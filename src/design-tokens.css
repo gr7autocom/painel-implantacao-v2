@@ -1,0 +1,99 @@
+@theme {
+  /* ─── Global Color Primitives (VS Code Dark Theme) ─── */
+
+  /* White remapped to card surface — clearly distinct from page bg */
+  --color-white: #3a3a3a;
+
+  /* Gray scale — inverted for dark theme */
+  --color-gray-50: #1e1e1e;   /* page background */
+  --color-gray-100: #2d2d2d;  /* sidebar, hover states */
+  --color-gray-200: #515151;  /* borders — visíveis no fundo escuro */
+  --color-gray-300: #666666;  /* borders secundários */
+  --color-gray-400: #7a7a7a;  /* placeholder text */
+  --color-gray-500: #9a9a9a;  /* muted text */
+  --color-gray-600: #b0b0b0;  /* secondary text */
+  --color-gray-700: #cccccc;  /* body text */
+  --color-gray-800: #d8d8d8;  /* slightly brighter body */
+  --color-gray-900: #e8e8e8;  /* headings / brightest text */
+
+  /* Blue scale — VS Code accent blues */
+  --color-blue-50: #1a3050;
+  --color-blue-100: #1e3a5f;
+  --color-blue-200: #2e5a8e;
+  --color-blue-500: #569cd6;
+  --color-blue-600: #0078d4;
+  --color-blue-700: #005a9e;
+
+  /* Status colors */
+  --color-green-500: #4ec9b0;
+  --color-green-600: #3bab98;
+  --color-emerald-500: #4ec9b0;
+  --color-amber-500: #dcdcaa;
+  --color-orange-600: #ce9178;
+  --color-red-500: #f14c4c;
+  --color-red-600: #cd3131;
+
+  /* ─── Semantic Color Tokens ─── */
+
+  /* Surfaces */
+  --color-surface-page: #1e1e1e;
+  --color-surface-card: #3a3a3a;
+  --color-surface-elevated: #444444;
+  --color-surface-hover: #424242;
+  --color-surface-active: #4a4a4a;
+  --color-surface-disabled: #2d2d2d;
+
+  /* Text */
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #9e9e9e;
+  --color-text-tertiary: #858585;
+  --color-text-disabled: #6e6e6e;
+  --color-text-inverse: #ffffff;
+
+  /* Borders */
+  --color-border-default: #3c3c3c;
+  --color-border-hover: #555555;
+  --color-border-focus: #569cd6;
+  --color-border-error: #f14c4c;
+
+  /* Actions */
+  --color-action-primary: #0078d4;
+  --color-action-primary-hover: #005a9e;
+  --color-action-primary-text: #ffffff;
+  --color-action-danger: #cd3131;
+  --color-action-danger-hover: #b02020;
+
+  /* Feedback */
+  --color-feedback-success: #4ec9b0;
+  --color-feedback-success-bg: #1a3330;
+  --color-feedback-warning: #dcdcaa;
+  --color-feedback-warning-bg: #2e2a1a;
+  --color-feedback-error: #f14c4c;
+  --color-feedback-error-bg: #2e1a1a;
+  --color-feedback-info: #569cd6;
+  --color-feedback-info-bg: #1a3050;
+
+  /* Progress Bar Colors */
+  --color-progress-empty: #3c3c3c;
+  --color-progress-low: #dcdcaa;
+  --color-progress-mid: #569cd6;
+  --color-progress-high: #4ec9b0;
+  --color-progress-complete: #4ec9b0;
+
+  /* ─── Border Radius ─── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ─── Spacing Scale (4px base) ─── */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+}

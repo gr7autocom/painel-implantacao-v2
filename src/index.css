@@ -1,0 +1,149 @@
+@import "./design-tokens.css";
+@import "tailwindcss";
+
+/* Dark theme base */
+html {
+  color-scheme: dark;
+}
+html, body {
+  background-color: #1e1e1e;
+  color: #e8e8e8;
+}
+
+* {
+  scrollbar-color: #3c3c3c #1e1e1e;
+  scrollbar-width: thin;
+}
+
+/* Rich text editor (Tiptap) — estilos do conteúdo editado */
+
+.rich-text-content .tiptap {
+  outline: none;
+}
+
+.rich-text-content .tiptap > * + * {
+  margin-top: 0.5rem;
+}
+
+.rich-text-content .tiptap p {
+  line-height: 1.55;
+}
+
+.rich-text-content .tiptap h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1rem;
+}
+
+.rich-text-content .tiptap h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1rem;
+}
+
+.rich-text-content .tiptap h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 0.75rem;
+}
+
+.rich-text-content .tiptap h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.75rem;
+}
+
+.rich-text-content .tiptap ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.rich-text-content .tiptap ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.rich-text-content .tiptap li > p {
+  margin: 0;
+}
+
+.rich-text-content .tiptap a {
+  color: #569cd6;
+  text-decoration: underline;
+}
+
+.rich-text-content .tiptap code {
+  background: #3c3c3c;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #ce9178;
+}
+
+.rich-text-content .tiptap pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+.rich-text-content .tiptap pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.rich-text-content .tiptap blockquote {
+  border-left: 3px solid #555555;
+  padding-left: 0.75rem;
+  color: #9e9e9e;
+  font-style: italic;
+}
+
+.rich-text-content .tiptap hr {
+  border: none;
+  border-top: 1px solid #3c3c3c;
+  margin: 1rem 0;
+}
+
+/* Tamanho de fonte mínimo reutilizável — substitui text-[11px] espalhado */
+.text-caption {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Modal entry animations */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-dialog-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Skeleton loading */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Placeholder */
+.rich-text-content .tiptap p.is-editor-empty:first-child::before {
+  color: #6e6e6e;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

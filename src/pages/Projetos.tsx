@@ -1,0 +1,393 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Building2, FolderKanban, UserPlus } from 'lucide-react'
+import { Modal } from '../components/Modal'
+import { supabase } from '../lib/supabase'
+import { AlertBanner } from '../components/AlertBanner'
+import { EmptyState } from '../components/EmptyState'
+import { usePermissao } from '../lib/permissoes'
+import type { EtapaImplantacao, ProjetoComRelacoes } from '../lib/types'
+import { ClienteModal } from '../components/clientes/ClienteModal'
+import { SelecionarClienteModal } from '../components/clientes/SelecionarClienteModal'
+import { CardProjeto } from '../components/projetos/CardProjeto'
+import { type Progresso, PROGRESSO_VAZIO } from '../lib/projetos-utils'
+import { PageHeader } from '../components/PageHeader'
+import { SearchInput } from '../components/SearchInput'
+import { usePageTitle } from '../lib/utils'
+
+const SELECT_PROJETO =
+  '*, cliente:clientes(id, nome_fantasia, razao_social), etapa_implantacao:etapas_implantacao(id, nome, cor, ordem)'
+
+export function Projetos() {
+  const perm = usePermissao()
+  const navigate = useNavigate()
+  usePageTitle('Projetos')
+  const [items, setItems] = useState<ProjetoComRelacoes[]>([])
+  const [progresso, setProgresso] = useState<Record<string, Progresso>>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [busca, setBusca] = useState('')
+  const [etapaFiltro, setEtapaFiltro] = useState('')
+  const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selecionarOpen, setSelecionarOpen] = useState(false)
+  const [criandoProjeto, setCriandoProjeto] = useState(false)
+  const [nomeModalOpen, setNomeModalOpen] = useState(false)
+  const [clienteParaProjeto, setClienteParaProjeto] = useState<string | null>(null)
+  const [nomeProjeto, setNomeProjeto] = useState('')
+  const [renomearProjeto, setRenomearProjeto] = useState<ProjetoComRelacoes | null>(null)
+  const [excluirProjeto, setExcluirProjeto] = useState<ProjetoComRelacoes | null>(null)
+  const [excluindoProjeto, setExcluindoProjeto] = useState(false)
+  const [novoNome, setNovoNome] = useState('')
+  const [salvandoNome, setSalvandoNome] = useState(false)
+  const nomeInputRef = useRef<HTMLInputElement>(null)
+  const renomearInputRef = useRef<HTMLInputElement>(null)
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    const [projRes, progRes, etRes] = await Promise.all([
+      supabase
+        .from('projetos')
+        .select(SELECT_PROJETO)
+        .eq('ativo', true)
+        .order('created_at', { ascending: false }),
+      supabase.from('projetos_progresso').select('*'),
+      supabase.from('etapas_implantacao').select('*').eq('ativo', true).order('ordem'),
+    ])
+    if (projRes.error) setError(projRes.error.message)
+    else setItems((projRes.data ?? []) as unknown as ProjetoComRelacoes[])
+    if (!progRes.error) {
+      const map: Record<string, Progresso> = {}
+      for (const row of progRes.data ?? []) {
+        map[(row as { projeto_id: string }).projeto_id] = row as Progresso
+      }
+      setProgresso(map)
+    }
+    setEtapasImplantacao((etRes.data ?? []) as EtapaImplantacao[])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const itensFiltrados = useMemo(() => {
+    return items.filter((p) => {
+      if (busca.trim()) {
+        const b = busca.toLowerCase()
+        const match =
+          p.nome.toLowerCase().includes(b) ||
+          (p.cliente?.nome_fantasia.toLowerCase().includes(b) ?? false) ||
+          (p.cliente?.razao_social.toLowerCase().includes(b) ?? false)
+        if (!match) return false
+      }
+      if (etapaFiltro && p.etapa_implantacao_id !== etapaFiltro) return false
+      return true
+    })
+  }, [items, busca, etapaFiltro])
+
+  function abrirModalNomeProjeto(clienteId: string) {
+    setClienteParaProjeto(clienteId)
+    setNomeProjeto('')
+    setNomeModalOpen(true)
+    setTimeout(() => nomeInputRef.current?.focus(), 50)
+  }
+
+  async function criarProjetoEmBranco() {
+    if (!clienteParaProjeto) return
+    const nome = nomeProjeto.trim() || 'Novo projeto'
+    setCriandoProjeto(true)
+    setError(null)
+    const { data, error: err } = await supabase
+      .from('projetos')
+      .insert({ cliente_id: clienteParaProjeto, nome })
+      .select('id')
+      .single()
+    setCriandoProjeto(false)
+    setNomeModalOpen(false)
+    if (err || !data) {
+      setError(err?.message ?? 'Erro ao criar projeto.')
+      return
+    }
+    navigate(`/projetos/${data.id}`)
+  }
+
+  async function salvarNomeProjeto() {
+    if (!renomearProjeto) return
+    const nome = novoNome.trim()
+    if (!nome) return
+    setSalvandoNome(true)
+    const { error: err } = await supabase
+      .from('projetos')
+      .update({ nome, updated_at: new Date().toISOString() })
+      .eq('id', renomearProjeto.id)
+    setSalvandoNome(false)
+    if (err) { setError(err.message); return }
+    setRenomearProjeto(null)
+    load()
+  }
+
+  async function confirmarExcluirProjeto() {
+    if (!excluirProjeto) return
+    setExcluindoProjeto(true)
+    const { error: err } = await supabase.from('projetos').delete().eq('id', excluirProjeto.id)
+    setExcluindoProjeto(false)
+    if (err) {
+      setError(err.code === '42501' ? 'Você não tem permissão para excluir projetos.' : err.message)
+      setExcluirProjeto(null)
+      return
+    }
+    setExcluirProjeto(null)
+    load()
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Projetos"
+        description="Acompanhe o andamento de implantação de cada cliente."
+      />
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <label htmlFor="projetos-etapa-filtro" className="sr-only">Filtrar por etapa</label>
+        <select
+          id="projetos-etapa-filtro"
+          value={etapaFiltro}
+          onChange={(e) => setEtapaFiltro(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+        >
+          <option value="">Todas as etapas</option>
+          {etapasImplantacao.map((e) => (
+            <option key={e.id} value={e.id}>{e.nome}</option>
+          ))}
+        </select>
+        <SearchInput
+          id="projetos-busca"
+          label="Buscar projeto"
+          value={busca}
+          onChange={setBusca}
+          placeholder="Buscar projeto ou cliente..."
+          className="w-full sm:w-64"
+        />
+      </div>
+
+      {perm.can('cliente.criar') && (
+        <div className="mb-6 p-5 border border-dashed border-gray-300 rounded-xl bg-white">
+          <p className="text-sm text-gray-500 mb-4 text-center">
+            Selecione um projeto abaixo ou inicie um novo:
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-[#ffffff] text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                Novo cliente
+              </button>
+              <span className="text-xs text-gray-400">Cadastra cliente e gera tarefas</span>
+            </div>
+            <div className="hidden sm:block w-px h-12 bg-gray-200" />
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSelecionarOpen(true)}
+                disabled={criandoProjeto}
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                <Building2 className="w-4 h-4" />
+                {criandoProjeto ? 'Criando...' : 'Cliente existente'}
+              </button>
+              <span className="text-xs text-gray-400">Abre projeto em branco</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && <AlertBanner>{error}</AlertBanner>}
+
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center animate-pulse">
+              <div className="w-20 h-20 rounded-full bg-gray-200 mb-3" />
+              <div className="h-3 bg-gray-200 rounded w-3/4 mb-2" />
+              <div className="h-2.5 bg-gray-200 rounded w-1/2 mb-4" />
+              <div className="w-full mt-auto space-y-1.5">
+                <div className="h-2 bg-gray-200 rounded w-full" />
+                <div className="h-1.5 bg-gray-200 rounded-full w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : itensFiltrados.length === 0 ? (
+        <EmptyState
+          icon={<FolderKanban className="w-10 h-10" />}
+          title={items.length === 0 ? 'Nenhum projeto cadastrado ainda.' : 'Nenhum projeto encontrado.'}
+          description={items.length === 0 ? 'Crie um novo projeto clicando no botão acima.' : 'Tente ajustar a busca ou os filtros.'}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+          {itensFiltrados.map((p) => (
+            <CardProjeto
+              key={p.id}
+              projeto={p}
+              progresso={progresso[p.id] ?? PROGRESSO_VAZIO}
+              onOpen={() => navigate(`/projetos/${p.id}`)}
+              onRenomear={perm.can('cliente.editar') ? () => {
+                setNovoNome(p.nome)
+                setRenomearProjeto(p)
+                setTimeout(() => renomearInputRef.current?.focus(), 50)
+              } : undefined}
+              onExcluir={perm.can('projeto.excluir') ? () => setExcluirProjeto(p) : undefined}
+            />
+          ))}
+        </div>
+      )}
+
+      <ClienteModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={(r) => {
+          load()
+          if (r?.criou && r.projetoId) navigate(`/projetos/${r.projetoId}`)
+          if (r?.criou && r.erroGeracao) setError(`Cliente criado, mas tarefas não geradas: ${r.erroGeracao}`)
+        }}
+        cliente={null}
+      />
+
+      <SelecionarClienteModal
+        open={selecionarOpen}
+        onClose={() => setSelecionarOpen(false)}
+        onSelect={(c) => { setSelecionarOpen(false); abrirModalNomeProjeto(c.id) }}
+      />
+
+      {/* Modal: nome do novo projeto */}
+      <Modal
+        open={nomeModalOpen}
+        onClose={() => setNomeModalOpen(false)}
+        title="Nome do projeto"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setNomeModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={criarProjetoEmBranco}
+              disabled={criandoProjeto}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {criandoProjeto ? 'Criando...' : 'Criar projeto'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <label htmlFor="nome-projeto-input" className="block text-sm text-gray-700">
+            Nome do projeto
+          </label>
+          <input
+            id="nome-projeto-input"
+            ref={nomeInputRef}
+            type="text"
+            value={nomeProjeto}
+            onChange={(e) => setNomeProjeto(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && criarProjetoEmBranco()}
+            placeholder="Ex: Implantação Loja Centro"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400">Deixe em branco para usar "Novo projeto".</p>
+        </div>
+      </Modal>
+
+      {/* Modal: renomear projeto existente */}
+      <Modal
+        open={!!renomearProjeto}
+        onClose={() => setRenomearProjeto(null)}
+        title="Renomear projeto"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setRenomearProjeto(null)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={salvarNomeProjeto}
+              disabled={salvandoNome || !novoNome.trim()}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {salvandoNome ? 'Salvando...' : 'Salvar'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <label htmlFor="renomear-projeto-input" className="block text-sm text-gray-700">
+            Novo nome
+          </label>
+          <input
+            id="renomear-projeto-input"
+            ref={renomearInputRef}
+            type="text"
+            value={novoNome}
+            onChange={(e) => setNovoNome(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && salvarNomeProjeto()}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </Modal>
+
+      {/* Modal: confirmar exclusão de projeto */}
+      <Modal
+        open={!!excluirProjeto}
+        onClose={() => setExcluirProjeto(null)}
+        title="Excluir projeto"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setExcluirProjeto(null)}
+              disabled={excluindoProjeto}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmarExcluirProjeto}
+              disabled={excluindoProjeto}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {excluindoProjeto ? 'Excluindo...' : 'Excluir projeto'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3 text-sm text-gray-700">
+          <p>
+            Excluir o projeto <strong>{excluirProjeto?.nome}</strong>
+            {excluirProjeto?.cliente?.nome_fantasia && <> (cliente: <strong>{excluirProjeto.cliente.nome_fantasia}</strong>)</>}?
+          </p>
+          <p className="text-gray-500">
+            O cliente será mantido. As tarefas ativas do projeto serão canceladas automaticamente e preservadas no histórico.
+            Esta ação não pode ser desfeita.
+          </p>
+        </div>
+      </Modal>
+    </div>
+  )
+}

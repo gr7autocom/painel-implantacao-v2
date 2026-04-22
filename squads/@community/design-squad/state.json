@@ -1,0 +1,20 @@
+{
+  "squad": "design-squad",
+  "status": "done",
+  "step": { "current": 5, "total": 5, "label": "Handoff review complete" },
+  "agents": [
+    {
+      "id": "design-chief",
+      "name": "Design Chief",
+      "icon": "paintbrush",
+      "status": "done",
+      "stepIndex": 5,
+      "stepLabel": "Handoff review — specs, tokens, and implementation guidance",
+      "deliverTo": null,
+      "message": "Design Project Report entregue. 7 ações priorizadas."
+    }
+  ],
+  "handoff": null,
+  "startedAt": "2026-04-20T00:00:00Z",
+  "updatedAt": "2026-04-20T00:05:00Z"
+}

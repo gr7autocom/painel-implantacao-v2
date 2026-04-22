@@ -1,0 +1,16 @@
+{
+  "squad": "ui-ux-optimizer",
+  "status": "done",
+  "step": { "current": 7, "total": 7, "label": "Pipeline concluído" },
+  "agents": [
+    { "id": "auditora", "name": "Ana Lima", "icon": "magnifying-glass", "status": "done", "stepIndex": 1, "stepLabel": "Auditoria completa", "desk": { "col": 1, "row": 1 }, "deliverTo": "arquiteta-ui", "message": "7 P1s + 6 P2s mapeados." },
+    { "id": "arquiteta-ui", "name": "Carla Mendes", "icon": "layout", "status": "done", "stepIndex": 2, "stepLabel": "Plano de melhorias", "desk": { "col": 2, "row": 1 }, "deliverTo": "dev-react", "message": "Specs entregues para 4 agentes." },
+    { "id": "dev-react", "name": "Bruno Costa", "icon": "code", "status": "done", "stepIndex": 4, "stepLabel": "Implementação React/TS", "desk": { "col": 3, "row": 1 }, "deliverTo": "dev-testes", "message": "9 tarefas implementadas. Build ok." },
+    { "id": "dev-estilo", "name": "Diego Santos", "icon": "palette", "status": "done", "stepIndex": 4, "stepLabel": "Estilos TailwindCSS", "desk": { "col": 1, "row": 2 }, "deliverTo": null, "message": "CSS e classes aplicados." },
+    { "id": "dev-perf", "name": "Marina Oliveira", "icon": "zap", "status": "done", "stepIndex": 5, "stepLabel": "Performance", "desk": { "col": 2, "row": 2 }, "deliverTo": null, "message": "Sem regressões de performance." },
+    { "id": "dev-testes", "name": "Felipe Rocha", "icon": "check-circle", "status": "done", "stepIndex": 6, "stepLabel": "Testes", "desk": { "col": 3, "row": 2 }, "deliverTo": null, "message": "Plano de testes entregue. Vitest não instalado — código documentado." }
+  ],
+  "handoff": null,
+  "startedAt": "2026-04-19T00:00:00Z",
+  "updatedAt": "2026-04-20T00:00:00Z"
+}

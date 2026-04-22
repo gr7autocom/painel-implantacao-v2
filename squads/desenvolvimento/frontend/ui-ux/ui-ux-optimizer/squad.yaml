@@ -1,0 +1,109 @@
+squad:
+  code: ui-ux-optimizer
+  setor: desenvolvimento
+  grupo: frontend
+  sessao: ui-ux
+  name: UI/UX Optimizer
+  description: Audita a interface do painel GR7, projeta melhorias visuais e de UX, e implementa as mudanças no código (React 19 + TailwindCSS v4 + Vite).
+  icon: sparkles
+  version: "1.0.0"
+
+  company: "_expxagents/_memory/company.md"
+  preferences: "_expxagents/_memory/preferences.md"
+  memory: "_memory/memories.md"
+
+  target_audience: Usuários internos da GR7 Automação — gestores e equipe de implantação
+  platform: Web (React SPA)
+  format: frontend-component
+
+  schedule:
+    enabled: false
+
+  skills:
+    - web_search
+    - web_fetch
+
+  data: []
+
+  agents:
+    - id: auditora
+      name: "Ana Lima"
+      icon: magnifying-glass
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Ana"
+      prompt: agents/auditora.md
+
+    - id: arquiteta-ui
+      name: "Carla Mendes"
+      icon: layout
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Carla"
+      prompt: agents/arquiteta-ui.md
+
+    - id: dev-react
+      name: "Bruno Costa"
+      icon: code
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Bruno"
+      prompt: agents/dev-react.md
+
+    - id: dev-estilo
+      name: "Diego Santos"
+      icon: palette
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Diego"
+      prompt: agents/dev-estilo.md
+
+    - id: dev-perf
+      name: "Marina Oliveira"
+      icon: zap
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Marina"
+      prompt: agents/dev-perf.md
+
+    - id: dev-testes
+      name: "Felipe Rocha"
+      icon: check-circle
+      avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=Felipe"
+      prompt: agents/dev-testes.md
+
+  pipeline:
+    steps:
+      - id: step-01
+        agent: auditora
+        label: "Auditoria completa — visual, UX e performance"
+        execution: inline
+
+      - id: step-02
+        agent: arquiteta-ui
+        label: "Plano de melhorias com specs técnicas"
+        deliverFrom: auditora
+        execution: inline
+
+      - id: step-03
+        type: checkpoint
+        label: "Aprovação do plano pelo Pabllo"
+        options:
+          - approve
+          - reject
+        on_reject: step-02
+
+      - id: step-04
+        agent: dev-react
+        label: "Implementação React 19 + TypeScript"
+        deliverFrom: arquiteta-ui
+        execution: inline
+
+      - id: step-05
+        agent: dev-estilo
+        label: "Implementação TailwindCSS v4 + estilização"
+        deliverFrom: arquiteta-ui
+        execution: inline
+
+      - id: step-06
+        agent: dev-perf
+        label: "Otimizações de performance + Vite"
+        deliverFrom: arquiteta-ui
+        execution: inline
+
+      - id: step-07
+        agent: dev-testes
+        label: "Testes de UI — Vitest + Testing Library + Playwright"
+        deliverFrom: dev-react
+        execution: inline
+        produces_format: true

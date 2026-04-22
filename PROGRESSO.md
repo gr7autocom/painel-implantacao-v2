@@ -1,0 +1,505 @@
+# Progresso do Desenvolvimento - GR7 Automação
+
+> Detalhes de implementação ficam em `CLAUDE.md`. Aqui só etapas: feito / fazendo / a fazer.
+
+## ✅ Concluído
+
+### Setup Inicial
+
+- [x] Projeto React + TypeScript + Vite
+- [x] TailwindCSS v4
+- [x] Supabase configurado
+- [x] Sidebar + Layout
+- [x] Páginas base (Inicio, Clientes, Tarefas, Configurações)
+
+### Configurações
+
+- [x] Migração das 5 tabelas base (setores, usuarios, categorias, etapas, prioridades) com seeds
+- [x] Página Configurações com abas
+- [x] CRUD de Setores / Usuários / Categorias / Etapas / Prioridades
+- [x] CRUD de Permissões (Administrador / Vendedor / Suporte)
+- [x] **Fase B** — slug (`admin` / `vendas` / `suporte`) em `permissoes` + FK `usuarios.permissao_id` + select de Permissão na UsuariosTab
+
+### Tarefas
+
+- [x] Migração `tarefas` (e drop da coluna `tags`)
+- [x] Página Tarefas: lista, filtros, criar/editar/excluir, badge "Atrasada"
+- [x] Filtro por responsável = usuário atual
+- [x] Auto-preenchimento de `criado_por` e default de `responsavel`
+
+### Autenticação — Fase A (Supabase Auth real)
+
+- [x] Migration `usuarios.auth_user_id` → `auth.users`
+- [x] Tela `/login` com email + senha
+- [x] `AuthProvider` com states `loading / authenticated / unauthenticated / unauthorized`
+- [x] Vínculo automático `auth_user_id` por email no primeiro login
+- [x] `<RequireAuth>` protegendo rotas
+- [x] `PerfilSidebar` com botão "Sair"
+- [x] Bloqueio automático de usuários inativos
+- [x] Script `bootstrap-admin.mjs` criando 1º admin via service role
+- [x] Admin `suporte@gr7autocom.com.br` provisionado
+
+### Permissões — Fase C (RLS no Postgres)
+
+- [x] Helpers SECURITY DEFINER: `current_user_id()`, `current_permissao_id()`, `current_role_slug()`, `is_admin()`, `link_auth_user_by_email()`
+- [x] RLS habilitado em: setores, categorias, etapas, prioridades, permissoes, usuarios, tarefas
+- [x] Policies conforme matriz (SELECT aberto p/ autenticados; escrita por papel)
+- [x] Bloqueio de escalada de papel (usuário não muda própria `permissao_id`)
+- [x] `lib/auth.tsx` usa RPC `link_auth_user_by_email` no primeiro login
+
+### Permissões — Fase D (UI aplica permissões)
+
+- [x] `AuthProvider` carrega a permissão (slug) junto do usuário via join
+- [x] Hook `usePermissao()` centralizando capabilities por papel
+- [x] `<RequireRole>` protegendo `/configuracoes`
+- [x] Sidebar esconde "Configurações" para não-admin
+- [x] Tarefas com toggle Minhas / Em aberto / Todas
+- [x] Botão "Assumir" em tarefas em aberto (admin/suporte)
+- [x] Botões Editar/Excluir nos cards respeitam o papel
+- [x] TarefaModal em modo somente leitura quando o papel não permite editar
+- [x] Campo Responsável read-only quando usuário não pode reatribuir
+
+### Permissões — Fase E (convite via Edge Function)
+
+- [x] Edge Function `invite-user` (verifica admin via RPC, cria Auth + upsert em `usuarios`)
+- [x] Deploy da Edge Function
+- [x] UsuariosTab com fluxo "Convidar" (senha + confirmar senha no modal)
+- [x] Edição existente mantém UPDATE direto; email fica readonly
+- [x] Script `bootstrap-admin.mjs` mantido apenas como fallback de recuperação
+
+### Reforma de capacidades granulares + limpeza
+
+- [x] **Setor removido** (tabela `setores` e `usuarios.setor_id` dropados; `SetoresTab` deletado)
+- [x] **Descrições removidas** de `permissoes`, `categorias`, `etapas`
+- [x] `permissoes.capacidades TEXT[]` + seeds por slug (admin com tudo)
+- [x] Catálogo canônico `src/lib/acoes.ts` (14 ações em 4 grupos)
+- [x] Helper SQL `can(acao)` SECURITY DEFINER
+- [x] RLS refatorado: todas policies de escrita agora consultam `can()` em vez de `is_admin()` / slug
+- [x] Trigger anti-lockout em `permissoes`
+- [x] `usePermissao` virou `can(acao)` + helpers contextuais
+- [x] PermissoesTab reescrita: checkboxes agrupadas; perfil admin travado (readonly)
+- [x] Edge Function `invite-user` redeployada sem `setor_id`
+
+### Classificações
+
+- [x] Tabela `classificacoes` (N:1 com `categorias`; UNIQUE por categoria+nome)
+- [x] RLS (SELECT autenticado; escrita via `can('configuracoes.catalogos')`)
+- [x] Seeds: 5 categorias + 19 classificações pré-cadastradas
+- [x] `ClassificacoesTab` com CRUD + filtro por categoria
+- [x] `tarefas.classificacao_id` + trigger que valida coerência com `categoria_id`
+- [x] TarefaModal: layout reorganizado (Prioridade / Categoria / Classificação na linha 1; Responsável / Etapa na linha 2); select de Classificação desabilitado até escolher Categoria e filtra pela categoria selecionada; ao trocar Categoria, Classificação reseta
+
+### Editor rich text na descrição de Tarefa
+
+- [x] Tiptap v3 instalado (`@tiptap/react` + extensions)
+- [x] Componente `RichTextEditor` com toolbar (fonte, heading, bold/italic/underline/strike/code, cor do texto, cor de fundo, listas, link)
+- [x] CSS dedicado em `index.css` (.rich-text-content)
+- [x] Integrado ao TarefaModal, respeitando modo readonly (desliga toolbar)
+
+### Badge de prazo em Tarefas
+
+- [x] Badge dinâmico calculado a partir de `prazo_entrega`: verde (>7d), amarelo (4-7d), vermelho (≤3d e "Vence hoje"), vermelho "Atrasada há N dias" quando passa do prazo
+- [x] Não aparece quando a tarefa está em etapa que contém "concl" ou "cancel" (concluída/cancelada)
+- [x] Helpers movidos para `lib/tarefa-utils.ts` (reusados no dashboard)
+
+### Fluxo de convite (ciclo de vida)
+
+- [x] `usuarios.status` (`pendente | ativo | inativo`)
+- [x] Edge Function reescrita: `inviteUserByEmail` (envia e-mail), upsert em `usuarios` com `status='pendente'`, valida JWT manualmente
+- [x] Redeploy com `--no-verify-jwt` (corrigiu 401 do gateway)
+- [x] UsuariosTab: sem senha; coluna Status; banner de sucesso
+- [x] RPC `activate_self()` SECURITY DEFINER
+- [x] AuthProvider com novo estado `needs_password` — aceitar convite leva à tela de "Definir senha", não dá acesso direto
+- [x] Página `/definir-senha` obrigatória no primeiro acesso (updateUser + activate_self)
+- [x] Login + RequireAuth redirecionam `needs_password` para `/definir-senha`
+- [x] Default de Responsável ao criar tarefa varia por papel: Vendas nasce em aberto, Admin/Suporte nasce com eles mesmos (baseado em `can('tarefa.reatribuir')` + `can('tarefa.editar_todas')`)
+
+### Separação tarefas avulsas vs. de projeto
+
+- [x] Flag `tarefas.de_projeto BOOLEAN` — separa avulsa (mesmo com cliente) de tarefa de projeto
+- [x] Aba `/tarefas`: "Minhas" mostra avulsa + projeto (tudo que o usuário tem para fazer); "Em aberto" e "Todas" só avulsas
+- [x] Linhas em `/tarefas` mostram badge "Projeto: X" (link) ou "Cliente: X" (plain) conforme `de_projeto`
+- [x] Página `/projetos/:id` filtra `cliente_id = :id AND de_projeto = true`
+- [x] `TarefaModal` usa **botão "Associar Cliente"** que abre o `SelecionarClienteModal` (lista com busca); associar cliente em avulsa **não** a move para projeto — é apenas identificação
+- [x] `clienteFixo` (contexto de `/projetos/:id`) faz a tarefa nascer com `de_projeto = true`
+- [x] RPC `gerar_tarefas_iniciais_cliente` insere com `de_projeto = true` (idempotência baseada em `cliente_id + de_projeto`)
+- [x] `SELECT_TAREFA_COM_RELACOES` inclui join `cliente`
+- [x] Dashboard mostra "Projeto: X" (com link) se `de_projeto`; senão "Cliente: X" (plain text) se houver cliente
+- [x] Painel "Atividades em [data]" do calendário também mostra o cliente quando aplicável
+
+### Projetos (visão em cards + detalhe)
+
+- [x] Cada cliente cadastrado aparece como um card (1 cliente = 1 projeto)
+- [x] Layout de grid com avatar gradient, nome fantasia e responsável
+- [x] Botão "Criar um novo projeto" abre `ClienteModal`
+- [x] Clique no card → navega para `/projetos/:id`
+- [x] Lápis no card → edita o cliente diretamente (modal)
+- [x] **Página `/projetos/:id`**: header com info do cliente + lista de tarefas filtradas por `cliente_id` + filtros + botão Nova Tarefa
+- [x] **Geração automática de tarefas** ao criar cliente: 1 por servidor, 1 por retaguarda, 1 por PDV, 1 por módulo (sufixo k/N quando múltiplas)
+- [x] Geração via **RPC SECURITY DEFINER** `gerar_tarefas_iniciais_cliente` (idempotente — não duplica se chamada 2x)
+- [x] Função TS `gerarTarefasIniciais` removida (obsoleta); botão "Gerar tarefas iniciais" removido do ProjetoDetalhe (evita duplicação acidental)
+- [x] `TarefaModal` ganhou campo `Cliente` (com prop `clienteFixo` que trava o select quando vem da página de projeto)
+
+### Clientes (CRUD completo)
+
+- [x] Migration `clientes` com todos os campos (dados cadastrais, importação, infraestrutura, módulos TEXT[])
+- [x] FK `tarefas.cliente_id → clientes(id)` adicionada
+- [x] RLS via capacidades `cliente.*` (Admin/Vendas/Suporte criam e editam; só Admin exclui)
+- [x] Catálogo de módulos em `lib/clientes-utils.ts` (13 módulos: PIX, IMG, TEF, BKP, F_VENDAS, MOB, COL, COT, MTZ, TB_DIGITAL, VDA, GRAZI, VPN)
+- [x] Helpers de formatação/validação CNPJ e telefone
+- [x] Página Clientes com listagem + busca por nome/CNPJ + modal de criar/editar organizado em seções (Dados Básicos, Importação, Infraestrutura, Módulos, Status)
+- [x] Campo "sistema atual" aparece só quando "importar dados" = sim
+- [x] Ações respeitam permissões via `usePermissao()`
+
+### Dashboard (Início)
+
+- [x] Header "Seja bem-vindo, {nome}" com avatar da inicial
+- [x] 3 cards de métricas: Minhas tarefas (ativas), Tarefas atrasadas (minhas), Em aberto (global)
+- [x] Lista das suas tarefas ordenada por urgência (atrasadas → vencendo → sem prazo → finalizadas), desempate por prioridade e recência
+- [x] Link "Ver todas" que leva para `/tarefas`
+- [x] Calendário lateral mensal com navegação de mês; pontinho azul nos dias com tarefa (início/prazo); destaca hoje e dia selecionado
+- [x] Painel "Atividades em {data}" lista tarefas cujo `inicio_previsto` ou `prazo_entrega` caem no dia selecionado, com horário do início
+
+### Comentários, Checklist e Histórico em Tarefa
+
+- [x] Tabelas `tarefa_comentarios`, `tarefa_checklist`, `tarefa_historico` (CASCADE com `tarefas`)
+- [x] Helper `is_tarefa_editor(tarefa_id)` SECURITY DEFINER
+- [x] RLS: comentários restritos a responsável + admin (writes); quem excluir = autor ou admin
+- [x] Trigger `enforce_checklist_update`: marcar aberto p/ autenticado, desmarcar só quem marcou (ou admin); edição de texto só editor
+- [x] Triggers de histórico (criação, mudança de título/etapa/responsável/prioridade/prazo, comentário, checklist)
+- [x] Histórico só pode ser lido (sem policy de INSERT; triggers SECURITY DEFINER escrevem)
+- [x] `TarefaModal` com sidebar de 4 abas (Principal, Comentários, Checklist, Histórico); abas extras bloqueadas em criação
+- [x] `TarefaComentariosTab`: lista + form para responsável/admin; excluir = autor ou admin
+- [x] `TarefaChecklistTab`: barra de progresso, add/remove (editor), toggle com regra de desmarcação
+- [x] `TarefaHistoricoTab`: timeline vertical com ícone por tipo de evento
+- [x] `usePermissao` ganhou helper `isAdmin`
+
+### Medidor de progresso de projeto
+
+- [x] View `projetos_progresso` agregando tarefas + itens de checklist por cliente
+- [x] Regra: 1 unidade por tarefa + 1 unidade por item de checklist; canceladas ficam fora
+- [x] 100% só quando todas as tarefas estão "Concluído" e todos os itens ticados
+- [x] Barra de progresso no card de `/projetos` (cor varia por faixa)
+- [x] Barra de progresso no header de `/projetos/:id` com contagem `X/Y itens`
+
+### Etapas de Implantação (catálogo para projetos)
+
+- [x] Tabela `etapas_implantacao` (nome UNIQUE, ordem, cor, ativo) com RLS por `can('configuracoes.catalogos')`
+- [x] Seeds: A fazer, Contatado, Instalando, Importando, Treinamento, Cadastrando, Concluído, Inaugurado, Pausado, Cancelado
+- [x] Aba **Implantação** em Configurações com CRUD (reuso do padrão de EtapasTab)
+- [x] `clientes.etapa_implantacao_id` FK + trigger BEFORE INSERT que aplica "A fazer" como default
+- [x] Select de estágio no `ClienteModal` (seção "Estágio de implantação")
+- [x] Badge colorido do estágio no card de `/projetos` e no header de `/projetos/:id`
+
+### Monitor do Projeto
+
+- [x] Rota `/projetos/:id/monitor` + botão "Monitor" no header do projeto
+- [x] Header com estágio, progresso e dias desde a venda
+- [x] 4 KPI cards: total/concluídas, atrasadas, em aberto, em andamento
+- [x] Widget "Equipe no projeto" — responsáveis com contagem ativas/atrasadas/concluídas
+- [x] Widget "Próximos prazos" — top 5 tarefas ativas com prazo, ordenadas por urgência
+- [x] Aba "Atividade" — feed agregado do histórico de todas as tarefas do projeto
+- [x] Aba "Comentários" — comentários agregados com atalho para a tarefa
+- [x] Clique em qualquer tarefa abre o `TarefaModal` com `clienteFixo`
+
+### Estágio vs. status automático
+
+- [x] Edição da etapa de implantação movida do `ClienteModal` para o projeto (`/projetos/:id`, `/projetos/:id/monitor`, card de `/projetos`, grid `/clientes`)
+- [x] `ClienteModal` mostra apenas badge read-only com instrução "altere pela página do projeto"
+- [x] Componente reutilizável `EtapaImplantacaoBadge` (modo editável com popover)
+- [x] Coluna **Etapa** adicionada no grid `/clientes`
+- [x] View `projetos_progresso` ganhou `status_atividade` derivado (`sem_tarefas|nao_iniciado|em_andamento|concluido`)
+- [x] Componente `StatusAtividadeBadge` exibido ao lado da etapa manual no card `/projetos`, header `/projetos/:id` e `/monitor`
+
+### Tarefas — aba Concluídas + filtros
+
+- [x] Aba **Concluídas** em `/tarefas` (filtra `isFinalizada` client-side)
+- [x] Concluídas removidas das demais views (Minhas/Em aberto/Todas)
+- [x] Filtro por **Responsável** (com opção "Sem responsável")
+- [x] Reorganização do grid de filtros (Título / Responsável / Prioridade / Etapa / Criada de → até)
+
+### Trocar senha
+
+- [x] Edge Function `reset-user-password` (deploy --no-verify-jwt) — valida admin com capacidade `usuarios.editar` e usa `admin.updateUserById`
+- [x] Componente `TrocarSenhaModal` com modos `self` e `admin`
+- [x] "Trocar senha" no `PerfilSidebar` (usuário próprio, via `supabase.auth.updateUser`)
+- [x] "Redefinir senha" no `UsuariosTab` (admin para outro user) — só aparece quando `auth_user_id != null`
+- [x] Após login, sempre redireciona para `/` (home = Início)
+
+### Log de histórico — redesign visual
+
+- [x] Helper `src/lib/historico-utils.ts`: tempo relativo, `descreverEvento`, paleta de chips
+- [x] Componente `HistoricoLinha` reusado em `TarefaHistoricoTab` e no feed do Monitor
+- [x] Verbo natural + chip colorido no novo valor (etapa=indigo, prioridade=amber, responsável=purple, prazo=rose)
+- [x] "Antes: X" em cinza claro só quando relevante
+- [x] Tempo relativo ("agora", "há 5 min", "ontem 14:32") com tooltip do timestamp absoluto
+- [x] Linha inteira clicável no feed do Monitor → abre a tarefa na aba apropriada (comentário→Comentários, checklist→Checklist)
+- [x] `TarefaModal` aceita prop `abaInicial`
+- [x] Evento de responsável reconhece "assumiu a tarefa" (ator=para_id) e "soltou a tarefa" (ator=de_id)
+- [x] Diálogo de confirmação ao abrir tarefa concluída/cancelada: Cancelar / Apenas visualizar / Reabrir (muda etapa para "Pendente" imediato)
+
+### Qualidade e integridade de dados (auditoria P0–P2)
+
+- [x] `tarefas.de_projeto` imutável — trigger `BEFORE UPDATE` (`20260419000000`)
+- [x] RPC `gerar_tarefas_iniciais_cliente` rejeita cliente inativo; idempotência refinada (`20260419100000`)
+- [x] Anti-lockout no último admin — trigger em `usuarios` (`20260419200000`)
+- [x] `tarefa_historico.tarefa_id` — tentativa de `ON DELETE SET NULL` (`20260419300000`) revertida para CASCADE (`20260419164524`) pois coluna é NOT NULL; ao excluir tarefa, histórico é removido junto
+- [x] `tarefa_checklist.tarefa_id` imutável adicionado ao trigger `enforce_checklist_update` (`20260419400000`)
+- [x] Bug de timezone em `TarefaModal` corrigido — `toLocaleDateString('sv')`
+- [x] Reautenticação ao trocar senha própria — campo "Senha atual" + `signInWithPassword`
+- [x] View `projetos_progresso` com `SECURITY INVOKER` explícito (`20260419500000`)
+- [x] Utils de projeto extraídos para `src/lib/projetos-utils.ts`
+- [x] Cache de listas com TTL 5 min via `TarefaListasProvider` (`src/lib/tarefa-listas-context.tsx`)
+- [x] Índice composto `tarefas(cliente_id, de_projeto)` (`20260419600000`)
+- [x] `TarefaModal` dividido: `AssociarClienteField.tsx` + hook `useTarefaForm.ts`
+- [x] ARIA nos modais (`role="dialog"`, `aria-modal`, `aria-labelledby`)
+- [x] Sanitização do rich text com DOMPurify
+- [x] Filtros de tarefas persistidos em `localStorage`
+- [x] Coluna `em_aberto` na view `projetos_progresso` + badge laranja no card (`20260419700000`)
+- [x] Componente `ChecklistMiniBar` em linhas de tarefa
+
+### Correção: tarefas órfãs ao excluir cliente
+
+- [x] Trigger `BEFORE DELETE` em `clientes` — cancela tarefas `de_projeto=true` não-finalizadas antes da exclusão (`20260419160023`)
+- [x] `Inicio.tsx` KPI "Em aberto" — filtro `.eq('de_projeto', false)` adicionado para excluir tarefas de projeto do contador global
+
+### Fase do projeto sincronizada com badge de status
+
+- [x] Etapa "Pausado" criada nas etapas de tarefa (`20260419144221`)
+- [x] View `projetos_progresso` atualizada: `status_atividade` considera a fase — Pausado→`pausado`, Cancelado→`cancelado`, Inaugurado/Concluído+tudo concluído→`concluido` (`20260419144241`)
+- [x] `EtapaImplantacaoBadge`: fluxo de comentário alterado para diálogo sim/não antes de abrir textarea; "Não" salva direto
+- [x] Ao mudar fase para "Pausado": tarefas não-finalizadas movidas para etapa "Pausado" automaticamente
+- [x] Ao mudar fase para "Cancelado": tarefas não-finalizadas canceladas automaticamente
+- [x] Aviso visual no diálogo quando a ação é destrutiva (Pausado/Cancelado)
+- [x] `StatusAtividadeBadge` com novos estados visuais: `pausado` (violeta) e `cancelado` (vermelho)
+- [x] Card de projeto em `/projetos` exibe apenas `StatusAtividadeBadge`; `EtapaImplantacaoBadge` removido do card
+
+### Histórico de etapa de implantação + modal de comentário
+
+- [x] Tabela `cliente_historico` (id, cliente_id, ator_id, tipo, descricao, metadata, created_at) com RLS e índices (`20260419135237`)
+- [x] Trigger `AFTER UPDATE OF etapa_implantacao_id` em `clientes` — registra automaticamente a mudança com ator resolvido via `auth.uid()`
+- [x] `EtapaImplantacaoBadge` redesenhado: ao selecionar nova etapa, abre modal de confirmação com textarea de comentário opcional (salvo em `cliente_historico.tipo='comentario'`)
+- [x] `ProjetoMonitor` — aba "Atividade" busca e exibe `cliente_historico` mesclado com `tarefa_historico`, ordenado por data; ícone `ArrowRightLeft` para mudança de etapa, `MessageSquareText` para comentários de projeto
+
+### Refatoração arquitetural: 1 cliente → N projetos
+
+- [x] Tabela `projetos` (id, cliente_id FK, nome, etapa_implantacao_id FK, ativo, datas) + RLS
+- [x] `tarefas.projeto_id` (UUID nullable FK → projetos) + índice
+- [x] Migração de dados: 1 projeto criado por cliente existente com tarefas de projeto; tarefas linkadas via `projeto_id`
+- [x] RPC `gerar_tarefas_iniciais_cliente` retorna `TABLE(tarefas_geradas, projeto_id)`; cria projeto automaticamente
+- [x] Trigger `sync_tarefas_on_fase_change` movido de `clientes` para `projetos`
+- [x] View `projetos_progresso` reescrita para agregar por `projeto_id`
+- [x] Tipos `Projeto`, `ProjetoComRelacoes` em `lib/types.ts`; `Tarefa.projeto_id` adicionado
+- [x] `Projetos.tsx` — grid busca `projetos`; botões "Novo cliente" e "Cliente existente" (cria projeto em branco)
+- [x] `CardProjeto.tsx` — recebe `ProjetoComRelacoes`, exibe nome do projeto + cliente como subtítulo
+- [x] `ProjetoDetalhe.tsx` — filtra tarefas por `projeto_id`; header usa `ProjetoComRelacoes`
+- [x] `EtapaImplantacaoBadge` — migrado de `clienteId`/`clientes` para `projetoId`/`projetos`; `aplicarAcaoFase` removida (trigger DB assume)
+- [x] `TarefaModal` + `useTarefaForm` — prop `projetoFixo` define `projeto_id`, `cliente_id` e `de_projeto=true` nas novas tarefas
+- [x] `ProjetoMonitor.tsx` — busca de `projetos` (não `clientes`); filtra tarefas por `projeto_id`; `EtapaImplantacaoBadge` e `TarefaModal` atualizados
+- [x] Botão "Assumir" abre `TarefaModal` pré-preenchido (sem update silencioso)
+
+### Melhorias de UX / filtros / responsividade
+
+- [x] ID `#N` removido do grid de tarefas (título limpo)
+- [x] Filtro de tarefas por **prazo** (não por data de criação); labels atualizadas para "Prazo de / até"
+- [x] Filtros de `/tarefas` persistidos em `localStorage`
+- [x] `/projetos` ganhou filtro por etapa de implantação; dropdown vazio ("Todos os projetos") removido
+- [x] `/projetos/:id` ganhou filtro por responsável (com opção "Em aberto")
+- [x] Configurações — abas EtapasTab, PrioridadesTab, ImplantacaoTab, CategoriasTab ganham filtro ativo/inativo/todos
+- [x] UsuariosTab ganhou filtro de status (Todos / Ativos / Pendentes / Inativos)
+- [x] Sistema de **Toast** global (`Toast.tsx` + `useToast`) — notificações de sucesso/erro no canto inferior direito
+- [x] Toast integrado em: Tarefas, Clientes, ProjetoDetalhe, UsuariosTab
+- [x] Botões de ação sempre visíveis em mobile (Tarefas, ProjetoDetalhe, Projetos) — `opacity-0 group-hover:opacity-100` → `opacity-100 sm:opacity-0 sm:group-hover:opacity-100`
+- [x] Tabela de Clientes responsiva — cards para mobile (`md:hidden`), tabela para desktop (`hidden md:block`)
+- [x] Indicador de scroll no `TarefaModal` — gradiente CSS no rodapé do formulário
+- [x] Asterisco vermelho em campos obrigatórios (`TarefaModal`, CategoriasTab, EtapasTab, PrioridadesTab, ImplantacaoTab)
+
+### Design System — Fase 1 (formalização)
+
+- [x] `src/design-tokens.css` criado com 70+ tokens via `@theme {}` (primitivos, semânticos, radius, spacing)
+- [x] `src/index.css` importa `design-tokens.css` antes do Tailwind
+- [x] `text-[10px]` substituído por `text-caption` em todos os 9 arquivos (zero ocorrências arbitrárias)
+- [x] `CardProjeto` — `aria-label="Abrir projeto {nome}"` adicionado ao `role="button"`
+- [x] `EtapaImplantacaoBadge` — `aria-haspopup="listbox"` + `aria-expanded` no botão editável
+- [x] `docs/design-system.md` criado — referência viva de tokens, tipografia, componentes e acessibilidade
+- [x] Componente `Button.tsx` criado — variantes primary/secondary/danger/ghost, sizes sm/md, usa tokens semânticos
+- [x] Componente `AlertBanner.tsx` criado — tipos error/warning/success/info, `role="alert"` para acessibilidade
+- [x] `AlertBanner` aplicado em 12 arquivos (pages + config tabs + TarefaModal) — elimina 12 divs de erro inline
+- [x] `Button` aplicado nos footers de modais de todas as config tabs (CategoriasTab, EtapasTab, PrioridadesTab, ClassificacoesTab, PermissoesTab, ImplantacaoTab, UsuariosTab)
+
+### Acessibilidade P0 (WCAG 2.1)
+
+- [x] **Modal focus trap** — foco capturado ao abrir, Tab/Shift+Tab presos dentro, foco devolvido ao fechar; `aria-hidden="true"` no backdrop
+- [x] **Botões de ícone contextuais** — `aria-label` com nome do item em Clientes, Tarefas e Projetos (`"Editar cliente X"`, `"Excluir tarefa Y"`, `"Editar projeto Z"`)
+- [x] **Labels conectados a inputs** — `htmlFor`/`id` nos 6 filtros de Tarefas; `aria-label` nos inputs/selects de busca em Clientes e Projetos
+- [x] **EtapaBadge contraste** — helper `corTextoLegivel()` usa luminância percebida para usar `gray-700` quando a cor da etapa for clara demais
+- [x] **Calendário acessível** — `role="grid"`, `role="gridcell"`, `aria-label` com data por extenso, `aria-current="date"` no dia atual, `aria-selected`, `aria-live` no cabeçalho do mês, navegação por setas (←→↑↓ = ±1 dia / ±7 dias), `aria-hidden` nos pontos decorativos
+
+### UX/Qualidade P1
+
+- [x] **ErrorBoundary** — `src/components/ErrorBoundary.tsx` criado; todas as rotas em `App.tsx` envolvidas; tela de erro amigável com botão "Tentar novamente" em vez de tela branca
+- [x] **Toast melhorado** — duração 3.5s → 5s; hover pausa o timer (ToastBubble gerencia próprio `setTimeout`); `aria-label` no botão fechar
+- [x] **Loading skeleton em Comentários e Checklist** — substituído texto "Carregando..." por skeletons animados (`animate-pulse`) com estrutura visual fiel ao conteúdo real
+- [x] **EmptyState em Projetos** — substituídos divs de texto puro por `EmptyState` com ícone; loading virou skeleton grid de cards
+- [x] **EmptyState em Início** — lista de atividades com skeleton animado no loading e `EmptyState` quando vazia
+- [x] **Button component nos CTAs** — "Nova Tarefa" (Tarefas), "Novo Cliente" (Clientes) usam `<Button>` em vez de `<button>` com classes hardcoded
+- [x] **Paginação melhorada** — texto `text-sm` + `font-medium`, botões com `disabled:cursor-not-allowed`, fundo `bg-gray-50`, contador `X–Y de Z` com números em negrito
+
+### UX/Qualidade P2
+
+- [x] **`SearchInput` reutilizável** — `src/components/SearchInput.tsx` com debounce embutido, ícone de lupa e label acessível; usado em Clientes, Projetos, Tarefas (título) e ProjetoDetalhe; elimina `useDebounce` duplicado nessas páginas
+- [x] **`readLocalStorage` tipado** — helper em `lib/utils.ts` que garante que apenas valores string do localStorage são usados; substitui o bloco try/catch manual em Tarefas e ProjetoDetalhe
+- [x] **`CardProjeto` extraído** — movido de `Projetos.tsx` para `src/components/projetos/CardProjeto.tsx` junto com `CORES` e `corDoCliente`; Projetos.tsx importa do novo arquivo
+- [x] **Animação de entrada nos modais** — `@keyframes modal-backdrop-in` e `modal-dialog-in` em `index.css`; fade de 0.15s no backdrop + fade + scale(0.95→1) no dialog
+- [x] **Títulos dinâmicos por rota** — `usePageTitle(title)` em `lib/utils.ts`; chamado em todas as páginas: Início, Clientes, Projetos, Tarefas, ProjetoDetalhe, ProjetoMonitor, Configurações
+- [x] **Espaçamentos auditados** — PageHeader usa `mb-6`, filtros `mb-4` em todas as páginas; padrão já consistente, nenhuma correção necessária
+
+### Dark Theme (VS Code-inspired)
+
+- [x] `design-tokens.css` reescrito com paleta VS Code dark (gray invertido, blue accent `#0078d4`, status colors teal/yellow/orange/red)
+- [x] `index.css` atualizado: body bg/color defaults, dark scrollbar, Tiptap styles adaptados (links, code, blockquote, placeholder)
+- [x] Todos os `text-white` (35 ocorrências em ~20 arquivos) substituídos por `text-[#ffffff]` (bypassa a variável CSS remapeada)
+- [x] `EmptyState.tsx` — ícone ajustado de `text-gray-300` para `text-gray-500` (visível no fundo escuro)
+
+### Anexos em Tarefas (Cloudinary)
+
+- [x] Tabela `tarefa_anexos` (id, tarefa_id, nome_arquivo, public_id, url, tipo_mime, tamanho_bytes, criado_por_id) + índice + RLS (`20260420193049`)
+- [x] Tipo `TarefaAnexo` / `TarefaAnexoComAutor` em `lib/types.ts`
+- [x] Edge Function `delete-cloudinary-asset` — gera assinatura SHA-1, chama Cloudinary destroy, remove registro do banco; secrets configurados via `supabase secrets set`
+- [x] Componente `TarefaAnexosSection` — upload via clique, drag&drop e Ctrl+V (imagens do clipboard); barra de progresso por arquivo; lista com ícone por tipo, tamanho, download e remoção
+- [x] Integrado ao `TarefaModal` na aba Principal, logo abaixo do campo Descrição
+- [x] `.env` atualizado com `VITE_CLOUDINARY_CLOUD_NAME` e `VITE_CLOUDINARY_UPLOAD_PRESET`
+- [x] Imagem colada dentro do editor Tiptap → aparece inline (via `@tiptap/extension-image` + `handlePaste` que faz upload no Cloudinary e insere `<img>`)
+- [x] Imagem colada fora do editor → vai para lista de anexos (guard `.ProseMirror` no paste listener de `TarefaAnexosSection`)
+- [x] Upload utilitário extraído para `src/lib/cloudinary.ts` (com e sem progresso)
+- [x] Anexos na criação de tarefa — upload vai para Cloudinary imediatamente; arquivos ficam "pendentes" na UI e são salvos no banco junto com a tarefa ao clicar Salvar (sem precisar salvar antes)
+- [x] Histórico do TarefaModal corrigido: layout flex elimina sobreposição de ícone/texto e scrollbar horizontal
+- [x] Foto de perfil — `usuarios.foto_url` + `usuarios.foto_public_id` (`20260420210000`); upload pelo menu do `PerfilSidebar`; componente `UserAvatar` reutilizado em Início, comentários, equipe do Monitor
+
+### Integridade cadastro ↔ projeto
+
+- [x] `tarefas.origem_cadastro BOOLEAN` — marca tarefas geradas automaticamente pelo cadastro (`20260420232500`)
+- [x] Backfill: tarefas existentes com título de instalação marcadas como `origem_cadastro=TRUE`
+- [x] RPC `sincronizar_tarefas_cliente` — calcula delta ao editar cliente: cria novas tarefas, cancela removidas (módulos e equipamentos)
+- [x] `ClienteModal` — no EDIT chama `sincronizar_tarefas_cliente` após salvar; toast mostra X criadas / Y canceladas
+- [x] `Tarefas.tsx` e `ProjetoDetalhe.tsx` — tentativa de excluir tarefa com `origem_cadastro=true` exibe aviso orientando a editar o cadastro do cliente
+
+### Sistema de Notificações
+
+- [x] Tabela `notificacoes` (usuario_id, tipo, titulo, mensagem, lida, tarefa_id, email_enviado) + RLS
+- [x] Trigger `notificar_atribuicao_tarefa` — cria notificação in-app ao atribuir responsável em tarefa
+- [x] Função SQL `criar_notificacoes_prazo_vencendo()` — chamada pela Edge Function diária
+- [x] Edge Function `notify-assignment` — envia email via Resend ao atribuir tarefa
+- [x] Edge Function `notify-deadlines` — cron diário, cria notificações + envia emails de prazo vencendo amanhã
+- [x] `NotificationBell` — sino no topo direito do Layout com contador de não lidas e painel dropdown
+- [x] Realtime: sino atualiza ao vivo quando nova notificação chega
+- [x] `useTarefaForm` chama `notify-assignment` após salvar tarefa com novo responsável
+
+### Scrap — chat interno 1:1
+
+- [x] Migration `20260421100000_scrap.sql`: tabelas `scrap_conversas`, `scrap_mensagens`, `scrap_anexos` com RLS por participante
+- [x] Helper SQL `is_scrap_participante(conversa_id)` SECURITY DEFINER
+- [x] RPC `abrir_ou_criar_conversa(p_outro_usuario)` — idempotente, normaliza ordem dos UUIDs
+- [x] RPC `marcar_mensagens_lidas(p_conversa_id)` — marca todas as mensagens do outro como lidas ao abrir
+- [x] Trigger `scrap_atualiza_ultima_mensagem` — atualiza `ultima_mensagem_em` ao inserir
+- [x] Tipos `ScrapConversa`, `ScrapMensagem`, `ScrapAnexo`, `ConversaComRelacoes`, `MensagemComAnexos` em `lib/types.ts`
+- [x] `lib/scrap-utils.ts` — helpers de tempo relativo, preview, `carregarConversas` com join de usuário + última mensagem + contador de não lidas
+- [x] `ScrapBadge` — ícone de balão no topo com contador de não lidas + dropdown das últimas 10 conversas + toast de nova mensagem via Realtime
+- [x] Página `/scrap` — layout 2 colunas (lista + chat), mobile volta ao lista clicando em "← Voltar"
+- [x] `ConversasList` — busca, avatar, preview, badge de não lidas, botão "Nova"
+- [x] `ConversaView` — agrupamento por dia, bubbles agrupados por remetente consecutivo, Realtime para mensagens da conversa, auto-scroll
+- [x] `MensagemBubble` — imagens inline, arquivos com ícone+tamanho+download, hora, cor diferente eu/outro
+- [x] `MensagemInput` — textarea + anexos (clique, drag&drop, Ctrl+V), upload Cloudinary (pasta `scrap-anexos`), enviar com Enter
+- [x] `NovaConversaModal` — lista usuários ativos filtrados, busca por nome/email, chama RPC ao selecionar
+- [x] Sidebar: item "Scrap" adicionado entre Tarefas e Configurações
+- [x] Layout: `ScrapBadge` ao lado do `NotificationBell` (mobile header + desktop fixed)
+- [x] Rota `/scrap` em `App.tsx` dentro de `RequireAuth` + `ErrorBoundary`
+
+### Scrap/Talk — evolução
+
+- [x] Renomeação visível: "Scrap" → "Talk" (sidebar, page title, rota `/talk`); mantido alias `/scrap` → redirect preservando query string
+- [x] Exclusão de mensagem: soft delete (`scrap_mensagens.excluida`) com tombstone "🚫 Mensagem excluída" pros dois lados; trigger SQL garante só o remetente excluir e apaga anexos; irreversível
+- [x] Exclusão de conversa: `DELETE` em cascata (mensagens + anexos) com modal de confirmação; policy exige `can('scrap.excluir_conversa')`
+- [x] Novas capacidades `scrap.excluir_mensagem` e `scrap.excluir_conversa` no catálogo `acoes.ts` + seed em todos os perfis existentes (admin pode destravar depois)
+- [x] Sidebar ganha badge vermelho de mensagens não lidas no item "Talk" (via hook `useScrapNotifications`)
+- [x] Remoção do `ScrapBadge` do topo (sino + lápis apenas) — limpeza visual
+- [x] Toasts de nova mensagem com tag `scrap-nova-mensagem` descartados automaticamente ao entrar em `/talk`
+
+### Status de usuário (presença + DND)
+
+- [x] Coluna `usuarios.status_manual` (TEXT CHECK IN 'nao_incomodar' OR NULL) — override manual
+- [x] Coluna `usuarios.status_manual_desde TIMESTAMPTZ` — timestamp de quando o DND foi ativado
+- [x] `PresenceProvider` (`src/lib/usePresence.tsx`) — canal Supabase Realtime Presence compartilhado, rastreia online/ausente via `.track()`
+- [x] Auto-ausente após 5 min de inatividade (mouse/teclado/scroll/click/touchstart, throttled 1s)
+- [x] Listeners de `sync`, `join` e `leave` para updates incrementais (evita race condition do sync inicial)
+- [x] Re-sincroniza presenceState após `SUBSCRIBED` — pega quem já estava online
+- [x] Helper `resolverStatus(presenca, statusManual)` — prioridade: DND > presenca > offline
+- [x] Componente `StatusDot` com 4 cores (verde/amarelo/vermelho/cinza) e labels
+- [x] `UserAvatar` ganhou prop `status` opcional que overlaya a bolinha no canto inferior direito
+- [x] Status aplicado no Talk: lista de conversas, header da conversa, `NovaConversaModal`
+- [x] Menu "Não incomodar" no `PerfilSidebar` com toggle
+- [x] Banner DND em `ConversaView`: quando o outro usuário está em DND, avisa "X está em Não incomodar — pode demorar pra responder"
+- [x] `useScrapNotifications` silencia toast se eu estou em DND
+- [x] Ao desativar DND: conta mensagens recebidas durante o período (via `status_manual_desde`) e mostra toast "Você recebeu N mensagens enquanto estava em Não incomodar"
+
+### Notificações — polimento
+
+- [x] Migration `20260421110000_scrap_realtime.sql`: `ALTER PUBLICATION supabase_realtime ADD TABLE scrap_mensagens`
+- [x] Migration `20260421170000_notificacoes_realtime.sql`: idem para `notificacoes` (correção — sininho não atualizava em tempo real)
+- [x] Novo tipo de toast `task` com cor roxa (`#7c3aed`) e ícone `ClipboardList` — distinto do azul do Talk
+- [x] `NotificationBell` dispara toast roxo ao receber nova notificação do tipo `tarefa_atribuida` ou `prazo_vencendo` via Realtime
+- [x] Toast de tarefa descarta automaticamente ao entrar em `/tarefas` (tag `notificacao-tarefa`)
+- [x] Channel names com `crypto.randomUUID()` em todos os Realtime subscribers (corrigido bug de StrictMode reutilizando mesmo canal)
+- [x] Toasts com tag + `dismissByTag(tag)` no contexto — toasts de chat somem ao entrar em /talk; toasts de tarefa somem ao entrar em /tarefas
+- [x] Fix de cores dos toasts: hex fixo (`#0078d4`, `#16a34a`, `#dc2626`) em vez de classes remapeadas pelo design tokens
+
+### Responsividade (P0+P1+P2)
+
+- [x] `SearchInput` em Clientes e Projetos: `w-full sm:w-64/80` (antes overflow em mobile)
+- [x] Filtros de Clientes e Projetos empilham em coluna no mobile (`flex-col sm:flex-row`)
+- [x] `PageHeader` empilha título + ação em mobile; título ganhou `text-xl sm:text-2xl`
+- [x] `TarefaModal` responsivo: `max-w-full sm:max-w-3xl lg:max-w-5xl`, padding menor em mobile, sidebar de abas `w-14 sm:w-24` (ícones-only em mobile)
+- [x] `Modal` genérico: footer `flex-col-reverse sm:flex-row` com botões em largura cheia no mobile
+- [x] Tabs de Configurações com `overflow-x-auto` + `whitespace-nowrap` + `shrink-0`
+- [x] Botão "Voltar" do Talk mobile integrado ao header da conversa (ícone ArrowLeft em vez de link solto)
+- [x] Touch targets: botões de editar/excluir em Clientes/Tarefas/ProjetoDetalhe/CardProjeto agora `p-2` (32px) em vez de `p-1.5` (28px)
+- [x] Calendário do Dashboard em mobile/tablet: `max-w-md` centrado com `mx-auto` (não estica para full width)
+
+### Exclusão de Projeto
+
+- [x] Migration `20260421150000_projeto_exclusao.sql`: trigger `BEFORE DELETE` em `projetos` cancela tarefas ativas (padrão do trigger de cliente)
+- [x] Migration `20260421160000_projeto_excluir_capability.sql`: nova capacidade `projeto.excluir` separada de `cliente.excluir`; RLS de `projetos_delete` atualizada; seed em todos os perfis que já tinham `cliente.excluir`
+- [x] Nova entrada no catálogo `acoes.ts` no grupo "Projetos"
+- [x] Botão "Excluir projeto" vermelho no header de `/projetos/:id` + modal de confirmação; após excluir, navega para `/projetos`
+- [x] Ícone de lixeira no hover de `CardProjeto` ao lado do lápis; modal de confirmação em `/projetos` com lista recarregando após delete
+
+### Fix do modal de edição de cliente no projeto
+
+- [x] `ProjetoDetalhe` select mudou de `cliente:clientes(id, nome_fantasia, razao_social, cnpj, ...)` para `cliente:clientes(*)` — todos os campos do cliente
+- [x] `ClienteModal` recebe `cliente={projeto.cliente}` em vez de `null` — abre em modo edição com dados preenchidos
+- [x] Tipo `ProjetoComRelacoes.cliente` de `Pick<Cliente, ...>` para `Cliente | null` (full type)
+- [x] Toast após salvar mostra tarefas sincronizadas (criadas/canceladas pela mudança no cadastro)
+
+### Configuração de email (Resend via SMTP)
+
+- [x] SMTP configurado no Supabase Studio → Authentication → SMTP com credenciais Resend (`smtp.resend.com:465`)
+- [x] Template customizado do email de convite: assunto "Você foi convidado — GR7 Automação" + HTML inline (dark theme da plataforma) com botão CTA azul "Ativar minha conta" + fallback de link + footer
+- [x] Redirect URL configurada em Authentication → URL Configuration
+- [x] Secrets `RESEND_API_KEY` e `APP_URL` configurados via `supabase secrets set` para Edge Functions de notificação
+
+## 🔄 Em Andamento
+
+Nenhuma tarefa em andamento.
+
+## 📋 Próximos Passos
+
+### Notificações futuras (P1)
+
+- [ ] Notificação ao comentar em tarefa que sou responsável
+- [ ] Notificação ao mudar etapa de implantação de um projeto
+- [ ] Notificação ao ser mencionado em comentário
+- [ ] Preferências de notificação por usuário (quais eventos receber por email)
+
+---
+
+**Última atualização:** 2026-04-21 (Exclusão de projeto + capacidade separada + realtime de notificações + toasts coloridos + responsividade completa)

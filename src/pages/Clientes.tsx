@@ -1,0 +1,327 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Pencil, Plus, Trash2, Users } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { AlertBanner } from '../components/AlertBanner'
+import { Button } from '../components/Button'
+import { usePermissao } from '../lib/permissoes'
+import type { Cliente, ClienteComEtapa, EtapaImplantacao } from '../lib/types'
+import { Modal } from '../components/Modal'
+import { ClienteModal } from '../components/clientes/ClienteModal'
+import { EtapaImplantacaoBadge } from '../components/projetos/EtapaImplantacaoBadge'
+import { EmptyState } from '../components/EmptyState'
+import { SkeletonRow } from '../components/SkeletonRow'
+import { PageHeader } from '../components/PageHeader'
+import { SearchInput } from '../components/SearchInput'
+import { useToast } from '../components/Toast'
+import { usePageTitle } from '../lib/utils'
+
+export function Clientes() {
+  const perm = usePermissao()
+  const { toast } = useToast()
+  usePageTitle('Clientes')
+  const [items, setItems] = useState<ClienteComEtapa[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState<ClienteComEtapa | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
+  const [busca, setBusca] = useState('')
+  const [etapaFiltro, setEtapaFiltro] = useState('')
+  const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
+
+  async function load() {
+    setLoading(true)
+    setError(null)
+    const [cliRes, etRes] = await Promise.all([
+      supabase
+        .from('clientes')
+        .select('*, etapa_implantacao:etapas_implantacao(id, nome, cor, ordem)')
+        .order('nome_fantasia'),
+      supabase.from('etapas_implantacao').select('*').eq('ativo', true).order('ordem'),
+    ])
+    if (cliRes.error) setError(cliRes.error.message)
+    else setItems((cliRes.data ?? []) as unknown as ClienteComEtapa[])
+    setEtapasImplantacao((etRes.data ?? []) as EtapaImplantacao[])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const itensFiltrados = useMemo(() => {
+    return items.filter((c) => {
+      if (busca.trim()) {
+        const b = busca.toLowerCase()
+        const match =
+          c.nome_fantasia.toLowerCase().includes(b) ||
+          c.razao_social.toLowerCase().includes(b) ||
+          c.cnpj.toLowerCase().includes(b) ||
+          (c.responsavel_comercial?.toLowerCase().includes(b) ?? false)
+        if (!match) return false
+      }
+      if (etapaFiltro && c.etapa_implantacao_id !== etapaFiltro) return false
+      return true
+    })
+  }, [items, busca, etapaFiltro])
+
+  function openCreate() {
+    setEditing(null)
+    setModalOpen(true)
+  }
+
+  function openEdit(item: ClienteComEtapa) {
+    setEditing(item)
+    setModalOpen(true)
+  }
+
+  async function remove() {
+    if (!confirmDelete) return
+    const { error: delErr } = await supabase
+      .from('clientes')
+      .delete()
+      .eq('id', confirmDelete.id)
+    if (delErr) {
+      setError(delErr.message)
+      return
+    }
+    setConfirmDelete(null)
+    toast('Cliente excluído.')
+    load()
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title="Clientes"
+        description="Cadastro de clientes em implantação."
+        action={
+          perm.can('cliente.criar') ? (
+            <Button type="button" onClick={openCreate}>
+              <Plus className="w-4 h-4" />
+              Novo Cliente
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <label htmlFor="clientes-etapa-filtro" className="sr-only">Filtrar por etapa</label>
+        <select
+          id="clientes-etapa-filtro"
+          value={etapaFiltro}
+          onChange={(e) => setEtapaFiltro(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+        >
+          <option value="">Todas as etapas</option>
+          {etapasImplantacao.map((e) => (
+            <option key={e.id} value={e.id}>{e.nome}</option>
+          ))}
+        </select>
+        <SearchInput
+          id="clientes-busca"
+          label="Buscar clientes"
+          value={busca}
+          onChange={setBusca}
+          placeholder="Buscar por nome, CNPJ ou responsável..."
+          className="w-full sm:w-80"
+        />
+      </div>
+
+      {error && (
+        <AlertBanner>
+          {error}
+        </AlertBanner>
+      )}
+
+      {/* Cards — mobile */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          [1, 2, 3].map((i) => <SkeletonRow key={i} className="bg-white border border-gray-200 rounded-lg" />)
+        ) : itensFiltrados.length === 0 ? (
+          <EmptyState
+            icon={<Users className="w-8 h-8" />}
+            title={items.length === 0 ? 'Nenhum cliente cadastrado.' : 'Nenhum cliente encontrado.'}
+            description={items.length === 0 ? 'Clique em "Novo Cliente" para adicionar o primeiro.' : 'Tente ajustar a busca ou os filtros.'}
+            action={items.length === 0 && perm.can('cliente.criar') ? (
+              <button type="button" onClick={openCreate}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-[#ffffff] text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                <Plus className="w-4 h-4" /> Novo Cliente
+              </button>
+            ) : undefined}
+          />
+        ) : (
+          itensFiltrados.map((c) => (
+            <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">{c.nome_fantasia}</p>
+                  <p className="text-xs text-gray-500">{c.razao_social}</p>
+                </div>
+                <EtapaImplantacaoBadge clienteId={c.id} etapa={c.etapa_implantacao ?? null} compacto />
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
+                {c.responsavel_comercial && <span>Resp.: {c.responsavel_comercial}</span>}
+                {c.telefone && <span>Tel: {c.telefone}</span>}
+                <span>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="flex gap-2">
+                {perm.can('cliente.editar') && (
+                  <button
+                    type="button"
+                    onClick={() => openEdit(c)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Editar
+                  </button>
+                )}
+                {perm.can('cliente.excluir') && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(c)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-400/10"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Excluir
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Tabela — desktop */}
+      <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-gray-600 text-left">
+            <tr>
+              <th className="px-4 py-3 font-medium">Razão Social</th>
+              <th className="px-4 py-3 font-medium">Nome Fantasia</th>
+              <th className="px-4 py-3 font-medium">Etapa</th>
+              <th className="px-4 py-3 font-medium">Responsável</th>
+              <th className="px-4 py-3 font-medium">Telefone</th>
+              <th className="px-4 py-3 font-medium">Data cadastro</th>
+              <th className="px-4 py-3 font-medium w-24 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {loading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <tr key={i}>
+                  <td colSpan={7} className="px-0 py-0">
+                    <SkeletonRow />
+                  </td>
+                </tr>
+              ))
+            ) : itensFiltrados.length === 0 ? (
+              <tr>
+                <td colSpan={7}>
+                  <EmptyState
+                    icon={<Users className="w-8 h-8" />}
+                    title={items.length === 0 ? 'Nenhum cliente cadastrado.' : 'Nenhum cliente encontrado.'}
+                    description={items.length === 0 ? 'Clique em "Novo Cliente" para adicionar o primeiro.' : 'Tente ajustar a busca ou os filtros.'}
+                    action={items.length === 0 && perm.can('cliente.criar') ? (
+                      <button type="button" onClick={openCreate}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-[#ffffff] text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                        <Plus className="w-4 h-4" /> Novo Cliente
+                      </button>
+                    ) : undefined}
+                  />
+                </td>
+              </tr>
+            ) : (
+              itensFiltrados.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{c.razao_social}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.nome_fantasia}</td>
+                  <td className="px-4 py-3">
+                    <EtapaImplantacaoBadge clienteId={c.id} etapa={c.etapa_implantacao ?? null} compacto />
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{c.responsavel_comercial ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.telefone ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-600">{new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      {perm.can('cliente.editar') && (
+                        <button
+                          type="button"
+                          onClick={() => openEdit(c)}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded transition-colors"
+                          aria-label={`Editar cliente ${c.nome_fantasia}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                      {perm.can('cliente.excluir') && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(c)}
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded transition-colors"
+                          aria-label={`Excluir cliente ${c.nome_fantasia}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <ClienteModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSaved={(r) => {
+          load()
+          if (r?.criou) {
+            toast('Cliente criado.')
+            if (r.erroGeracao) {
+              setError(`Cliente criado, mas tarefas iniciais não foram geradas: ${r.erroGeracao}`)
+            }
+          } else if (r) {
+            const partes: string[] = ['Cliente atualizado.']
+            if (r.tarefasCriadas > 0) partes.push(`${r.tarefasCriadas} tarefa(s) criada(s).`)
+            if (r.tarefasCanceladas > 0) partes.push(`${r.tarefasCanceladas} tarefa(s) cancelada(s).`)
+            toast(partes.join(' '))
+            if (r.erroGeracao) {
+              setError(`Cliente atualizado, mas sincronização de tarefas falhou: ${r.erroGeracao}`)
+            }
+          }
+        }}
+        cliente={editing}
+      />
+
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        title="Confirmar exclusão"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(null)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={remove}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
+            >
+              Excluir
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Excluir o cliente <strong>{confirmDelete?.nome_fantasia}</strong>? As tarefas vinculadas ficarão sem cliente (não serão apagadas).
+        </p>
+      </Modal>
+    </div>
+  )
+}
