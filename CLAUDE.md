@@ -200,7 +200,8 @@ Fluxo:
   - 1 tarefa "Instalação de Retaguarda (k/N)" para cada `retaguarda_qtd`
   - 1 tarefa "Instalação de Caixa/PDV (k/N)" para cada `pdv_qtd`
   - 1 tarefa "Instalação módulo XXX" para cada item em `modulos`
-- Defaults: categoria=**Implantação**, classificação=**Instalação do sistema** (infra) ou **Instalação de módulos**, etapa=**Pendente**, prioridade=nível 2, responsável=NULL (em aberto), prazos=NULL
+  - **1 tarefa "Importação de dados"** quando `importar_dados = TRUE` (classificação homônima)
+- Defaults: categoria=**Implantação**, classificação=**Instalação do sistema** (infra) / **Instalação de módulos** / **Importação de dados**, etapa=**Pendente**, prioridade=nível 2, responsável=NULL (em aberto), prazos=NULL
 - **Idempotente**: a RPC verifica se o cliente já tem tarefas; se sim, retorna 0 sem inserir. Safety-net contra duplicação acidental
 - Edições do cliente NÃO regeneram tarefas — quem precisar adiciona manualmente em `/projetos/:id`
 - RPC valida `can('cliente.criar')` da caller, então só quem pode criar cliente pode invocar
@@ -750,7 +751,7 @@ Status visual aparece apenas em componentes do Talk (`ConversasList`, `ConversaV
 4 tipos com cores fixas em hex (não usam Tailwind mapeado pelo design tokens — garantia de contraste no dark theme):
 
 | Tipo | Cor background | Ícone | Uso |
-|-|-|-|-|
+| --- | --- | --- | --- |
 | `success` | `#16a34a` verde | `CheckCircle2` | Confirmação genérica |
 | `error` | `#dc2626` vermelho | `XCircle` | Erros |
 | `info` | `#0078d4` azul | `Info` | Nova mensagem do Talk |

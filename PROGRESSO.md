@@ -521,6 +521,13 @@
 - [x] `TarefaChecklistTab` redesenhado: número de posição (1, 2, 3…), texto em negrito, badge **"Manual"** (azul, com ícone `BookOpen`) aparece apenas quando o item tem link e abre em nova aba; badge **"Obs"** sempre visível (âmbar quando tem observação salva, com ponto indicador; cinza quando vazio), clicar expande editor inline ("Motivo:" + textarea + Salvar/Cancelar); permissão segue a regra existente (responsável ou `checklist.editar_qualquer_tarefa`)
 - [x] Visitante sem permissão vê o badge "Obs" desabilitado quando não há observação; quando existe observação, o badge continua clicável mas a textarea fica read-only e sem botão Salvar
 
+### Tarefa automática de "Importação de dados" quando cliente marca o flag
+
+- [x] Migration `20260423180000_importar_dados_tarefa.sql`: atualiza `gerar_tarefas_iniciais_cliente` — se `v_cliente.importar_dados = TRUE`, insere tarefa com título "Importação de dados", classificação "Importação de dados" (categoria Implantação), etapa Pendente, prioridade nível 2, `origem_cadastro = TRUE`
+- [x] `sincronizar_tarefas_cliente` ganha bloco IMPORTAÇÃO DE DADOS: marcar "Sim" cria tarefa (se não houver ativa); marcar "Não" cancela a existente (move para etapa Cancelado)
+- [x] Backfill one-shot: clientes ativos com `importar_dados=TRUE` cujo projeto não tinha a tarefa ganham retroativamente
+- [x] Título fixo "Importação de dados" (sistema antigo fica no cadastro do cliente, evita divergência se usuário trocar o valor depois)
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -536,4 +543,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Redesenho visual do checklist da tarefa: badges Manual/Obs + observação inline editável por item)
+**Última atualização:** 2026-04-23 (Tarefa automática "Importação de dados" gerada quando `clientes.importar_dados = TRUE`, tanto no create quanto no edit; backfill retroativo aplicado)
