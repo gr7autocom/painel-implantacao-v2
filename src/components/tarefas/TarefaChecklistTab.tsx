@@ -34,7 +34,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
   const [templatesLoading, setTemplatesLoading] = useState(false)
   const [importando, setImportando] = useState<string | null>(null)
 
-  const podeEditarItens = perm.podeEditarTarefa(tarefa)
+  const podeEditarItens = perm.podeEditarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')
 
   async function load() {
     setLoading(true)
@@ -217,7 +217,8 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
 
       {!podeEditarItens && itens.length === 0 && (
         <div className="mb-4 p-3 bg-blue-400/15 border border-blue-400/40 text-blue-300 text-xs rounded-lg">
-          Apenas o responsável pela tarefa e administradores podem adicionar itens ao checklist.
+          Apenas o responsável pela tarefa (ou quem tem permissão de editar checklist de qualquer tarefa)
+          pode adicionar itens.
         </div>
       )}
 

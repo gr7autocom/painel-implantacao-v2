@@ -7,6 +7,7 @@ import { AlertBanner } from '../AlertBanner'
 import { Button } from '../Button'
 import { EmptyState } from '../EmptyState'
 import { useToast } from '../Toast'
+import { usePermissao } from '../../lib/permissoes'
 
 type ItemForm = {
   idBanco: string | null
@@ -29,6 +30,8 @@ const emptyForm: FormState = {
 
 export function ChecklistTab() {
   const { toast } = useToast()
+  const perm = usePermissao()
+  const podeGerenciar = perm.can('checklist.modelos_gerenciar')
   const [templates, setTemplates] = useState<ChecklistTemplateComItens[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -266,16 +269,24 @@ export function ChecklistTab() {
             <option value="inativo">Somente inativos</option>
             <option value="todos">Todos</option>
           </select>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-[#ffffff] text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Novo modelo
-          </button>
+          {podeGerenciar && (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-[#ffffff] text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Novo modelo
+            </button>
+          )}
         </div>
       </div>
+
+      {!podeGerenciar && (
+        <div className="mb-4 p-3 bg-blue-400/15 border border-blue-400/40 text-blue-300 text-xs rounded-lg">
+          Você não tem permissão para gerenciar modelos de checklist. Apenas visualização.
+        </div>
+      )}
 
       {error && <AlertBanner>{error}</AlertBanner>}
 
@@ -296,7 +307,13 @@ export function ChecklistTab() {
         <EmptyState
           icon={<CheckSquare className="w-10 h-10" />}
           title={templates.length === 0 ? 'Nenhum modelo cadastrado.' : 'Nenhum modelo corresponde ao filtro.'}
-          description={templates.length === 0 ? 'Clique em "Novo modelo" para criar seu primeiro checklist padrão.' : 'Ajuste o filtro para ver outros.'}
+          description={
+            templates.length === 0
+              ? podeGerenciar
+                ? 'Clique em "Novo modelo" para criar seu primeiro checklist padrão.'
+                : 'Peça para um administrador cadastrar modelos.'
+              : 'Ajuste o filtro para ver outros.'
+          }
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -319,24 +336,26 @@ export function ChecklistTab() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(t)}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded"
-                    aria-label={`Editar modelo ${t.nome}`}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(t)}
-                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded"
-                    aria-label={`Excluir modelo ${t.nome}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {podeGerenciar && (
+                  <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(t)}
+                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded"
+                      aria-label={`Editar modelo ${t.nome}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(t)}
+                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded"
+                      aria-label={`Excluir modelo ${t.nome}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-1.5 text-xs text-gray-600 flex-1 min-h-0">

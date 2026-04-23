@@ -241,20 +241,32 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 - **Triggers em `tarefa_checklist`**: `checklist_item_criado` (AFTER INSERT), `checklist_item_concluido`/`checklist_item_desmarcado` (AFTER UPDATE quando `concluido` muda)
 - UI: sidebar de abas dentro do `TarefaModal` (Principal/Comentários/Checklist/Histórico). Abas extras bloqueadas em criação (precisam de `tarefa_id`)
 
-### Modelos de Checklist (`20260423140000_checklist_templates.sql`)
+### Modelos de Checklist (`20260423140000_checklist_templates.sql` + `20260423160000_checklist_capacidades.sql`)
 
-Catálogo em Configurações → aba **Checklist** que permite criar "listas prontas" e importá-las em qualquer tarefa.
+Catálogo em Configurações → aba **Checklist** que permite criar "listas prontas" e importá-las em qualquer tarefa. Seed dos 3 modelos padrão GR7 (Servidor, Retaguarda, Caixa NFCe) em `20260423150000_seed_checklist_templates_gr7.sql` com links dos manuais Notion.
 
 - `checklist_templates` (id, nome, ativo, timestamps) — o modelo em si
 - `checklist_template_itens` (id, template_id → templates **CASCADE**, texto, **link** TEXT nullable, ordem, created_at) — os itens do modelo
-- **RLS:** SELECT aberto para autenticado (necessário para listar modelos ao importar dentro da tarefa); INSERT/UPDATE/DELETE via `can('configuracoes.catalogos')`
-- **Decoupling intencional:** ao importar um modelo em uma tarefa, os itens são **copiados** para `tarefa_checklist` (texto + link + ordem). Não há FK de vínculo. Editar/excluir um modelo depois disso **não afeta** tarefas que já importaram — os itens lá são independentes
-- UI do catálogo ([ChecklistTab.tsx](src/components/configuracoes/ChecklistTab.tsx)): grid de cards com nome + preview de até 5 itens (com ícone `ExternalLink` quando tem link, "+N itens" quando excede); modal de criar/editar com lista dinâmica de itens, setas up/down para reordenar, botão adicionar/remover item; save faz sincronização fina (remove os apagados, atualiza existentes, insere novos) preservando IDs para não invalidar outras referências
-- Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistTab.tsx):
-  - Botão **"Importar modelo"** (ícone `FileDown`) ao lado do botão "Adicionar"
-  - Modal lista templates `ativo=true` ordenados por nome, com contagem de itens e flag "com links"
-  - Ao selecionar um modelo, inserção em batch com `ordem = itens_existentes.length + idx` (anexa ao fim, não reseta)
-  - Estado vazio do checklist também mostra CTA "Importar de um modelo" quando o usuário pode editar
+
+**Capacidades dedicadas** (grupo "Checklist" em Permissões):
+
+- `checklist.modelos_gerenciar` — criar/editar/excluir modelos (catálogo em Configurações). Substituiu `configuracoes.catalogos` nas policies de `checklist_templates` e `checklist_template_itens`
+- `checklist.editar_qualquer_tarefa` — adicionar/remover/importar itens em qualquer tarefa, mesmo sem ser responsável. Policies de `tarefa_checklist` (INSERT/DELETE) e trigger `enforce_checklist_update` foram atualizadas para aceitar `is_tarefa_editor(tarefa_id) OR can('checklist.editar_qualquer_tarefa')`
+- **Seed (após migration `20260423160000`):** admin e suporte recebem ambas; perfis que já tinham `configuracoes.catalogos` mantiveram acesso via `checklist.modelos_gerenciar`; vendas continua restrito a checklists das próprias tarefas
+
+**Decoupling intencional:** ao importar um modelo em uma tarefa, os itens são **copiados** para `tarefa_checklist` (texto + link + ordem). Não há FK de vínculo. Editar/excluir um modelo depois disso **não afeta** tarefas que já importaram — os itens lá são independentes.
+
+**RLS dos templates:** SELECT aberto para autenticado (necessário para listar modelos ao importar dentro da tarefa); INSERT/UPDATE/DELETE via `can('checklist.modelos_gerenciar')`.
+
+UI do catálogo ([ChecklistTab.tsx](src/components/configuracoes/ChecklistTab.tsx)): grid de cards com nome + preview de até 5 itens (com ícone `ExternalLink` quando tem link, "+N itens" quando excede); modal de criar/editar com lista dinâmica de itens, setas up/down para reordenar, botão adicionar/remover item; save faz sincronização fina (remove os apagados, atualiza existentes, insere novos) preservando IDs. Botões "Novo modelo"/editar/excluir são escondidos para quem não tem `checklist.modelos_gerenciar`.
+
+Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistTab.tsx):
+
+- `podeEditarItens = perm.podeEditarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')` — inclui a nova capacidade global
+- Botão **"Importar modelo"** (ícone `FileDown`) ao lado do botão "Adicionar"
+- Modal lista templates `ativo=true` ordenados por nome, com contagem de itens e flag "com links"
+- Ao selecionar um modelo, inserção em batch com `ordem = itens_existentes.length + idx` (anexa ao fim, não reseta)
+- Estado vazio do checklist também mostra CTA "Importar de um modelo" quando o usuário pode editar
 - Itens com `link` não-nulo renderizam ícone `ExternalLink` clicável ao lado do texto, abrindo em nova aba com `target="_blank" rel="noopener noreferrer"`
 
 ### Tarefas (`20260417163000_tarefas_table.sql` + migrations posteriores)
@@ -358,7 +370,7 @@ Todos os helpers filtram por `usuarios.ativo = true AND permissoes.ativo = true`
 
 ### Catálogo de ações ([src/lib/acoes.ts](src/lib/acoes.ts))
 
-14 ações fixas, agrupadas por área (Clientes / Tarefas / Configurações / Usuários). Ids no formato `area.acao` (ex: `tarefa.excluir`, `configuracoes.perfis`). **Deve permanecer em sincronia com as policies RLS.** Cada perfil tem um subset dessas ações em `permissoes.capacidades TEXT[]`.
+Ações fixas agrupadas por área (Clientes / Tarefas / Projetos / Checklist / Talk / Configurações / Usuários). Ids no formato `area.acao` (ex: `tarefa.excluir`, `configuracoes.perfis`, `checklist.modelos_gerenciar`). **Deve permanecer em sincronia com as policies RLS.** Cada perfil tem um subset dessas ações em `permissoes.capacidades TEXT[]`.
 
 ### Matriz aplicada
 

@@ -504,6 +504,16 @@
 - [x] Itens com link renderizam ícone `ExternalLink` clicável (abre em nova aba com `target="_blank" rel="noopener noreferrer"`); estado vazio do checklist também ganha CTA para importar modelo quando o usuário tem permissão
 - [x] Migration `20260423150000_seed_checklist_templates_gr7.sql`: seed dos 3 modelos padrão GR7 extraídos de `docs/Checklist.html` — **Instalação de Servidor** (28 itens), **Instalação de Retaguarda** (19 itens), **Instalação de Caixa (NFCe)** (23 itens), todos com link do manual Notion correspondente; idempotente via `IF NOT EXISTS` por nome
 
+### Capacidades dedicadas de Checklist (grupo em Permissões + fix do Suporte)
+
+- [x] Migration `20260423160000_checklist_capacidades.sql`: duas capacidades novas no catálogo — `checklist.modelos_gerenciar` e `checklist.editar_qualquer_tarefa`
+- [x] Policies de `tarefa_checklist` (INSERT/DELETE) aceitam `is_tarefa_editor(tarefa_id) OR can('checklist.editar_qualquer_tarefa')`; trigger `enforce_checklist_update` idem para texto/ordem/link — resolve o 42501 que o Suporte recebia ao importar modelo em tarefa alheia
+- [x] Policies de `checklist_templates` e `checklist_template_itens` substituem `configuracoes.catalogos` por `checklist.modelos_gerenciar`
+- [x] Seed: perfis que já tinham `configuracoes.catalogos` ganham `checklist.modelos_gerenciar` automaticamente (migração graciosa); admin e suporte também recebem `checklist.editar_qualquer_tarefa`; vendas mantém comportamento restritivo (só checklist das próprias tarefas)
+- [x] Frontend `acoes.ts`: grupo novo **"Checklist"** com as duas capacidades (aparece em Configurações → Permissões)
+- [x] `ChecklistTab` esconde botões "Novo modelo"/editar/excluir pra quem não tem `checklist.modelos_gerenciar`; mostra aviso no topo
+- [x] `TarefaChecklistTab.podeEditarItens` passa a aceitar a nova capacidade global (`can('checklist.editar_qualquer_tarefa')`), então Suporte consegue importar modelos em qualquer tarefa
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -519,4 +529,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Modelos de Checklist em Configurações + seed dos 3 modelos padrão GR7 Servidor/Retaguarda/Caixa com links dos manuais Notion)
+**Última atualização:** 2026-04-23 (Capacidades dedicadas de Checklist em Permissões + Suporte consegue importar modelos em qualquer tarefa via `checklist.editar_qualquer_tarefa`)

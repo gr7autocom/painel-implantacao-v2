@@ -11,6 +11,8 @@ export type AcaoId =
   | 'tarefa.assumir'
   | 'tarefa.excluir'
   | 'projeto.excluir'
+  | 'checklist.modelos_gerenciar'
+  | 'checklist.editar_qualquer_tarefa'
   | 'scrap.excluir_mensagem'
   | 'scrap.excluir_conversa'
   | 'configuracoes.acessar'
@@ -69,6 +71,21 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
         id: 'projeto.excluir',
         label: 'Excluir projeto',
         descricao: 'Remover um projeto (tarefas ativas são canceladas; cliente é mantido)',
+      },
+    ],
+  },
+  {
+    titulo: 'Checklist',
+    acoes: [
+      {
+        id: 'checklist.modelos_gerenciar',
+        label: 'Gerenciar modelos de checklist',
+        descricao: 'Criar, editar e excluir modelos em Configurações → Checklist',
+      },
+      {
+        id: 'checklist.editar_qualquer_tarefa',
+        label: 'Editar checklist de qualquer tarefa',
+        descricao: 'Adicionar, remover e importar itens em tarefas onde não é responsável (além das próprias, que já é permitido por padrão)',
       },
     ],
   },
