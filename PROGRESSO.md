@@ -487,6 +487,13 @@
 - [x] Redirect URL configurada em Authentication → URL Configuration
 - [x] Secrets `RESEND_API_KEY` e `APP_URL` configurados via `supabase secrets set` para Edge Functions de notificação
 
+### Exclusão de projeto — hard delete completo
+
+- [x] Migration `20260423100000_projeto_hard_delete.sql`: remove trigger `cancelar_tarefas_ao_excluir_projeto` e a função associada; FK `tarefas.projeto_id` passa de `ON DELETE SET NULL` para `ON DELETE CASCADE`
+- [x] Edge Function `delete-projeto`: valida JWT + `can('projeto.excluir')`, coleta `tarefa_anexos` de todas as tarefas do projeto, apaga em batch no Cloudinary (admin API `DELETE /resources/{type}/upload`, até 100 public_ids por call, agrupado por resource_type image/video/raw) e executa `DELETE projetos`; retorna `{ ok, projeto_id, tarefas_removidas, anexos_cloudinary: { deletados, falharam } }`
+- [x] `ProjetoDetalhe.excluirProjeto()` e `Projetos.confirmarExcluirProjeto()` passam a chamar `supabase.functions.invoke('delete-projeto', { body: { projeto_id } })` em vez de DELETE direto
+- [x] Modais de confirmação em ambas as páginas ganham banner vermelho destacado listando o que será apagado (tarefas, comentários, checklist, histórico, anexos Cloudinary) e deixando explícito que o cliente é mantido
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -502,4 +509,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-21 (Exclusão de projeto + capacidade separada + realtime de notificações + toasts coloridos + responsividade completa)
+**Última atualização:** 2026-04-23 (Exclusão de projeto agora é hard delete — apaga tarefas, comentários, checklist, histórico e anexos Cloudinary via Edge Function + CASCADE)

@@ -171,10 +171,13 @@ export function ProjetoDetalhe() {
   async function excluirProjeto() {
     if (!projeto) return
     setExcluindoProjeto(true)
-    const { error: err } = await supabase.from('projetos').delete().eq('id', projeto.id)
+    const { data, error: err } = await supabase.functions.invoke('delete-projeto', {
+      body: { projeto_id: projeto.id },
+    })
     setExcluindoProjeto(false)
-    if (err) {
-      setError(err.code === '42501' ? 'Você não tem permissão para excluir projetos.' : err.message)
+    if (err || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error ?? err?.message ?? 'Erro ao excluir projeto.'
+      setError(msg)
       setConfirmExcluirProjeto(false)
       return
     }
@@ -548,10 +551,14 @@ export function ProjetoDetalhe() {
             Excluir o projeto <strong>{projeto.nome}</strong>
             {projeto.cliente?.nome_fantasia && <> (cliente: <strong>{projeto.cliente.nome_fantasia}</strong>)</>}?
           </p>
-          <p className="text-gray-500">
-            O cliente será mantido. As tarefas ativas do projeto serão canceladas automaticamente e preservadas no histórico.
-            Esta ação não pode ser desfeita.
-          </p>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800 font-medium mb-1">Atenção: ação irreversível.</p>
+            <p className="text-red-700 text-xs">
+              Serão apagados permanentemente: todas as tarefas do projeto, comentários,
+              itens de checklist, histórico e anexos (incluindo arquivos no Cloudinary).
+              O cliente é mantido.
+            </p>
+          </div>
         </div>
       </Modal>
     </div>

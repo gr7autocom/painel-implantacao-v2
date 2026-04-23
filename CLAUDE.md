@@ -695,13 +695,18 @@ Status visual aparece apenas em componentes do Talk (`ConversasList`, `ConversaV
 
 ---
 
-## Exclusão de projeto (capacidade separada)
+## Exclusão de projeto (hard delete + capacidade separada)
 
-- Nova capacidade `projeto.excluir` separada de `cliente.excluir` — admin pode autorizar um perfil a excluir projetos sem excluir clientes (e vice-versa)
+- Capacidade `projeto.excluir` separada de `cliente.excluir` — admin pode autorizar um perfil a excluir projetos sem excluir clientes (e vice-versa)
 - Entrada no catálogo `acoes.ts` no grupo "Projetos"
-- Policy `projetos_delete` atualizada para usar `can('projeto.excluir')` ([20260421160000_projeto_excluir_capability.sql](supabase/migrations/20260421160000_projeto_excluir_capability.sql))
-- Trigger `cancelar_tarefas_ao_excluir_projeto` ([20260421150000_projeto_exclusao.sql](supabase/migrations/20260421150000_projeto_exclusao.sql)) — BEFORE DELETE em `projetos` move tarefas ativas para etapa "Cancelado" (preserva histórico, não órfãs)
-- UI: botão vermelho "Excluir projeto" no header de `/projetos/:id` + ícone de lixeira no hover de `CardProjeto` em `/projetos`; modal de confirmação em ambos com aviso: cliente é mantido, tarefas ativas canceladas
+- Policy `projetos_delete` usa `can('projeto.excluir')` ([20260421160000_projeto_excluir_capability.sql](supabase/migrations/20260421160000_projeto_excluir_capability.sql))
+- **Comportamento (hard delete):** migration [20260423100000_projeto_hard_delete.sql](supabase/migrations/20260423100000_projeto_hard_delete.sql) removeu o trigger `cancelar_tarefas_ao_excluir_projeto` (que cancelava tarefas) e mudou a FK `tarefas.projeto_id` de `ON DELETE SET NULL` para `ON DELETE CASCADE`. Ao excluir projeto, tudo cai em cadeia: tarefas → comentários, checklist, histórico e anexos-DB (todos já eram CASCADE via `tarefa_id`)
+- **Cloudinary:** arquivos físicos no Cloudinary precisam ser apagados ANTES do DELETE (a FK só cuida do registro no banco). Por isso o frontend não chama `DELETE projetos` direto — passa pela Edge Function
+- **Edge Function [`delete-projeto`](supabase/functions/delete-projeto/index.ts):** valida JWT + `can('projeto.excluir')`, coleta todos os `tarefa_anexos` das tarefas do projeto, agrupa por `resource_type` (image/video/raw conforme `tipo_mime`) e chama Cloudinary Admin API `DELETE /resources/{type}/upload?public_ids[]=...` em batches de até 100. Depois executa `DELETE projetos`. Retorna `{ ok, projeto_id, tarefas_removidas, anexos_cloudinary: { deletados, falharam } }`. Falhas no Cloudinary não bloqueiam o DELETE (são reportadas no retorno)
+- **Secrets necessários:** `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (já configurados para `delete-cloudinary-asset`)
+- **Deploy:** `npx supabase functions deploy delete-projeto --no-verify-jwt` (JWT é validado manualmente na função)
+- UI: botão vermelho "Excluir projeto" no header de `/projetos/:id` + ícone de lixeira no hover de `CardProjeto` em `/projetos`; ambos chamam `supabase.functions.invoke('delete-projeto', { body: { projeto_id } })`; modal de confirmação traz banner vermelho listando exatamente o que será apagado (tarefas, comentários, checklist, histórico, anexos) e reforça que o cliente é mantido
+- **Exclusão de cliente continua soft** — trigger `cancelar_tarefas_ao_excluir_cliente` ([20260419160023](supabase/migrations/20260419160023_cancelar_tarefas_ao_excluir_cliente.sql)) segue cancelando tarefas. Só o fluxo de projeto ficou agressivo (a capacidade `projeto.excluir` é só admin, então o botão funciona como camada extra de segurança)
 
 ### Fix cliente vazio no modal
 
