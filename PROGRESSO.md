@@ -494,6 +494,15 @@
 - [x] `ProjetoDetalhe.excluirProjeto()` e `Projetos.confirmarExcluirProjeto()` passam a chamar `supabase.functions.invoke('delete-projeto', { body: { projeto_id } })` em vez de DELETE direto
 - [x] Modais de confirmação em ambas as páginas ganham banner vermelho destacado listando o que será apagado (tarefas, comentários, checklist, histórico, anexos Cloudinary) e deixando explícito que o cliente é mantido
 
+### Modelos de Checklist (templates em Configurações + importar na tarefa)
+
+- [x] Migration `20260423140000_checklist_templates.sql`: tabelas `checklist_templates` e `checklist_template_itens` (itens: texto + link opcional + ordem); `tarefa_checklist.link` adicionada; trigger `enforce_checklist_update` atualizado para exigir `is_tarefa_editor` também em mudanças de `link`
+- [x] RLS: SELECT para qualquer autenticado (necessário para listar modelos ao importar); INSERT/UPDATE/DELETE via `can('configuracoes.catalogos')`
+- [x] Tipos em `types.ts`: `ChecklistTemplate`, `ChecklistTemplateItem`, `ChecklistTemplateComItens`; `TarefaChecklistItem.link`
+- [x] Aba **Checklist** em Configurações (`ChecklistTab.tsx`): grid de cards mostrando nome + preview (5 primeiros itens, com "+N" quando excede) + ícone de link nos itens que têm URL; modal de criar/editar com lista dinâmica de itens (texto + URL opcional), setas para reordenar, botão "+ adicionar item" e "× remover"; sincronização fina (remove/atualiza/insere) no save para não perder IDs
+- [x] `TarefaChecklistTab`: novo botão **"Importar modelo"** (ícone `FileDown`) ao lado de "Adicionar"; modal lista templates ativos com contagem de itens e flag "com links"; ao selecionar, insere em batch no `tarefa_checklist` preservando itens existentes e copiando `texto + link + ordem`
+- [x] Itens com link renderizam ícone `ExternalLink` clicável (abre em nova aba com `target="_blank" rel="noopener noreferrer"`); estado vazio do checklist também ganha CTA para importar modelo quando o usuário tem permissão
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -509,4 +518,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Exclusão de projeto agora é hard delete — apaga tarefas, comentários, checklist, histórico e anexos Cloudinary via Edge Function + CASCADE)
+**Última atualização:** 2026-04-23 (Modelos de Checklist em Configurações + botão "Importar modelo" na aba Checklist da tarefa; itens com link opcional que renderiza ícone clicável)

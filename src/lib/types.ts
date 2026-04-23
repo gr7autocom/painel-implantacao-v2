@@ -242,12 +242,34 @@ export type TarefaChecklistItem = {
   id: string
   tarefa_id: string
   texto: string
+  link: string | null
   concluido: boolean
   concluido_por_id: string | null
   concluido_em: string | null
   ordem: number
   criado_por_id: string
   created_at: string
+}
+
+export type ChecklistTemplate = {
+  id: string
+  nome: string
+  ativo: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ChecklistTemplateItem = {
+  id: string
+  template_id: string
+  texto: string
+  link: string | null
+  ordem: number
+  created_at: string
+}
+
+export type ChecklistTemplateComItens = ChecklistTemplate & {
+  itens: ChecklistTemplateItem[]
 }
 
 export type TarefaChecklistItemComRel = TarefaChecklistItem & {

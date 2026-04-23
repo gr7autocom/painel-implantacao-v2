@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, Tag, Tags, ListOrdered, Flag, Shield, Rocket } from 'lucide-react'
+import { Users, Tag, Tags, ListOrdered, Flag, Shield, Rocket, CheckSquare } from 'lucide-react'
 import { cn, usePageTitle } from '../lib/utils'
 import { PageHeader } from '../components/PageHeader'
 import { UsuariosTab } from '../components/configuracoes/UsuariosTab'
@@ -9,6 +9,7 @@ import { EtapasTab } from '../components/configuracoes/EtapasTab'
 import { PrioridadesTab } from '../components/configuracoes/PrioridadesTab'
 import { PermissoesTab } from '../components/configuracoes/PermissoesTab'
 import { ImplantacaoTab } from '../components/configuracoes/ImplantacaoTab'
+import { ChecklistTab } from '../components/configuracoes/ChecklistTab'
 
 type TabKey =
   | 'usuarios'
@@ -18,6 +19,7 @@ type TabKey =
   | 'etapas'
   | 'prioridades'
   | 'implantacao'
+  | 'checklist'
 
 const tabs: { key: TabKey; label: string; icon: typeof Users }[] = [
   { key: 'usuarios', label: 'Usuários', icon: Users },
@@ -27,6 +29,7 @@ const tabs: { key: TabKey; label: string; icon: typeof Users }[] = [
   { key: 'etapas', label: 'Etapas', icon: ListOrdered },
   { key: 'prioridades', label: 'Prioridades', icon: Flag },
   { key: 'implantacao', label: 'Implantação', icon: Rocket },
+  { key: 'checklist', label: 'Checklist', icon: CheckSquare },
 ]
 
 export function Configuracoes() {
@@ -65,6 +68,7 @@ export function Configuracoes() {
       {active === 'etapas' && <EtapasTab />}
       {active === 'prioridades' && <PrioridadesTab />}
       {active === 'implantacao' && <ImplantacaoTab />}
+      {active === 'checklist' && <ChecklistTab />}
     </div>
   )
 }

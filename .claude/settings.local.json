@@ -10,7 +10,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://github.com/gr7autocom)",
       "Bash(git push *)",
       "Bash(git credential-manager *)",
-      "PowerShell(cmdkey /list)"
+      "PowerShell(cmdkey /list)",
+      "Bash(node node_modules/typescript/bin/tsc -b)"
     ]
   }
 }

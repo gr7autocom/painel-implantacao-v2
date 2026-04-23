@@ -54,7 +54,8 @@ src/
 │   │   ├── ClassificacoesTab.tsx   # subdivisões de categoria (N:1)
 │   │   ├── EtapasTab.tsx
 │   │   ├── PrioridadesTab.tsx
-│   │   └── ImplantacaoTab.tsx       # estágios do ciclo de implantação (catálogo para projetos)
+│   │   ├── ImplantacaoTab.tsx       # estágios do ciclo de implantação (catálogo para projetos)
+│   │   └── ChecklistTab.tsx         # modelos de checklist (templates importáveis nas tarefas)
 │   ├── tarefas/
 │   │   ├── TarefaModal.tsx       # form criar/editar tarefa + sidebar de abas
 │   │   ├── TarefaComentariosTab.tsx  # aba comentários (restrito a responsável/admin)
@@ -226,12 +227,12 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 ### Comentários / Checklist / Histórico de Tarefa (`20260418200000_...`)
 
 - `tarefa_comentarios` (id, tarefa_id → tarefas CASCADE, autor_id → usuarios, texto, timestamps)
-- `tarefa_checklist` (id, tarefa_id → tarefas CASCADE, texto, concluido, concluido_por_id, concluido_em, ordem, criado_por_id)
+- `tarefa_checklist` (id, tarefa_id → tarefas CASCADE, texto, **link** TEXT nullable, concluido, concluido_por_id, concluido_em, ordem, criado_por_id)
 - `tarefa_historico` (id, tarefa_id → tarefas CASCADE, ator_id, tipo, descricao, metadata JSONB)
 - Helper `is_tarefa_editor(tarefa_id)`: `can('tarefa.editar_todas')` ou `responsavel_id = current_user_id()`
 - **Comentários — RLS:** SELECT autenticado; INSERT = `is_tarefa_editor`; UPDATE = autor; DELETE = autor ou admin
 - **Checklist — RLS + trigger:** INSERT/DELETE = `is_tarefa_editor`; UPDATE aberto para autenticados (trigger `enforce_checklist_update` faz enforcement fino). Regras do trigger:
-  - Edição de `texto`/`ordem` requer `is_tarefa_editor`
+  - Edição de `texto`/`ordem`/`link` requer `is_tarefa_editor`
   - Marcar (`concluido: FALSE→TRUE`) aberto para qualquer autenticado; trigger força `concluido_por_id = current_user_id()` + `concluido_em = NOW()`
   - Desmarcar (`TRUE→FALSE`) só se `OLD.concluido_por_id = current_user_id()` ou admin — evita que troca de responsável desfaça progresso alheio
 - **Histórico — RLS:** SELECT autenticado; sem policies de escrita (só triggers SECURITY DEFINER inserem)
@@ -239,6 +240,22 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 - **Triggers em `tarefa_comentarios`**: `comentou` (AFTER INSERT)
 - **Triggers em `tarefa_checklist`**: `checklist_item_criado` (AFTER INSERT), `checklist_item_concluido`/`checklist_item_desmarcado` (AFTER UPDATE quando `concluido` muda)
 - UI: sidebar de abas dentro do `TarefaModal` (Principal/Comentários/Checklist/Histórico). Abas extras bloqueadas em criação (precisam de `tarefa_id`)
+
+### Modelos de Checklist (`20260423140000_checklist_templates.sql`)
+
+Catálogo em Configurações → aba **Checklist** que permite criar "listas prontas" e importá-las em qualquer tarefa.
+
+- `checklist_templates` (id, nome, ativo, timestamps) — o modelo em si
+- `checklist_template_itens` (id, template_id → templates **CASCADE**, texto, **link** TEXT nullable, ordem, created_at) — os itens do modelo
+- **RLS:** SELECT aberto para autenticado (necessário para listar modelos ao importar dentro da tarefa); INSERT/UPDATE/DELETE via `can('configuracoes.catalogos')`
+- **Decoupling intencional:** ao importar um modelo em uma tarefa, os itens são **copiados** para `tarefa_checklist` (texto + link + ordem). Não há FK de vínculo. Editar/excluir um modelo depois disso **não afeta** tarefas que já importaram — os itens lá são independentes
+- UI do catálogo ([ChecklistTab.tsx](src/components/configuracoes/ChecklistTab.tsx)): grid de cards com nome + preview de até 5 itens (com ícone `ExternalLink` quando tem link, "+N itens" quando excede); modal de criar/editar com lista dinâmica de itens, setas up/down para reordenar, botão adicionar/remover item; save faz sincronização fina (remove os apagados, atualiza existentes, insere novos) preservando IDs para não invalidar outras referências
+- Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistTab.tsx):
+  - Botão **"Importar modelo"** (ícone `FileDown`) ao lado do botão "Adicionar"
+  - Modal lista templates `ativo=true` ordenados por nome, com contagem de itens e flag "com links"
+  - Ao selecionar um modelo, inserção em batch com `ordem = itens_existentes.length + idx` (anexa ao fim, não reseta)
+  - Estado vazio do checklist também mostra CTA "Importar de um modelo" quando o usuário pode editar
+- Itens com `link` não-nulo renderizam ícone `ExternalLink` clicável ao lado do texto, abrindo em nova aba com `target="_blank" rel="noopener noreferrer"`
 
 ### Tarefas (`20260417163000_tarefas_table.sql` + migrations posteriores)
 

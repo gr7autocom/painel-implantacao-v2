@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
-import { CheckSquare, Plus, Trash2 } from 'lucide-react'
+import { CheckSquare, ExternalLink, FileDown, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
 import { usePermissao } from '../../lib/permissoes'
-import type { TarefaComRelacoes, TarefaChecklistItemComRel } from '../../lib/types'
+import type {
+  ChecklistTemplateComItens,
+  TarefaComRelacoes,
+  TarefaChecklistItemComRel,
+} from '../../lib/types'
+import { Modal } from '../Modal'
 
 type Props = {
   tarefa: TarefaComRelacoes
@@ -24,6 +29,10 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [importarOpen, setImportarOpen] = useState(false)
+  const [templates, setTemplates] = useState<ChecklistTemplateComItens[]>([])
+  const [templatesLoading, setTemplatesLoading] = useState(false)
+  const [importando, setImportando] = useState<string | null>(null)
 
   const podeEditarItens = perm.podeEditarTarefa(tarefa)
 
@@ -94,6 +103,56 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
     onChange?.()
   }
 
+  async function abrirImportar() {
+    setImportarOpen(true)
+    setError(null)
+    if (templates.length > 0) return
+    setTemplatesLoading(true)
+    const { data, error: err } = await supabase
+      .from('checklist_templates')
+      .select('*, itens:checklist_template_itens(*)')
+      .eq('ativo', true)
+      .order('nome')
+    setTemplatesLoading(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
+    const lista = ((data ?? []) as unknown as ChecklistTemplateComItens[]).map((t) => ({
+      ...t,
+      itens: [...(t.itens ?? [])].sort((a, b) => a.ordem - b.ordem),
+    }))
+    setTemplates(lista)
+  }
+
+  async function importarTemplate(template: ChecklistTemplateComItens) {
+    if (!usuarioAtual) return
+    if (template.itens.length === 0) {
+      setError('Este modelo não possui itens.')
+      return
+    }
+    setImportando(template.id)
+    setError(null)
+    const baseOrdem = itens.length
+    const { error: err } = await supabase.from('tarefa_checklist').insert(
+      template.itens.map((it, idx) => ({
+        tarefa_id: tarefa.id,
+        texto: it.texto,
+        link: it.link,
+        criado_por_id: usuarioAtual.id,
+        ordem: baseOrdem + idx,
+      }))
+    )
+    setImportando(null)
+    if (err) {
+      setError(err.code === '42501' ? 'Você não tem permissão para editar o checklist.' : err.message)
+      return
+    }
+    setImportarOpen(false)
+    await load()
+    onChange?.()
+  }
+
   const totalConcluidos = itens.filter((i) => i.concluido).length
   const pct = itens.length === 0 ? 0 : Math.round((totalConcluidos / itens.length) * 100)
 
@@ -121,7 +180,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       )}
 
       {podeEditarItens && (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
           <input
             type="text"
             value={novoTexto}
@@ -133,7 +192,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
               }
             }}
             placeholder="Novo item do checklist..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="button"
@@ -143,6 +202,15 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
           >
             <Plus className="w-4 h-4" />
             Adicionar
+          </button>
+          <button
+            type="button"
+            onClick={abrirImportar}
+            className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            title="Importar itens de um modelo"
+          >
+            <FileDown className="w-4 h-4" />
+            Importar modelo
           </button>
         </div>
       )}
@@ -170,6 +238,16 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
           <div className="py-8 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
             <CheckSquare className="w-8 h-8 text-gray-300" />
             Nenhum item no checklist.
+            {podeEditarItens && (
+              <button
+                type="button"
+                onClick={abrirImportar}
+                className="mt-2 flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-400/10"
+              >
+                <FileDown className="w-4 h-4" />
+                Importar de um modelo
+              </button>
+            )}
           </div>
         ) : (
           <ul className="space-y-2">
@@ -205,12 +283,26 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                     {item.concluido && <CheckSquare className="w-3 h-3" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-sm ${
-                        item.concluido ? 'text-gray-400 line-through' : 'text-gray-800'
-                      }`}
-                    >
-                      {item.texto}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-sm ${
+                          item.concluido ? 'text-gray-400 line-through' : 'text-gray-800'
+                        }`}
+                      >
+                        {item.texto}
+                      </span>
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-blue-500 hover:text-blue-700 shrink-0"
+                          title={`Abrir link: ${item.link}`}
+                          aria-label={`Abrir link do item ${item.texto}`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
                     </div>
                     {item.concluido && item.concluido_por && (
                       <div className="text-caption text-gray-500 mt-0.5">
@@ -236,6 +328,55 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
           </ul>
         )}
       </div>
+
+      {/* Modal: importar modelo */}
+      <Modal
+        open={importarOpen}
+        onClose={() => setImportarOpen(false)}
+        title="Importar modelo de checklist"
+        size="md"
+      >
+        {templatesLoading ? (
+          <div className="py-8 text-center text-gray-500 text-sm">Carregando modelos...</div>
+        ) : templates.length === 0 ? (
+          <div className="py-8 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
+            <CheckSquare className="w-8 h-8 text-gray-300" />
+            Nenhum modelo cadastrado ainda.
+            <p className="text-xs text-gray-400 max-w-xs">
+              Modelos podem ser criados em Configurações → Checklist (requer permissão de catálogos).
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-gray-500 mb-2">
+              Os itens do modelo serão adicionados ao fim do checklist atual. Itens existentes são preservados.
+            </p>
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => importarTemplate(t)}
+                disabled={importando !== null}
+                className="w-full text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-400/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-medium text-sm text-gray-900 truncate">{t.nome}</h4>
+                    <p className="text-caption text-gray-500 mt-0.5">
+                      {t.itens.length} {t.itens.length === 1 ? 'item' : 'itens'}
+                      {t.itens.some((i) => i.link) && ' · com links'}
+                    </p>
+                  </div>
+                  <FileDown className="w-4 h-4 text-blue-600 shrink-0" />
+                </div>
+                {importando === t.id && (
+                  <p className="text-caption text-blue-600 mt-1">Importando...</p>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
