@@ -533,6 +533,19 @@
 - [x] Migration `20260423190000_projetos_progresso_inclui_checklist.sql`: view `projetos_progresso` reescrita — `total` e `concluidos` agora somam tarefas + itens de checklist (cada item vale 1 unidade), ignorando tarefas canceladas e itens dentro delas; `pct` recalculado; `status_atividade` só vira `concluido` (ou `aguardando_inauguracao`) quando tarefas concluídas **e** todos os itens ticados (antes considerava só tarefas — bug documentado no CLAUDE.md mas nunca implementado)
 - [x] `TarefaModal` intercepta o submit via `handleSubmit`: quando usuário muda etapa para "Concluído" (transição, não estar já concluído) e a tarefa tem itens de checklist não-ticados, dispara modal de confirmação com contagem de pendentes, botões **"Voltar para o checklist"** e **"Concluir mesmo assim"** (ícone âmbar); se confirmar, a tarefa é salva normalmente e os itens pendentes continuam reduzindo o % do projeto até serem marcados
 
+### Participantes da tarefa (colaboração multi-usuário)
+
+- [x] Migration `20260423200000_tarefa_participantes.sql`: tabela `tarefa_participantes` (id, tarefa_id, usuario_id, adicionado_por_id, created_at) com UNIQUE (tarefa+usuario) e CASCADE; helper SQL `is_tarefa_colaborador(tarefa_id)` que retorna TRUE se responsável OU `tarefa.editar_todas` OU é participante; policies de `tarefa_comentarios` (INSERT), `tarefa_checklist` (INSERT/DELETE), `tarefa_anexos` (INSERT) e trigger `enforce_checklist_update` atualizadas para aceitar `is_tarefa_colaborador`; INSERT/DELETE em `tarefa_participantes` exige `is_tarefa_editor` (não-recursivo — participante não adiciona outro); triggers de histórico (`participante_adicionado` / `participante_removido`) com metadata do usuário
+- [x] Tipos: `TarefaParticipante`, `TarefaParticipanteComUsuario`, `TarefaComRelacoes.participantes` (Pick id + usuario_id, embarcado no `SELECT_TAREFA_COM_RELACOES`); novos tipos de histórico
+- [x] `usePermissao()` ganha `ehParticipante(tarefa)` e `podeColaborarTarefa(tarefa)` — primeiro retorna se sou participante (não responsável); segundo combina podeEditar + ehParticipante
+- [x] Componente `TarefaParticipantesTab.tsx`: lista atual com avatar+nome+quem adicionou+data; modal de adicionar com busca por nome/email (filtra responsável e quem já é participante); botão remover no hover; só responsável/admin gerencia, mas todos veem a lista
+- [x] Aba **Participantes** registrada no `TarefaModal` (sidebar, ícone `Users`) entre Principal e Comentários, com extra=true (bloqueada na criação)
+- [x] `TarefaChecklistTab`: `podeEditarItens` passa a usar `podeColaborarTarefa` (participantes podem mexer no checklist); item ticado mostra **chip verde inline** com nome de quem ticou ao lado dos badges Manual/Obs (tooltip com data); regra "só quem ticou pode desticar" continua funcionando via trigger
+- [x] `TarefaComentariosTab`: `podeComentar` usa `podeColaborarTarefa` (participantes podem comentar); regra "só autor edita/exclui o próprio comentário" inalterada
+- [x] `Tarefas.tsx`: view "Minhas" busca primeiro `tarefa_participantes` do usuário e faz `or(responsavel_id.eq, id.in.(...))` na query; badge **"Participante"** roxo na linha quando sou participante mas não responsável
+- [x] `Inicio.tsx`: dashboard usa a mesma combinação responsável + participante para KPIs, lista de "minhas" e calendário
+- [x] `historico-utils.ts` + `HistoricoLinha.tsx`: ícones `UserPlus` (roxo) e `UserMinus` (cinza) + verbos "adicionou como participante" / "removeu dos participantes" com chip do nome do usuário
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -548,4 +561,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (View `projetos_progresso` agora soma tarefas + itens de checklist; `TarefaModal` alerta quando tenta concluir tarefa com checklist pendente)
+**Última atualização:** 2026-04-23 (Participantes da tarefa: aba dedicada no TarefaModal, podeColaborar inclui participantes, checklist mostra nome inline de quem ticou, "Minhas" e dashboard incluem tarefas onde sou participante)

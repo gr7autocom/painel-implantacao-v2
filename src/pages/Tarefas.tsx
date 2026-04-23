@@ -101,7 +101,19 @@ export function Tarefas() {
       .order('created_at', { ascending: false })
 
     if (view === 'minhas') {
-      tarefasQuery = tarefasQuery.eq('responsavel_id', usuarioAtual.id)
+      // Inclui tarefas onde sou responsável OU participante
+      const { data: participacoes } = await supabase
+        .from('tarefa_participantes')
+        .select('tarefa_id')
+        .eq('usuario_id', usuarioAtual.id)
+      const participanteIds = (participacoes ?? []).map((p) => p.tarefa_id as string)
+      if (participanteIds.length > 0) {
+        tarefasQuery = tarefasQuery.or(
+          `responsavel_id.eq.${usuarioAtual.id},id.in.(${participanteIds.join(',')})`
+        )
+      } else {
+        tarefasQuery = tarefasQuery.eq('responsavel_id', usuarioAtual.id)
+      }
     } else if (view === 'aberto') {
       tarefasQuery = tarefasQuery.is('responsavel_id', null).eq('de_projeto', false)
     } else {
@@ -389,6 +401,11 @@ export function Tarefas() {
                       <span>Responsável: {t.responsavel.nome}</span>
                     ) : (
                       <span className="text-orange-600 font-medium">Em aberto</span>
+                    )}
+                    {perm.ehParticipante(t) && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 text-caption font-medium rounded bg-purple-400/15 text-purple-700 border border-purple-400/40">
+                        Participante
+                      </span>
                     )}
                     {(t.checklist?.length ?? 0) > 0 && (
                       <ChecklistMiniBar checklist={t.checklist!} />

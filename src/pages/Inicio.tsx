@@ -65,11 +65,24 @@ export function Inicio() {
   async function load() {
     if (!usuario) return
     setLoading(true)
+    // Inclui tarefas onde sou responsável OU participante
+    const { data: participacoes } = await supabase
+      .from('tarefa_participantes')
+      .select('tarefa_id')
+      .eq('usuario_id', usuario.id)
+    const participanteIds = (participacoes ?? []).map((p) => p.tarefa_id as string)
+
+    let minhasQuery = supabase.from('tarefas').select(SELECT_TAREFA_COM_RELACOES)
+    if (participanteIds.length > 0) {
+      minhasQuery = minhasQuery.or(
+        `responsavel_id.eq.${usuario.id},id.in.(${participanteIds.join(',')})`
+      )
+    } else {
+      minhasQuery = minhasQuery.eq('responsavel_id', usuario.id)
+    }
+
     const [minhasRes, countRes] = await Promise.all([
-      supabase
-        .from('tarefas')
-        .select(SELECT_TAREFA_COM_RELACOES)
-        .eq('responsavel_id', usuario.id),
+      minhasQuery,
       supabase
         .from('tarefas')
         .select('id', { count: 'exact', head: true })

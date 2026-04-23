@@ -195,6 +195,7 @@ export type TarefaComRelacoes = Tarefa & {
   cliente?: Pick<Cliente, 'id' | 'nome_fantasia'> | null
   projeto?: Pick<Projeto, 'id' | 'nome'> | null
   checklist?: Pick<TarefaChecklistItem, 'id' | 'concluido'>[] | null
+  participantes?: Pick<TarefaParticipante, 'id' | 'usuario_id'>[] | null
 }
 
 export type UsuarioAutenticado = Usuario & {
@@ -289,6 +290,21 @@ export type TarefaHistoricoTipo =
   | 'checklist_item_criado'
   | 'checklist_item_concluido'
   | 'checklist_item_desmarcado'
+  | 'participante_adicionado'
+  | 'participante_removido'
+
+export type TarefaParticipante = {
+  id: string
+  tarefa_id: string
+  usuario_id: string
+  adicionado_por_id: string | null
+  created_at: string
+}
+
+export type TarefaParticipanteComUsuario = TarefaParticipante & {
+  usuario?: Pick<Usuario, 'id' | 'nome' | 'email' | 'foto_url'> | null
+  adicionado_por?: Pick<Usuario, 'id' | 'nome'> | null
+}
 
 export type TarefaHistoricoEvento = {
   id: string

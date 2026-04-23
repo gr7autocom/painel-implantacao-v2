@@ -22,7 +22,7 @@ export function TarefaComentariosTab({ tarefa, onChange }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const podeComentar = perm.podeEditarTarefa(tarefa)
+  const podeComentar = perm.podeColaborarTarefa(tarefa)
 
   async function load() {
     setLoading(true)
@@ -101,7 +101,7 @@ export function TarefaComentariosTab({ tarefa, onChange }: Props) {
 
       {!podeComentar && (
         <div className="mb-4 p-3 bg-blue-400/15 border border-blue-400/40 text-blue-300 text-xs rounded-lg">
-          Apenas o responsável pela tarefa e administradores podem comentar.
+          Apenas o responsável, participantes da tarefa e administradores podem comentar.
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useAuth } from './auth'
 import type { AcaoId } from './acoes'
-import type { Tarefa } from './types'
+import type { Tarefa, TarefaComRelacoes } from './types'
 
 type Capabilities = {
   slug: string | null
@@ -9,6 +9,8 @@ type Capabilities = {
   podeEditarTarefa: (t: Pick<Tarefa, 'responsavel_id'>) => boolean
   podeAssumirTarefa: (t: Pick<Tarefa, 'responsavel_id'>) => boolean
   podeReatribuirTarefa: (t: Pick<Tarefa, 'responsavel_id'>) => boolean
+  podeColaborarTarefa: (t: Pick<TarefaComRelacoes, 'responsavel_id' | 'participantes'>) => boolean
+  ehParticipante: (t: Pick<TarefaComRelacoes, 'responsavel_id' | 'participantes'>) => boolean
 }
 
 export function usePermissao(): Capabilities {
@@ -41,6 +43,23 @@ export function usePermissao(): Capabilities {
       if (can('tarefa.editar_todas')) return true
       if (can('tarefa.reatribuir')) return true
       if (t.responsavel_id === null && can('tarefa.assumir')) return true
+      return false
+    },
+
+    // É participante (não responsável) em uma tarefa
+    ehParticipante: (t) => {
+      if (!userId) return false
+      if (t.responsavel_id === userId) return false
+      return (t.participantes ?? []).some((p) => p.usuario_id === userId)
+    },
+
+    // Pode colaborar = pode editar (responsável/admin) OU é participante
+    podeColaborarTarefa: (t) => {
+      if (can('tarefa.editar_todas')) return true
+      if (t.responsavel_id === userId) return true
+      if (userId && (t.participantes ?? []).some((p) => p.usuario_id === userId)) return true
+      // Mesma lógica de podeEditarTarefa para tarefa em aberto
+      if (t.responsavel_id === null && (can('tarefa.criar') || can('tarefa.assumir'))) return true
       return false
     },
   }

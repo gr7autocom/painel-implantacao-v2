@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { isFinalizada } from '../../lib/tarefa-utils'
 import type { Cliente, Etapa, PendingAnexo, TarefaComRelacoes, UsuarioAutenticado } from '../../lib/types'
 
-export type Aba = 'principal' | 'comentarios' | 'checklist' | 'historico'
+export type Aba = 'principal' | 'participantes' | 'comentarios' | 'checklist' | 'historico'
 
 type FormState = {
   titulo: string

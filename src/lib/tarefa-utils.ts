@@ -95,5 +95,6 @@ export const SELECT_TAREFA_COM_RELACOES = `
   criado_por:usuarios!tarefas_criado_por_id_fkey(id, nome),
   cliente:clientes(id, nome_fantasia),
   projeto:projetos(id, nome),
-  checklist:tarefa_checklist(id, concluido)
+  checklist:tarefa_checklist(id, concluido),
+  participantes:tarefa_participantes(id, usuario_id)
 `

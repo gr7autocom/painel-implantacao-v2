@@ -139,6 +139,18 @@ export function descreverEvento(ev: TarefaHistoricoEvento): DescricaoEvento {
         quoted: str(m, 'texto') ?? '',
       }
 
+    case 'participante_adicionado':
+      return {
+        verbo: 'adicionou como participante',
+        chip: { label: str(m, 'usuario_nome') ?? '—', tone: 'purple' },
+      }
+
+    case 'participante_removido':
+      return {
+        verbo: 'removeu dos participantes',
+        chip: { label: str(m, 'usuario_nome') ?? '—', tone: 'gray' },
+      }
+
     default:
       // fallback — mostra a descrição crua caso o tipo seja novo/desconhecido
       return { verbo: ev.descricao ?? String(ev.tipo) }

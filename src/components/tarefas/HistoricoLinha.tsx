@@ -8,6 +8,8 @@ import {
   PenSquare,
   Plus,
   Sparkles,
+  UserMinus,
+  UserPlus,
   UserRound,
   Calendar,
   History,
@@ -52,6 +54,14 @@ const ICONE_POR_TIPO: Record<string, { icon: typeof History; classes: string }> 
   },
   checklist_item_desmarcado: {
     icon: Circle,
+    classes: 'text-gray-400 bg-gray-400/15',
+  },
+  participante_adicionado: {
+    icon: UserPlus,
+    classes: 'text-purple-300 bg-purple-400/20',
+  },
+  participante_removido: {
+    icon: UserMinus,
     classes: 'text-gray-400 bg-gray-400/15',
   },
 }

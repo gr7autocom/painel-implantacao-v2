@@ -39,7 +39,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
   const [obsRascunho, setObsRascunho] = useState('')
   const [obsSalvando, setObsSalvando] = useState(false)
 
-  const podeEditarItens = perm.podeEditarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')
+  const podeEditarItens = perm.podeColaborarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')
 
   async function load() {
     setLoading(true)
@@ -331,16 +331,22 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                       >
                         {item.texto}
                       </div>
-                      {item.concluido && item.concluido_por && (
-                        <div className="text-caption text-gray-500 mt-0.5">
-                          Concluído por <strong>{item.concluido_por.nome}</strong>
-                          {item.concluido_em &&
-                            ` em ${new Date(item.concluido_em).toLocaleString('pt-BR')}`}
-                        </div>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {item.concluido && item.concluido_por && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium rounded-md bg-green-400/15 text-green-700 border border-green-400/40"
+                          title={
+                            item.concluido_em
+                              ? `Concluído por ${item.concluido_por.nome} em ${new Date(item.concluido_em).toLocaleString('pt-BR')}`
+                              : `Concluído por ${item.concluido_por.nome}`
+                          }
+                        >
+                          <CheckSquare className="w-3 h-3" />
+                          {item.concluido_por.nome}
+                        </span>
+                      )}
                       {item.link && (
                         <a
                           href={item.link}

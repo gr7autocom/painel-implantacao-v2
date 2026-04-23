@@ -8,6 +8,7 @@ import {
   Lock,
   MessageSquare,
   RotateCcw,
+  Users,
   X,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -21,6 +22,7 @@ import { SelecionarClienteModal } from '../clientes/SelecionarClienteModal'
 import { TarefaComentariosTab } from './TarefaComentariosTab'
 import { TarefaChecklistTab } from './TarefaChecklistTab'
 import { TarefaHistoricoTab } from './TarefaHistoricoTab'
+import { TarefaParticipantesTab } from './TarefaParticipantesTab'
 import { AssociarClienteField } from './AssociarClienteField'
 import { TarefaAnexosSection } from './TarefaAnexosSection'
 import { useTarefaForm, type Aba, type ProjetoFixo } from './useTarefaForm'
@@ -236,6 +238,7 @@ export function TarefaModal({
           <div className="flex-1 min-w-0 flex flex-col">
             {aba !== 'principal' && tarefa && (
               <div className="px-6 py-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+                {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefa} onChange={onSaved} />}
                 {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefa} />}
                 {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefa} />}
                 {aba === 'historico' && <TarefaHistoricoTab tarefa={tarefa} />}
@@ -529,6 +532,7 @@ function AbasSidebar({
 }) {
   const itens: { id: Aba; label: string; icon: typeof FileText; extra?: boolean }[] = [
     { id: 'principal', label: 'Principal', icon: FileText },
+    { id: 'participantes', label: 'Participantes', icon: Users, extra: true },
     { id: 'comentarios', label: 'Comentários', icon: MessageSquare, extra: true },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare, extra: true },
     { id: 'historico', label: 'Histórico', icon: History, extra: true },
