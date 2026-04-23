@@ -528,6 +528,11 @@
 - [x] Backfill one-shot: clientes ativos com `importar_dados=TRUE` cujo projeto não tinha a tarefa ganham retroativamente
 - [x] Título fixo "Importação de dados" (sistema antigo fica no cadastro do cliente, evita divergência se usuário trocar o valor depois)
 
+### Fix do cálculo de progresso do projeto (itens de checklist contam) + alerta ao concluir tarefa com checklist pendente
+
+- [x] Migration `20260423190000_projetos_progresso_inclui_checklist.sql`: view `projetos_progresso` reescrita — `total` e `concluidos` agora somam tarefas + itens de checklist (cada item vale 1 unidade), ignorando tarefas canceladas e itens dentro delas; `pct` recalculado; `status_atividade` só vira `concluido` (ou `aguardando_inauguracao`) quando tarefas concluídas **e** todos os itens ticados (antes considerava só tarefas — bug documentado no CLAUDE.md mas nunca implementado)
+- [x] `TarefaModal` intercepta o submit via `handleSubmit`: quando usuário muda etapa para "Concluído" (transição, não estar já concluído) e a tarefa tem itens de checklist não-ticados, dispara modal de confirmação com contagem de pendentes, botões **"Voltar para o checklist"** e **"Concluir mesmo assim"** (ícone âmbar); se confirmar, a tarefa é salva normalmente e os itens pendentes continuam reduzindo o % do projeto até serem marcados
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -543,4 +548,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Tarefa automática "Importação de dados" gerada quando `clientes.importar_dados = TRUE`, tanto no create quanto no edit; backfill retroativo aplicado)
+**Última atualização:** 2026-04-23 (View `projetos_progresso` agora soma tarefas + itens de checklist; `TarefaModal` alerta quando tenta concluir tarefa com checklist pendente)

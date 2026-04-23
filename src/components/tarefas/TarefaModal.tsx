@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  AlertTriangle,
   CheckCircle2,
   CheckSquare,
   FileText,
@@ -9,11 +10,13 @@ import {
   RotateCcw,
   X,
 } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
 import { usePermissao } from '../../lib/permissoes'
 import { useTarefaListas } from '../../lib/tarefa-listas-context'
 import { RichTextEditor } from '../RichTextEditor'
 import { AlertBanner } from '../AlertBanner'
+import { Modal } from '../Modal'
 import { SelecionarClienteModal } from '../clientes/SelecionarClienteModal'
 import { TarefaComentariosTab } from './TarefaComentariosTab'
 import { TarefaChecklistTab } from './TarefaChecklistTab'
@@ -54,6 +57,9 @@ export function TarefaModal({
   const { listas: { prioridades, categorias, classificacoes, etapas, usuarios, clientes } } = useTarefaListas()
   const [selecionarClienteOpen, setSelecionarClienteOpen] = useState(false)
   const [pendingAnexos, setPendingAnexos] = useState<PendingAnexo[]>([])
+  const [confirmConcluirOpen, setConfirmConcluirOpen] = useState(false)
+  const [itemsPendentes, setItemsPendentes] = useState(0)
+  const [verificandoChecklist, setVerificandoChecklist] = useState(false)
 
   const isCriando = !tarefa
   const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefa!)
@@ -75,6 +81,40 @@ export function TarefaModal({
     open, tarefa, clienteFixo, projetoFixo, abaInicial, etapas,
     podeAtribuirNaCriacao, usuarioAtual, pendingAnexos, onSaved, onClose,
   })
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    // Só verifica quando é edição de tarefa existente (tarefa nova não tem checklist ainda)
+    if (!tarefa) { save(e); return }
+
+    const etapaNova = etapas.find((et) => et.id === form.etapa_id)
+    const estaConcluindo = !!etapaNova?.nome.toLowerCase().includes('conclu')
+    const etapaAntiga = etapas.find((et) => et.id === tarefa.etapa_id)
+    const estavaConcluido = !!etapaAntiga?.nome.toLowerCase().includes('conclu')
+
+    // Só alerta ao TRANSICIONAR para Concluído (não ao salvar já estando)
+    if (!estaConcluindo || estavaConcluido) { save(e); return }
+
+    setVerificandoChecklist(true)
+    const { data, error: err } = await supabase
+      .from('tarefa_checklist')
+      .select('id, concluido')
+      .eq('tarefa_id', tarefa.id)
+    setVerificandoChecklist(false)
+    if (err) { save(e); return } // não bloqueia save se a consulta falhar
+
+    const pendentes = (data ?? []).filter((i) => !i.concluido).length
+    if (pendentes === 0) { save(e); return }
+
+    setItemsPendentes(pendentes)
+    setConfirmConcluirOpen(true)
+  }
+
+  async function confirmarConclusao() {
+    setConfirmConcluirOpen(false)
+    const fakeEvent = { preventDefault: () => {} } as React.FormEvent
+    await save(fakeEvent)
+  }
 
   const classificacoesDaCategoria = useMemo(
     () =>
@@ -205,7 +245,7 @@ export function TarefaModal({
             {aba === 'principal' && (
         <div className="relative flex-1 min-h-0">
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white to-transparent z-10" />
-        <form id="tarefa-form" onSubmit={save} className="px-6 py-4 overflow-y-auto h-full">
+        <form id="tarefa-form" onSubmit={handleSubmit} className="px-6 py-4 overflow-y-auto h-full">
           {error && (
             <AlertBanner>
               {error}
@@ -419,10 +459,10 @@ export function TarefaModal({
               <button
                 type="submit"
                 form="tarefa-form"
-                disabled={saving}
+                disabled={saving || verificandoChecklist}
                 className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {saving ? 'Salvando...' : 'Salvar'}
+                {saving ? 'Salvando...' : verificandoChecklist ? 'Verificando...' : 'Salvar'}
               </button>
             )}
           </div>
@@ -434,6 +474,46 @@ export function TarefaModal({
         onClose={() => setSelecionarClienteOpen(false)}
         onSelect={(c) => setForm((f) => ({ ...f, cliente_id: c.id }))}
       />
+
+      <Modal
+        open={confirmConcluirOpen}
+        onClose={() => setConfirmConcluirOpen(false)}
+        title="Checklist pendente"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmConcluirOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Voltar para o checklist
+            </button>
+            <button
+              type="button"
+              onClick={confirmarConclusao}
+              disabled={saving}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50"
+            >
+              {saving ? 'Concluindo...' : 'Concluir mesmo assim'}
+            </button>
+          </>
+        }
+      >
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+          <div className="text-sm text-gray-700 space-y-2">
+            <p>
+              Esta tarefa ainda tem <strong>{itemsPendentes}</strong>{' '}
+              {itemsPendentes === 1 ? 'item pendente' : 'itens pendentes'} no checklist.
+            </p>
+            <p className="text-gray-500">
+              Marcar como <strong>Concluído</strong> mesmo assim? Os itens pendentes continuarão
+              contando como incompletos no progresso do projeto até serem marcados.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

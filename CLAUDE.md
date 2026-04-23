@@ -156,9 +156,9 @@ Fluxo:
 
 ### Progresso de implantação por projeto
 
-- View `projetos_progresso (cliente_id, total, concluidos, pct, status_atividade)` — consumida por `/projetos` (cards), `/projetos/:id` (header) e `/projetos/:id/monitor`
-- Regra de contagem: cada tarefa conta 1 unidade; cada item de checklist dentro dessas tarefas conta 1 unidade adicional. Tarefa cancelada fica de fora do total
-- 100% é alcançado apenas quando todas as tarefas estão em etapa "Concluído" **e** todos os itens de checklist estão marcados
+- View `projetos_progresso (projeto_id, cliente_id, total, concluidos, pct, em_aberto, status_atividade)` — consumida por `/projetos` (cards), `/projetos/:id` (header), `/projetos/:id/monitor` e `/clientes`
+- Regra de contagem: cada tarefa não-cancelada conta 1 unidade; cada item de checklist dentro dessas tarefas conta 1 unidade adicional. Tarefa cancelada e itens dela ficam fora (fix em [20260423190000_projetos_progresso_inclui_checklist.sql](supabase/migrations/20260423190000_projetos_progresso_inclui_checklist.sql) — antes a regra era documentada mas o SELECT da view ignorava o CTE `checklist_base`)
+- 100% é alcançado apenas quando todas as tarefas estão em etapa "Concluído" **e** todos os itens de checklist estão marcados. `status_atividade` derivado usa a mesma soma — só vira `concluido` / `aguardando_inauguracao` quando tudo está 100%
 - Cores da barra: cinza (0%), amber (<40%), blue (40–69%), emerald (70–99%), green (100%)
 - **status_atividade** (derivado das tarefas, independente da etapa manual do gestor):
   - `sem_tarefas` — projeto novo sem tarefas
@@ -241,6 +241,7 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 - **Triggers em `tarefa_comentarios`**: `comentou` (AFTER INSERT)
 - **Triggers em `tarefa_checklist`**: `checklist_item_criado` (AFTER INSERT), `checklist_item_concluido`/`checklist_item_desmarcado` (AFTER UPDATE quando `concluido` muda)
 - UI: sidebar de abas dentro do `TarefaModal` (Principal/Comentários/Checklist/Histórico). Abas extras bloqueadas em criação (precisam de `tarefa_id`)
+- **Alerta ao concluir com checklist pendente:** `TarefaModal.handleSubmit` intercepta o submit quando o usuário muda a etapa para "Concluído" (transição — não dispara se já estava concluído). Busca `tarefa_checklist` e, se houver itens não-ticados, abre modal âmbar com contagem + botões "Voltar para o checklist" / "Concluir mesmo assim". Se confirmar, a tarefa é marcada como concluída mas os itens pendentes continuam contando como incompletos no `projetos_progresso`, reduzindo o % do projeto até serem ticados
 
 ### Modelos de Checklist (`20260423140000_checklist_templates.sql` + `20260423160000_checklist_capacidades.sql`)
 
