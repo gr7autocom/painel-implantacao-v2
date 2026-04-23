@@ -514,6 +514,13 @@
 - [x] `ChecklistTab` esconde botões "Novo modelo"/editar/excluir pra quem não tem `checklist.modelos_gerenciar`; mostra aviso no topo
 - [x] `TarefaChecklistTab.podeEditarItens` passa a aceitar a nova capacidade global (`can('checklist.editar_qualquer_tarefa')`), então Suporte consegue importar modelos em qualquer tarefa
 
+### Redesenho visual do checklist da tarefa + observação inline por item
+
+- [x] Migration `20260423170000_tarefa_checklist_observacao.sql`: coluna `tarefa_checklist.observacao TEXT`; trigger `enforce_checklist_update` inclui `observacao` no conjunto de campos que exigem `is_tarefa_editor` ou `checklist.editar_qualquer_tarefa`
+- [x] Tipo `TarefaChecklistItem.observacao` em `types.ts`
+- [x] `TarefaChecklistTab` redesenhado: número de posição (1, 2, 3…), texto em negrito, badge **"Manual"** (azul, com ícone `BookOpen`) aparece apenas quando o item tem link e abre em nova aba; badge **"Obs"** sempre visível (âmbar quando tem observação salva, com ponto indicador; cinza quando vazio), clicar expande editor inline ("Motivo:" + textarea + Salvar/Cancelar); permissão segue a regra existente (responsável ou `checklist.editar_qualquer_tarefa`)
+- [x] Visitante sem permissão vê o badge "Obs" desabilitado quando não há observação; quando existe observação, o badge continua clicável mas a textarea fica read-only e sem botão Salvar
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -529,4 +536,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Capacidades dedicadas de Checklist em Permissões + Suporte consegue importar modelos em qualquer tarefa via `checklist.editar_qualquer_tarefa`)
+**Última atualização:** 2026-04-23 (Redesenho visual do checklist da tarefa: badges Manual/Obs + observação inline editável por item)

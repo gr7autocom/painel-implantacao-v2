@@ -227,12 +227,12 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 ### Comentários / Checklist / Histórico de Tarefa (`20260418200000_...`)
 
 - `tarefa_comentarios` (id, tarefa_id → tarefas CASCADE, autor_id → usuarios, texto, timestamps)
-- `tarefa_checklist` (id, tarefa_id → tarefas CASCADE, texto, **link** TEXT nullable, concluido, concluido_por_id, concluido_em, ordem, criado_por_id)
+- `tarefa_checklist` (id, tarefa_id → tarefas CASCADE, texto, **link** TEXT nullable, **observacao** TEXT nullable, concluido, concluido_por_id, concluido_em, ordem, criado_por_id)
 - `tarefa_historico` (id, tarefa_id → tarefas CASCADE, ator_id, tipo, descricao, metadata JSONB)
 - Helper `is_tarefa_editor(tarefa_id)`: `can('tarefa.editar_todas')` ou `responsavel_id = current_user_id()`
 - **Comentários — RLS:** SELECT autenticado; INSERT = `is_tarefa_editor`; UPDATE = autor; DELETE = autor ou admin
 - **Checklist — RLS + trigger:** INSERT/DELETE = `is_tarefa_editor`; UPDATE aberto para autenticados (trigger `enforce_checklist_update` faz enforcement fino). Regras do trigger:
-  - Edição de `texto`/`ordem`/`link` requer `is_tarefa_editor`
+  - Edição de `texto`/`ordem`/`link`/`observacao` requer `is_tarefa_editor` ou `can('checklist.editar_qualquer_tarefa')`
   - Marcar (`concluido: FALSE→TRUE`) aberto para qualquer autenticado; trigger força `concluido_por_id = current_user_id()` + `concluido_em = NOW()`
   - Desmarcar (`TRUE→FALSE`) só se `OLD.concluido_por_id = current_user_id()` ou admin — evita que troca de responsável desfaça progresso alheio
 - **Histórico — RLS:** SELECT autenticado; sem policies de escrita (só triggers SECURITY DEFINER inserem)
@@ -267,7 +267,7 @@ Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistT
 - Modal lista templates `ativo=true` ordenados por nome, com contagem de itens e flag "com links"
 - Ao selecionar um modelo, inserção em batch com `ordem = itens_existentes.length + idx` (anexa ao fim, não reseta)
 - Estado vazio do checklist também mostra CTA "Importar de um modelo" quando o usuário pode editar
-- Itens com `link` não-nulo renderizam ícone `ExternalLink` clicável ao lado do texto, abrindo em nova aba com `target="_blank" rel="noopener noreferrer"`
+- Cada item na aba Checklist da tarefa é renderizado como card com: checkbox, número de posição (1-based), texto em negrito, badge **"Manual"** (azul, ícone `BookOpen`) aparecendo só quando `link` existe (clica → abre em nova aba), badge **"Obs"** (âmbar com ponto indicador quando há observação, cinza neutro quando vazio); clicar em "Obs" expande um editor inline com label "Motivo:" + textarea + Salvar/Cancelar. Observação por item vive em `tarefa_checklist.observacao` — permissão de edição segue a mesma regra dos outros campos do item
 
 ### Tarefas (`20260417163000_tarefas_table.sql` + migrations posteriores)
 

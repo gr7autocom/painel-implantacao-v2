@@ -243,6 +243,7 @@ export type TarefaChecklistItem = {
   tarefa_id: string
   texto: string
   link: string | null
+  observacao: string | null
   concluido: boolean
   concluido_por_id: string | null
   concluido_em: string | null

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckSquare, ExternalLink, FileDown, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, BookOpen, CheckSquare, FileDown, MessageSquare, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
 import { usePermissao } from '../../lib/permissoes'
@@ -33,6 +33,11 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
   const [templates, setTemplates] = useState<ChecklistTemplateComItens[]>([])
   const [templatesLoading, setTemplatesLoading] = useState(false)
   const [importando, setImportando] = useState<string | null>(null)
+
+  // Estado do editor de observação: id do item aberto + rascunho
+  const [obsAberto, setObsAberto] = useState<string | null>(null)
+  const [obsRascunho, setObsRascunho] = useState('')
+  const [obsSalvando, setObsSalvando] = useState(false)
 
   const podeEditarItens = perm.podeEditarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')
 
@@ -76,7 +81,6 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
 
   async function alternar(item: TarefaChecklistItemComRel) {
     if (!usuarioAtual) return
-    // Só quem marcou (ou admin) pode desmarcar
     if (item.concluido) {
       const ehDono = item.concluido_por_id === usuarioAtual.id
       if (!ehDono && !perm.isAdmin) return
@@ -99,6 +103,34 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       setError(err.message)
       return
     }
+    await load()
+    onChange?.()
+  }
+
+  function abrirObs(item: TarefaChecklistItemComRel) {
+    if (obsAberto === item.id) {
+      setObsAberto(null)
+      return
+    }
+    setObsAberto(item.id)
+    setObsRascunho(item.observacao ?? '')
+  }
+
+  async function salvarObs(item: TarefaChecklistItemComRel) {
+    setObsSalvando(true)
+    setError(null)
+    const valor = obsRascunho.trim()
+    const { error: err } = await supabase
+      .from('tarefa_checklist')
+      .update({ observacao: valor || null })
+      .eq('id', item.id)
+    setObsSalvando(false)
+    if (err) {
+      setError(err.code === '42501' ? 'Você não tem permissão para editar o checklist.' : err.message)
+      return
+    }
+    setObsAberto(null)
+    setObsRascunho('')
     await load()
     onChange?.()
   }
@@ -252,76 +284,154 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
           </div>
         ) : (
           <ul className="space-y-2">
-            {itens.map((item) => {
+            {itens.map((item, idx) => {
               const ehDono = item.concluido_por_id === usuarioAtual?.id
               const podeDesmarcar = item.concluido && (ehDono || perm.isAdmin)
               const podeMarcar = !item.concluido
               const checkboxDisabled = item.concluido && !podeDesmarcar
+              const temObs = !!(item.observacao && item.observacao.trim())
+              const obsEstaAberto = obsAberto === item.id
               return (
                 <li
                   key={item.id}
-                  className="flex items-start gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 group"
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden group"
                 >
-                  <button
-                    type="button"
-                    onClick={() => alternar(item)}
-                    disabled={checkboxDisabled}
-                    className={`mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      item.concluido
-                        ? 'bg-green-500 border-green-500 text-[#ffffff]'
-                        : 'border-gray-300 hover:border-blue-500'
-                    } ${checkboxDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                    title={
-                      item.concluido
-                        ? podeDesmarcar
-                          ? 'Desmarcar'
-                          : `Concluído por ${item.concluido_por?.nome ?? 'outro usuário'}`
-                        : podeMarcar
-                          ? 'Marcar como concluído'
-                          : ''
-                    }
-                  >
-                    {item.concluido && <CheckSquare className="w-3 h-3" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm ${
-                          item.concluido ? 'text-gray-400 line-through' : 'text-gray-800'
+                  <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50">
+                    <button
+                      type="button"
+                      onClick={() => alternar(item)}
+                      disabled={checkboxDisabled}
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        item.concluido
+                          ? 'bg-green-500 border-green-500 text-[#ffffff]'
+                          : 'border-gray-300 hover:border-blue-500'
+                      } ${checkboxDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                      title={
+                        item.concluido
+                          ? podeDesmarcar
+                            ? 'Desmarcar'
+                            : `Concluído por ${item.concluido_por?.nome ?? 'outro usuário'}`
+                          : podeMarcar
+                            ? 'Marcar como concluído'
+                            : ''
+                      }
+                    >
+                      {item.concluido && <CheckSquare className="w-3 h-3" />}
+                    </button>
+
+                    <span className="text-caption text-gray-400 font-medium shrink-0 w-6 text-center">
+                      {idx + 1}
+                    </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-sm font-semibold ${
+                          item.concluido ? 'text-gray-400 line-through' : 'text-gray-900'
                         }`}
                       >
                         {item.texto}
-                      </span>
+                      </div>
+                      {item.concluido && item.concluido_por && (
+                        <div className="text-caption text-gray-500 mt-0.5">
+                          Concluído por <strong>{item.concluido_por.nome}</strong>
+                          {item.concluido_em &&
+                            ` em ${new Date(item.concluido_em).toLocaleString('pt-BR')}`}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {item.link && (
                         <a
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-0.5 text-blue-500 hover:text-blue-700 shrink-0"
-                          title={`Abrir link: ${item.link}`}
-                          aria-label={`Abrir link do item ${item.texto}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-caption font-medium rounded-md border border-blue-400/40 bg-blue-400/10 text-blue-600 hover:bg-blue-400/20 transition-colors"
+                          title={`Abrir manual: ${item.link}`}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <BookOpen className="w-3 h-3" />
+                          Manual
                         </a>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => abrirObs(item)}
+                        disabled={!podeEditarItens && !temObs}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-caption font-medium rounded-md border transition-colors ${
+                          obsEstaAberto
+                            ? 'border-amber-400 bg-amber-400/15 text-amber-700'
+                            : temObs
+                              ? 'border-amber-400/40 bg-amber-400/10 text-amber-700 hover:bg-amber-400/20'
+                              : 'border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
+                        }`}
+                        title={
+                          temObs
+                            ? obsEstaAberto ? 'Fechar observação' : 'Editar observação'
+                            : podeEditarItens ? 'Adicionar observação' : 'Sem observação'
+                        }
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        Obs
+                        {temObs && (
+                          <span
+                            className="w-1.5 h-1.5 rounded-full bg-amber-500"
+                            aria-label="Observação preenchida"
+                          />
+                        )}
+                      </button>
+                      {podeEditarItens && (
+                        <button
+                          type="button"
+                          onClick={() => remover(item.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 rounded transition-opacity"
+                          aria-label="Remover item"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                    {item.concluido && item.concluido_por && (
-                      <div className="text-caption text-gray-500 mt-0.5">
-                        Concluído por <strong>{item.concluido_por.nome}</strong>
-                        {item.concluido_em &&
-                          ` em ${new Date(item.concluido_em).toLocaleString('pt-BR')}`}
-                      </div>
-                    )}
                   </div>
-                  {podeEditarItens && (
-                    <button
-                      type="button"
-                      onClick={() => remover(item.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 rounded transition-opacity"
-                      aria-label="Remover item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+
+                  {obsEstaAberto && (
+                    <div className="border-t border-amber-400/30 bg-amber-400/5 px-3 py-3">
+                      <div className="flex items-start gap-2 mb-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <label
+                          htmlFor={`obs-${item.id}`}
+                          className="text-xs font-semibold text-amber-800"
+                        >
+                          Motivo:
+                        </label>
+                      </div>
+                      <textarea
+                        id={`obs-${item.id}`}
+                        value={obsRascunho}
+                        onChange={(e) => setObsRascunho(e.target.value)}
+                        disabled={!podeEditarItens}
+                        placeholder="Explique o motivo ou adicione uma observação..."
+                        rows={3}
+                        className="w-full px-3 py-2 border border-amber-400/40 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-gray-50 resize-none"
+                      />
+                      <div className="flex items-center justify-end gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => { setObsAberto(null); setObsRascunho('') }}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800"
+                        >
+                          Cancelar
+                        </button>
+                        {podeEditarItens && (
+                          <button
+                            type="button"
+                            onClick={() => salvarObs(item)}
+                            disabled={obsSalvando}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#ffffff] bg-amber-600 rounded-md hover:bg-amber-700 disabled:opacity-50"
+                          >
+                            {obsSalvando ? 'Salvando...' : 'Salvar'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </li>
               )
