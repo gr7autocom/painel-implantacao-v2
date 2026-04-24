@@ -61,6 +61,7 @@ src/
 │   │   ├── TarefaParticipantesTab.tsx # aba participantes (gestão pelo responsável; colaboração de quem foi adicionado)
 │   │   ├── TarefaComentariosTab.tsx  # aba comentários (responsável + participantes + admin)
 │   │   ├── TarefaChecklistTab.tsx    # aba checklist (colaborador edita; marcar por qualquer autenticado)
+│   │   ├── TarefaSubtarefasTab.tsx   # aba subtarefas (lista + criar; abre subtarefa em modal aninhado)
 │   │   └── TarefaHistoricoTab.tsx    # timeline read-only de eventos
 │   ├── clientes/
 │   │   ├── ClienteModal.tsx      # form criar/editar cliente (reusado em Clientes e Projetos)
@@ -241,8 +242,8 @@ Seeds: prioridades (Baixa/Média/Alta/Urgente) e etapas (Pendente/Em Andamento/C
 - **Triggers de histórico em `tarefas`**: `criada` (AFTER INSERT); mudanças de `titulo`, `etapa_id`, `responsavel_id`, `prioridade_id`, `prazo_entrega` viram eventos individuais (AFTER UPDATE), com descrição formatada (já resolve os nomes)
 - **Triggers em `tarefa_comentarios`**: `comentou` (AFTER INSERT)
 - **Triggers em `tarefa_checklist`**: `checklist_item_criado` (AFTER INSERT), `checklist_item_concluido`/`checklist_item_desmarcado` (AFTER UPDATE quando `concluido` muda)
-- UI: sidebar de abas dentro do `TarefaModal` (Principal/Participantes/Comentários/Checklist/Histórico). Abas extras bloqueadas em criação (precisam de `tarefa_id`)
-- **Alerta ao concluir com checklist pendente:** `TarefaModal.handleSubmit` intercepta o submit quando o usuário muda a etapa para "Concluído" (transição — não dispara se já estava concluído). Busca `tarefa_checklist` e, se houver itens não-ticados, abre modal âmbar com contagem + botões "Voltar para o checklist" / "Concluir mesmo assim". Se confirmar, a tarefa é marcada como concluída mas os itens pendentes continuam contando como incompletos no `projetos_progresso`, reduzindo o % do projeto até serem ticados
+- UI: sidebar de abas dentro do `TarefaModal` (Principal/Participantes/Comentários/Checklist/Subtarefas/Histórico). Abas extras bloqueadas em criação (precisam de `tarefa_id`)
+- **Alerta ao concluir com pendências:** `TarefaModal.handleSubmit` intercepta o submit quando o usuário muda a etapa para "Concluído" (transição — não dispara se já estava concluído). Busca em paralelo `tarefa_checklist` e subtarefas (`tarefa_pai_id = id`); se houver itens não-ticados ou subtarefas não-finalizadas, abre modal âmbar listando ambas pendências em bullets + botões "Voltar" / "Concluir mesmo assim". Se confirmar, a tarefa é marcada como concluída mas os pendentes continuam contando como incompletos no `projetos_progresso`
 
 ### Participantes da tarefa (`20260423200000_tarefa_participantes.sql`)
 
@@ -261,6 +262,38 @@ Permite o responsável adicionar usuários para colaborar na tarefa. Participant
 - UI ([TarefaParticipantesTab.tsx](src/components/tarefas/TarefaParticipantesTab.tsx)): aba "Participantes" no `TarefaModal` (ícone `Users`); lista atual com avatar + nome + "Adicionado por X em data"; modal de adicionar com busca por nome/email (filtra responsável e quem já é participante); botão remover no hover (só responsável/admin)
 - **Item de checklist ticado** ganha chip verde inline com `<CheckSquare>` + nome de quem ticou, ao lado dos badges Manual/Obs (substitui o texto "Concluído por X em Y" que ficava abaixo); tooltip mostra a data completa
 - **Filtros:** `Tarefas.tsx` e `Inicio.tsx` consultam `tarefa_participantes` do usuário antes da query principal e fazem `.or('responsavel_id.eq.X,id.in.(...)')` — assim "Minhas" e o dashboard incluem tarefas onde sou participante. Linha em `/tarefas` mostra badge **"Participante"** (roxo) quando `perm.ehParticipante(t)` (não responsável)
+
+### Subtarefas (`20260423210000_subtarefas.sql`)
+
+Tarefa pode ter subtarefas (1 nível só). Subtarefa **é uma tarefa** com `tarefa_pai_id` apontando pra pai — reusa toda infra (etapas, prioridades, comentários, checklist, anexos, histórico, participantes).
+
+- `tarefas.tarefa_pai_id` (FK auto-referência, ON DELETE CASCADE)
+- **Trigger `validate_subtarefa`** (BEFORE INSERT/UPDATE OF tarefa_pai_id):
+  - Bloqueia auto-referência (tarefa não pode ser pai de si mesma)
+  - Bloqueia 2º nível (subtarefa não pode ter subtarefa)
+  - Força `cliente_id` / `projeto_id` / `de_projeto` da subtarefa = pai (consistência herdada — o frontend não precisa setar esses campos)
+- **Trigger `auto_participante_subtarefa`** (AFTER INSERT/UPDATE OF responsavel_id): se o responsável da subtarefa difere do responsável da pai, insere automaticamente em `tarefa_participantes` da pai (idempotente via `ON CONFLICT DO NOTHING`). Triggers de histórico de participante já cuidam de logar
+- `useTarefaForm` aceita `tarefaPaiFixa: { id, responsavelId }`: default de responsável = pai; INSERT seta `tarefa_pai_id`. As validações de cliente/projeto/de_projeto ficam todas no trigger SQL
+- UI ([TarefaSubtarefasTab.tsx](src/components/tarefas/TarefaSubtarefasTab.tsx)): aba "Subtarefas" no `TarefaModal` (ícone `GitBranch`, abaixo de Checklist); lista cards com #codigo, título, etapa, prazo, responsável e mini-bar do checklist; botão "Nova subtarefa" abre `TarefaModal` aninhado com `tarefaPaiFixa`; clique numa subtarefa abre `TarefaModal` aninhado dela. Modais aninhados funcionam por z-index (cada `<TarefaModal>` é fixed full-screen)
+- **Filtros nas listagens:** views de "topo" filtram `tarefa_pai_id IS NULL`:
+  - `Tarefas.tsx`: "Em aberto", "Todas", "Concluídas" só mostram tarefas de topo
+  - `ProjetoDetalhe.tsx`: lista do projeto só mostra topo
+  - "Minhas" continua mostrando tudo (responsável OR participante em qualquer nível)
+  - Dashboard `Inicio.tsx` idem
+- **Badge "Subtarefa de X · Projeto Y"** aparece nas linhas onde `tarefa.tarefa_pai`:
+  - `Tarefas.tsx`: badge azul inline com ícone `GitBranch`, link clicável pro projeto
+  - `Inicio.tsx`: linha extra "↳ Subtarefa de X · Projeto Y" abaixo do título (lista principal e calendário)
+- `SELECT_TAREFA_COM_RELACOES` carrega `tarefa_pai:tarefas!tarefas_tarefa_pai_id_fkey(id, titulo, codigo, projeto_id, projeto:projetos(id, nome))`
+- **Cálculo de progresso:** subtarefa é uma tarefa "normal" no banco — entra na contagem da view `projetos_progresso` automaticamente (1 unidade por tarefa + 1 por item de checklist). A regra "tarefa pai depende das filhas" é enforçada via UI: o alerta de conclusão da pai (item anterior) lista subtarefas pendentes além de items de checklist
+- **Exclusão:** ver seção "Exclusão de tarefa" abaixo
+
+### Exclusão de tarefa (Edge Function `delete-tarefa`)
+
+Após o feature de subtarefas e anexos no Cloudinary, exclusão de tarefa não pode mais ser DELETE direto via PostgREST.
+
+- **Edge Function [`delete-tarefa`](supabase/functions/delete-tarefa/index.ts):** valida JWT + `can('tarefa.excluir')`, busca subtarefas, coleta `tarefa_anexos` da tarefa + subtarefas, apaga em batch no Cloudinary (admin API agrupada por resource_type, mesma lógica do `delete-projeto`); depois `DELETE FROM tarefas` (CASCADE remove subtarefas, comentários, checklist, anexos-DB, histórico, participantes em cadeia). Retorna `{ ok, tarefa_id, subtarefas_removidas, anexos_cloudinary: { deletados, falharam } }`
+- **Deploy:** `npx supabase functions deploy delete-tarefa --no-verify-jwt`
+- **Frontend:** `Tarefas.tsx` e `ProjetoDetalhe.tsx` chamam `supabase.functions.invoke('delete-tarefa', { body: { tarefa_id } })` em vez de DELETE direto. Modal de confirmação ganha banner vermelho destacando "ação irreversível" + lista do que será apagado (subtarefas + tudo dentro delas, comentários, checklist, histórico, anexos Cloudinary, participantes). Tarefas com `origem_cadastro=true` continuam protegidas (modal informa pra editar o cadastro do cliente)
 
 ### Modelos de Checklist (`20260423140000_checklist_templates.sql` + `20260423160000_checklist_capacidades.sql`)
 

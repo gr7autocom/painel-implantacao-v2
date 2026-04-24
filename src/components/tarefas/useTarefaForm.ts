@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { isFinalizada } from '../../lib/tarefa-utils'
 import type { Cliente, Etapa, PendingAnexo, TarefaComRelacoes, UsuarioAutenticado } from '../../lib/types'
 
-export type Aba = 'principal' | 'participantes' | 'comentarios' | 'checklist' | 'historico'
+export type Aba = 'principal' | 'participantes' | 'comentarios' | 'checklist' | 'subtarefas' | 'historico'
 
 type FormState = {
   titulo: string
@@ -56,11 +56,18 @@ export type ProjetoFixo = {
   clienteNome: string
 }
 
+export type TarefaPaiFixa = {
+  id: string
+  responsavelId: string | null
+}
+
 type Params = {
   open: boolean
   tarefa: TarefaComRelacoes | null
   clienteFixo?: Pick<Cliente, 'id' | 'nome_fantasia'> | null
   projetoFixo?: ProjetoFixo | null
+  /** Quando criando subtarefa: id da tarefa pai (e default de responsável) */
+  tarefaPaiFixa?: TarefaPaiFixa | null
   abaInicial?: Aba
   etapas: Etapa[]
   podeAtribuirNaCriacao: boolean
@@ -75,6 +82,7 @@ export function useTarefaForm({
   tarefa,
   clienteFixo,
   projetoFixo,
+  tarefaPaiFixa,
   abaInicial,
   etapas,
   podeAtribuirNaCriacao,
@@ -115,10 +123,13 @@ export function useTarefaForm({
         cliente_id: tarefa.cliente_id ?? defaultClienteId,
       })
     } else {
-      const defaultResponsavel = podeAtribuirNaCriacao ? (usuarioAtual?.id ?? '') : ''
+      // Subtarefa: default responsável = responsável da pai (com fallback ao próprio user)
+      const defaultResponsavel = tarefaPaiFixa
+        ? (tarefaPaiFixa.responsavelId ?? usuarioAtual?.id ?? '')
+        : (podeAtribuirNaCriacao ? (usuarioAtual?.id ?? '') : '')
       setForm(emptyForm(defaultResponsavel, defaultClienteId))
     }
-  }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial])
+  }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa])
 
   async function reabrirTarefa() {
     if (!tarefa) return
@@ -187,8 +198,11 @@ export function useTarefaForm({
         .insert({
           ...basePayload,
           criado_por_id: usuarioAtual.id,
+          // Subtarefa herda contexto da pai (cliente/projeto/de_projeto via trigger);
+          // tarefas avulsas/projeto seguem o que o modal forneceu
           de_projeto: !!(projetoFixo || clienteFixo),
           projeto_id: projetoFixo?.id ?? null,
+          tarefa_pai_id: tarefaPaiFixa?.id ?? null,
         })
         .select('id')
         .single()

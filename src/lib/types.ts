@@ -179,6 +179,7 @@ export type Tarefa = {
   criado_por_id: string | null
   cliente_id: string | null
   projeto_id: string | null
+  tarefa_pai_id: string | null
   de_projeto: boolean
   origem_cadastro: boolean
   created_at: string
@@ -194,6 +195,9 @@ export type TarefaComRelacoes = Tarefa & {
   criado_por?: Pick<Usuario, 'id' | 'nome'> | null
   cliente?: Pick<Cliente, 'id' | 'nome_fantasia'> | null
   projeto?: Pick<Projeto, 'id' | 'nome'> | null
+  tarefa_pai?: Pick<Tarefa, 'id' | 'titulo' | 'codigo' | 'projeto_id'> & {
+    projeto?: Pick<Projeto, 'id' | 'nome'> | null
+  } | null
   checklist?: Pick<TarefaChecklistItem, 'id' | 'concluido'>[] | null
   participantes?: Pick<TarefaParticipante, 'id' | 'usuario_id'>[] | null
 }

@@ -11,7 +11,8 @@
       "Bash(git push *)",
       "Bash(git credential-manager *)",
       "PowerShell(cmdkey /list)",
-      "Bash(node node_modules/typescript/bin/tsc -b)"
+      "Bash(node node_modules/typescript/bin/tsc -b)",
+      "Bash(grep -n \"MinhaTaref\\\\|t\\\\\\\\.projeto\\\\|t\\\\\\\\.cliente\\\\|t\\\\\\\\.titulo\" src/pages/Inicio.tsx)"
     ]
   }
 }

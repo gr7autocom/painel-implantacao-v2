@@ -546,6 +546,18 @@
 - [x] `Inicio.tsx`: dashboard usa a mesma combinação responsável + participante para KPIs, lista de "minhas" e calendário
 - [x] `historico-utils.ts` + `HistoricoLinha.tsx`: ícones `UserPlus` (roxo) e `UserMinus` (cinza) + verbos "adicionou como participante" / "removeu dos participantes" com chip do nome do usuário
 
+### Subtarefas (1 nível de aninhamento) + exclusão de tarefa via Edge Function
+
+- [x] Migration `20260423210000_subtarefas.sql`: coluna `tarefas.tarefa_pai_id` (FK auto-referência CASCADE) + índice; trigger `validate_subtarefa` (BEFORE INSERT/UPDATE) bloqueia 2º nível, impede auto-referência, força `cliente_id`/`projeto_id`/`de_projeto` herdados da pai; trigger `auto_participante_subtarefa` (AFTER INSERT/UPDATE OF responsavel_id) adiciona o responsável da subtarefa como participante da pai automaticamente quando ele difere do responsável da pai (idempotente via UNIQUE + ON CONFLICT DO NOTHING)
+- [x] Edge Function `delete-tarefa`: valida JWT + `can('tarefa.excluir')`, coleta anexos da tarefa + subtarefas, apaga em batch no Cloudinary (mesmo padrão do `delete-projeto`) e executa DELETE (CASCADE remove subtarefas, comentários, checklist, anexos-DB, histórico, participantes); retorna `{ ok, tarefa_id, subtarefas_removidas, anexos_cloudinary: { deletados, falharam } }`. Deploy: `--no-verify-jwt`
+- [x] Tipos: `Tarefa.tarefa_pai_id`, `TarefaComRelacoes.tarefa_pai` com nested projeto; SELECT padrão inclui `tarefa_pai:tarefas!tarefas_tarefa_pai_id_fkey(id, titulo, codigo, projeto_id, projeto:projetos(id, nome))`
+- [x] `useTarefaForm` aceita `tarefaPaiFixa` (id + responsavelId): default de responsável = pai, INSERT seta `tarefa_pai_id`
+- [x] Componente `TarefaSubtarefasTab.tsx` (nova aba abaixo de Checklist, ícone `GitBranch`): lista subtarefas com #codigo + título + responsável + etapa + prazo + mini-bar do checklist; contagem de concluídas/pendentes no header; botão "Nova subtarefa" abre TarefaModal aninhado com `tarefaPaiFixa`; clique numa subtarefa abre TarefaModal aninhado com a tarefa
+- [x] `TarefaModal` ganha aba "Subtarefas" + estados pra modal aninhado (criar e abrir); o alerta de conclusão da pai (já existente para checklist) estende pra subtarefas pendentes — modal lista as duas pendências em bullets; submit é interceptado em ambos os casos
+- [x] Exclusão de tarefa em `Tarefas.tsx` e `ProjetoDetalhe.tsx` agora chama `supabase.functions.invoke('delete-tarefa')`; modal de confirmação ganha banner vermelho destacando "ação irreversível" + lista do que será apagado (subtarefas, comentários, checklist, histórico, anexos Cloudinary, participantes)
+- [x] Filtros: `Tarefas.tsx` views "Em aberto", "Todas", "Concluídas" agora restringem `tarefa_pai_id IS NULL` (só topo); "Minhas" continua incluindo tudo (responsável OR participante, em qualquer nível); `ProjetoDetalhe.tsx` lista do projeto restringe topo também
+- [x] Badge **"Subtarefa de X · Projeto Y"** (azul, ícone `GitBranch`) aparece nas linhas de `Tarefas.tsx` quando `tarefa.tarefa_pai`; em `Inicio.tsx` aparece como linha extra abaixo do título ("↳ Subtarefa de X · Projeto Y") tanto na lista principal quanto no painel "Atividades em [data]" do calendário
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -561,4 +573,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Participantes da tarefa: aba dedicada no TarefaModal, podeColaborar inclui participantes, checklist mostra nome inline de quem ticou, "Minhas" e dashboard incluem tarefas onde sou participante)
+**Última atualização:** 2026-04-23 (Subtarefas — 1 nível com aba dedicada, herança automática de cliente/projeto, auto-add do responsável da subtarefa como participante da pai, alerta ao concluir pai com subtarefas pendentes, exclusão de tarefa via Edge Function `delete-tarefa` com cleanup do Cloudinary)

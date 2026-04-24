@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardList, FolderKanban, Hand, Pin, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ClipboardList, FolderKanban, GitBranch, Hand, Pin, Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
 import { useUsuarioAtual } from '../lib/auth'
@@ -101,7 +101,7 @@ export function Tarefas() {
       .order('created_at', { ascending: false })
 
     if (view === 'minhas') {
-      // Inclui tarefas onde sou responsável OU participante
+      // Inclui tarefas onde sou responsável OU participante (subtarefas incluídas com badge)
       const { data: participacoes } = await supabase
         .from('tarefa_participantes')
         .select('tarefa_id')
@@ -115,10 +115,17 @@ export function Tarefas() {
         tarefasQuery = tarefasQuery.eq('responsavel_id', usuarioAtual.id)
       }
     } else if (view === 'aberto') {
-      tarefasQuery = tarefasQuery.is('responsavel_id', null).eq('de_projeto', false)
+      // só topo (sem subtarefas) e só avulsas
+      tarefasQuery = tarefasQuery
+        .is('responsavel_id', null)
+        .eq('de_projeto', false)
+        .is('tarefa_pai_id', null)
+    } else if (view === 'concluidas') {
+      // 'concluidas' — só avulsas (subtarefas concluídas aparecem em 'Minhas')
+      tarefasQuery = tarefasQuery.eq('de_projeto', false).is('tarefa_pai_id', null)
     } else {
-      // 'todas' e 'concluidas' — só avulsas
-      tarefasQuery = tarefasQuery.eq('de_projeto', false)
+      // 'todas' — só avulsas e só topo
+      tarefasQuery = tarefasQuery.eq('de_projeto', false).is('tarefa_pai_id', null)
     }
 
     const [tar, pr, et, ca, us] = await Promise.all([
@@ -185,9 +192,12 @@ export function Tarefas() {
 
   async function excluir() {
     if (!confirmDelete) return
-    const { error: delErr } = await supabase.from('tarefas').delete().eq('id', confirmDelete.id)
-    if (delErr) {
-      setError(delErr.message)
+    const { data, error: delErr } = await supabase.functions.invoke('delete-tarefa', {
+      body: { tarefa_id: confirmDelete.id },
+    })
+    if (delErr || (data && (data as { error?: string }).error)) {
+      const msg = (data as { error?: string } | null)?.error ?? delErr?.message ?? 'Erro ao excluir tarefa.'
+      setError(msg)
       return
     }
     setConfirmDelete(null)
@@ -407,6 +417,21 @@ export function Tarefas() {
                         Participante
                       </span>
                     )}
+                    {t.tarefa_pai && (
+                      <span className="inline-flex items-center gap-1 text-caption text-blue-700">
+                        <GitBranch className="w-3 h-3" />
+                        Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
+                        {t.tarefa_pai.projeto && (
+                          <> · <Link
+                            to={`/projetos/${t.tarefa_pai.projeto.id}`}
+                            className="hover:text-blue-900 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {t.tarefa_pai.projeto.nome}
+                          </Link></>
+                        )}
+                      </span>
+                    )}
                     {(t.checklist?.length ?? 0) > 0 && (
                       <ChecklistMiniBar checklist={t.checklist!} />
                     )}
@@ -566,10 +591,19 @@ export function Tarefas() {
             </p>
           </div>
         ) : (
-          <p className="text-sm text-gray-600">
-            Excluir a tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong>?
-            Esta ação não pode ser desfeita.
-          </p>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>
+              Excluir a tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong>?
+            </p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 font-medium mb-1">Atenção: ação irreversível.</p>
+              <p className="text-red-700 text-xs">
+                Serão apagados permanentemente: subtarefas (e tudo dentro delas), comentários,
+                itens de checklist, histórico, anexos (incluindo arquivos no Cloudinary) e
+                participantes vinculados.
+              </p>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

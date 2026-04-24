@@ -341,9 +341,19 @@ function LinhaTarefa({
       <button
         type="button"
         onClick={onAbrir}
-        className="flex-1 min-w-0 text-left text-sm font-medium text-gray-900 hover:text-blue-600 truncate"
+        className="flex-1 min-w-0 text-left"
       >
-        {t.titulo}
+        <div className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate">
+          {t.titulo}
+        </div>
+        {t.tarefa_pai && (
+          <div className="text-caption text-blue-600 truncate">
+            ↳ Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
+            {t.tarefa_pai.projeto && (
+              <> · {t.tarefa_pai.projeto.nome}</>
+            )}
+          </div>
+        )}
       </button>
 
       <div className="flex items-center gap-1.5 shrink-0">
@@ -554,7 +564,12 @@ function AtividadesDoDia({
                   <div className="text-xs text-gray-900 group-hover:text-blue-600 truncate">
                     #{t.codigo} {t.titulo}
                   </div>
-                  {t.cliente && (
+                  {t.tarefa_pai ? (
+                    <div className="text-caption text-blue-600 truncate">
+                      ↳ Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
+                      {t.tarefa_pai.projeto && <> · {t.tarefa_pai.projeto.nome}</>}
+                    </div>
+                  ) : t.cliente && (
                     <div className="text-caption text-gray-500 truncate">
                       {t.cliente.nome_fantasia}
                     </div>

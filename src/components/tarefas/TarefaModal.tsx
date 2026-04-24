@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   CheckSquare,
   FileText,
+  GitBranch,
   History,
   Lock,
   MessageSquare,
@@ -23,9 +24,10 @@ import { TarefaComentariosTab } from './TarefaComentariosTab'
 import { TarefaChecklistTab } from './TarefaChecklistTab'
 import { TarefaHistoricoTab } from './TarefaHistoricoTab'
 import { TarefaParticipantesTab } from './TarefaParticipantesTab'
+import { TarefaSubtarefasTab } from './TarefaSubtarefasTab'
 import { AssociarClienteField } from './AssociarClienteField'
 import { TarefaAnexosSection } from './TarefaAnexosSection'
-import { useTarefaForm, type Aba, type ProjetoFixo } from './useTarefaForm'
+import { useTarefaForm, type Aba, type ProjetoFixo, type TarefaPaiFixa } from './useTarefaForm'
 import type { Cliente, PendingAnexo, TarefaComRelacoes } from '../../lib/types'
 
 type Props = {
@@ -37,6 +39,8 @@ type Props = {
   clienteFixo?: Pick<Cliente, 'id' | 'nome_fantasia'> | null
   /** Quando vem de uma página de projeto (nova arquitetura): projeto fixo */
   projetoFixo?: ProjetoFixo | null
+  /** Quando criando uma subtarefa: id e responsável da pai (default do form) */
+  tarefaPaiFixa?: TarefaPaiFixa | null
   /** Aba inicial ao abrir (default: principal) */
   abaInicial?: Aba
 }
@@ -48,6 +52,7 @@ export function TarefaModal({
   tarefa,
   clienteFixo,
   projetoFixo,
+  tarefaPaiFixa,
   abaInicial,
 }: Props) {
   // Deriva clienteFixo para o campo de display quando projetoFixo é fornecido
@@ -61,7 +66,10 @@ export function TarefaModal({
   const [pendingAnexos, setPendingAnexos] = useState<PendingAnexo[]>([])
   const [confirmConcluirOpen, setConfirmConcluirOpen] = useState(false)
   const [itemsPendentes, setItemsPendentes] = useState(0)
+  const [subtarefasPendentes, setSubtarefasPendentes] = useState(0)
   const [verificandoChecklist, setVerificandoChecklist] = useState(false)
+  const [subtarefaCriarOpen, setSubtarefaCriarOpen] = useState(false)
+  const [subtarefaAberta, setSubtarefaAberta] = useState<TarefaComRelacoes | null>(null)
 
   const isCriando = !tarefa
   const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefa!)
@@ -80,13 +88,13 @@ export function TarefaModal({
     save,
     reabrirTarefa,
   } = useTarefaForm({
-    open, tarefa, clienteFixo, projetoFixo, abaInicial, etapas,
+    open, tarefa, clienteFixo, projetoFixo, tarefaPaiFixa, abaInicial, etapas,
     podeAtribuirNaCriacao, usuarioAtual, pendingAnexos, onSaved, onClose,
   })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Só verifica quando é edição de tarefa existente (tarefa nova não tem checklist ainda)
+    // Só verifica quando é edição de tarefa existente
     if (!tarefa) { save(e); return }
 
     const etapaNova = etapas.find((et) => et.id === form.etapa_id)
@@ -94,21 +102,33 @@ export function TarefaModal({
     const etapaAntiga = etapas.find((et) => et.id === tarefa.etapa_id)
     const estavaConcluido = !!etapaAntiga?.nome.toLowerCase().includes('conclu')
 
-    // Só alerta ao TRANSICIONAR para Concluído (não ao salvar já estando)
+    // Só alerta ao TRANSICIONAR para Concluído
     if (!estaConcluindo || estavaConcluido) { save(e); return }
 
     setVerificandoChecklist(true)
-    const { data, error: err } = await supabase
-      .from('tarefa_checklist')
-      .select('id, concluido')
-      .eq('tarefa_id', tarefa.id)
+    // Verifica items de checklist pendentes e subtarefas não-finalizadas em paralelo
+    const [checklistRes, subtarefasRes] = await Promise.all([
+      supabase.from('tarefa_checklist').select('id, concluido').eq('tarefa_id', tarefa.id),
+      supabase.from('tarefas')
+        .select('id, etapa:etapas!tarefas_etapa_id_fkey(nome)')
+        .eq('tarefa_pai_id', tarefa.id),
+    ])
     setVerificandoChecklist(false)
-    if (err) { save(e); return } // não bloqueia save se a consulta falhar
 
-    const pendentes = (data ?? []).filter((i) => !i.concluido).length
-    if (pendentes === 0) { save(e); return }
+    const pendentesItems = checklistRes.error
+      ? 0
+      : (checklistRes.data ?? []).filter((i) => !i.concluido).length
+    const pendentesSubs = subtarefasRes.error
+      ? 0
+      : (subtarefasRes.data ?? []).filter((s) => {
+          const nome = ((s.etapa as { nome?: string } | null)?.nome ?? '').toLowerCase()
+          return !nome.includes('conclu') && !nome.includes('cancel')
+        }).length
 
-    setItemsPendentes(pendentes)
+    if (pendentesItems === 0 && pendentesSubs === 0) { save(e); return }
+
+    setItemsPendentes(pendentesItems)
+    setSubtarefasPendentes(pendentesSubs)
     setConfirmConcluirOpen(true)
   }
 
@@ -241,6 +261,14 @@ export function TarefaModal({
                 {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefa} onChange={onSaved} />}
                 {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefa} />}
                 {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefa} />}
+                {aba === 'subtarefas' && (
+                  <TarefaSubtarefasTab
+                    tarefa={tarefa}
+                    onChange={onSaved}
+                    onCriarSubtarefa={() => setSubtarefaCriarOpen(true)}
+                    onAbrirSubtarefa={(s) => setSubtarefaAberta(s)}
+                  />
+                )}
                 {aba === 'historico' && <TarefaHistoricoTab tarefa={tarefa} />}
               </div>
             )}
@@ -478,10 +506,33 @@ export function TarefaModal({
         onSelect={(c) => setForm((f) => ({ ...f, cliente_id: c.id }))}
       />
 
+      {/* Modal aninhado: criar nova subtarefa da tarefa atual */}
+      {tarefa && (
+        <TarefaModal
+          open={subtarefaCriarOpen}
+          onClose={() => setSubtarefaCriarOpen(false)}
+          onSaved={() => { setSubtarefaCriarOpen(false); onSaved() }}
+          tarefa={null}
+          tarefaPaiFixa={{ id: tarefa.id, responsavelId: tarefa.responsavel_id }}
+        />
+      )}
+
+      {/* Modal aninhado: abrir subtarefa existente */}
+      <TarefaModal
+        open={!!subtarefaAberta}
+        onClose={() => setSubtarefaAberta(null)}
+        onSaved={() => { setSubtarefaAberta(null); onSaved() }}
+        tarefa={subtarefaAberta}
+      />
+
       <Modal
         open={confirmConcluirOpen}
         onClose={() => setConfirmConcluirOpen(false)}
-        title="Checklist pendente"
+        title={
+          itemsPendentes > 0 && subtarefasPendentes > 0 ? 'Pendências na tarefa'
+          : subtarefasPendentes > 0 ? 'Subtarefas pendentes'
+          : 'Checklist pendente'
+        }
         size="sm"
         footer={
           <>
@@ -490,7 +541,7 @@ export function TarefaModal({
               onClick={() => setConfirmConcluirOpen(false)}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Voltar para o checklist
+              Voltar
             </button>
             <button
               type="button"
@@ -506,13 +557,24 @@ export function TarefaModal({
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" aria-hidden />
           <div className="text-sm text-gray-700 space-y-2">
-            <p>
-              Esta tarefa ainda tem <strong>{itemsPendentes}</strong>{' '}
-              {itemsPendentes === 1 ? 'item pendente' : 'itens pendentes'} no checklist.
-            </p>
+            <p>Esta tarefa ainda tem:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              {itemsPendentes > 0 && (
+                <li>
+                  <strong>{itemsPendentes}</strong>{' '}
+                  {itemsPendentes === 1 ? 'item pendente' : 'itens pendentes'} no checklist
+                </li>
+              )}
+              {subtarefasPendentes > 0 && (
+                <li>
+                  <strong>{subtarefasPendentes}</strong>{' '}
+                  {subtarefasPendentes === 1 ? 'subtarefa não concluída' : 'subtarefas não concluídas'}
+                </li>
+              )}
+            </ul>
             <p className="text-gray-500">
-              Marcar como <strong>Concluído</strong> mesmo assim? Os itens pendentes continuarão
-              contando como incompletos no progresso do projeto até serem marcados.
+              Marcar como <strong>Concluído</strong> mesmo assim? Os pendentes continuarão
+              contando como incompletos no progresso do projeto até serem finalizados.
             </p>
           </div>
         </div>
@@ -535,6 +597,7 @@ function AbasSidebar({
     { id: 'participantes', label: 'Participantes', icon: Users, extra: true },
     { id: 'comentarios', label: 'Comentários', icon: MessageSquare, extra: true },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare, extra: true },
+    { id: 'subtarefas', label: 'Subtarefas', icon: GitBranch, extra: true },
     { id: 'historico', label: 'Histórico', icon: History, extra: true },
   ]
   return (
