@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -95,6 +95,7 @@ export function TarefaModal({
 
   const {
     form, setForm,
+    formInicial,
     saving,
     error,
     aba, setAba,
@@ -106,6 +107,19 @@ export function TarefaModal({
     open, tarefa, clienteFixo, projetoFixo, tarefaPaiFixa, abaInicial, etapas,
     podeAtribuirNaCriacao, usuarioAtual, pendingAnexos, onSaved, onClose,
   })
+
+  // Dirty check: form mudou OU (na criação) há anexos pendentes
+  const formMudou = JSON.stringify(form) !== JSON.stringify(formInicial)
+  const dirty = formMudou || (isCriando && pendingAnexos.length > 0)
+  const [confirmDescartarOpen, setConfirmDescartarOpen] = useState(false)
+
+  const tentarFechar = useCallback(() => {
+    if (dirty && !saving) {
+      setConfirmDescartarOpen(true)
+    } else {
+      onClose()
+    }
+  }, [dirty, saving, onClose])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -161,14 +175,37 @@ export function TarefaModal({
     [classificacoes, form.categoria_id]
   )
 
+  // Focus trap (mesmo padrão do Modal genérico)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+  const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+  useEffect(() => {
+    if (!open) return
+    previousFocusRef.current = document.activeElement as HTMLElement
+    const first = dialogRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE)[0]
+    first?.focus()
+    return () => { previousFocusRef.current?.focus() }
+  }, [open])
+
   useEffect(() => {
     if (!open) { setPendingAnexos([]); return }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') { tentarFechar(); return }
+      if (e.key !== 'Tab' || !dialogRef.current) return
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, tentarFechar])
 
   if (!open) return null
 
@@ -183,8 +220,9 @@ export function TarefaModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/40" onClick={tentarFechar} aria-hidden />
       <div
+        ref={dialogRef}
         className="relative bg-white rounded-xl shadow-xl w-full max-w-full sm:max-w-3xl lg:max-w-5xl h-[96dvh] sm:h-[92dvh] flex flex-col"
         role="dialog"
         aria-modal="true"
@@ -208,7 +246,7 @@ export function TarefaModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={tentarFechar}
             className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Fechar"
           >
@@ -238,7 +276,7 @@ export function TarefaModal({
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={tentarFechar}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
@@ -497,7 +535,7 @@ export function TarefaModal({
           <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={tentarFechar}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               {aba === 'principal' ? (readonly ? 'Fechar' : 'Cancelar') : 'Fechar'}
@@ -595,6 +633,39 @@ export function TarefaModal({
               contando como incompletos no progresso do projeto até serem finalizados.
             </p>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmDescartarOpen}
+        onClose={() => setConfirmDescartarOpen(false)}
+        title="Descartar alterações?"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmDescartarOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Continuar editando
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirmDescartarOpen(false); onClose() }}
+              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
+            >
+              Descartar
+            </button>
+          </>
+        }
+      >
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+          <p className="text-sm text-gray-700">
+            Você tem alterações não salvas neste formulário. Se sair agora, as mudanças
+            serão perdidas.
+          </p>
         </div>
       </Modal>
     </div>

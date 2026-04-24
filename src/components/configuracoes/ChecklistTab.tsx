@@ -341,7 +341,7 @@ export function ChecklistTab() {
                     <button
                       type="button"
                       onClick={() => openEdit(t)}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded"
+                      className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded"
                       aria-label={`Editar modelo ${t.nome}`}
                     >
                       <Pencil className="w-4 h-4" />
@@ -349,7 +349,7 @@ export function ChecklistTab() {
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(t)}
-                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded"
+                      className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded"
                       aria-label={`Excluir modelo ${t.nome}`}
                     >
                       <Trash2 className="w-4 h-4" />

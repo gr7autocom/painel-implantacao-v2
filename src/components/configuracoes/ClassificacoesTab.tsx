@@ -227,7 +227,7 @@ export function ClassificacoesTab() {
                       <button
                         type="button"
                         onClick={() => openEdit(c)}
-                        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded transition-colors"
+                        className="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-400/10 rounded transition-colors"
                         aria-label="Editar"
                       >
                         <Pencil className="w-4 h-4" />
@@ -235,7 +235,7 @@ export function ClassificacoesTab() {
                       <button
                         type="button"
                         onClick={() => setConfirmDelete(c)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded transition-colors"
+                        className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-400/10 rounded transition-colors"
                         aria-label="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />

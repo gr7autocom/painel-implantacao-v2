@@ -92,6 +92,7 @@ export function useTarefaForm({
   onClose,
 }: Params) {
   const [form, setForm] = useState<FormState>(emptyForm(''))
+  const [formInicial, setFormInicial] = useState<FormState>(emptyForm(''))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aba, setAba] = useState<Aba>('principal')
@@ -108,7 +109,7 @@ export function useTarefaForm({
     if (tarefa) {
       const ini = splitDateTime(tarefa.inicio_previsto)
       const prz = splitDateTime(tarefa.prazo_entrega)
-      setForm({
+      const novo: FormState = {
         titulo: tarefa.titulo,
         descricao: tarefa.descricao ?? '',
         inicio_data: ini.data,
@@ -121,13 +122,17 @@ export function useTarefaForm({
         etapa_id: tarefa.etapa_id ?? '',
         responsavel_id: tarefa.responsavel_id ?? '',
         cliente_id: tarefa.cliente_id ?? defaultClienteId,
-      })
+      }
+      setForm(novo)
+      setFormInicial(novo)
     } else {
       // Subtarefa: default responsável = responsável da pai (com fallback ao próprio user)
       const defaultResponsavel = tarefaPaiFixa
         ? (tarefaPaiFixa.responsavelId ?? usuarioAtual?.id ?? '')
         : (podeAtribuirNaCriacao ? (usuarioAtual?.id ?? '') : '')
-      setForm(emptyForm(defaultResponsavel, defaultClienteId))
+      const novo = emptyForm(defaultResponsavel, defaultClienteId)
+      setForm(novo)
+      setFormInicial(novo)
     }
   }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa])
 
@@ -234,6 +239,7 @@ export function useTarefaForm({
 
   return {
     form, setForm,
+    formInicial,
     saving,
     error, setError,
     aba, setAba,

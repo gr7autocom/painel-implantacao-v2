@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Cliente, EtapaImplantacao } from '../../lib/types'
 import {
@@ -67,18 +68,26 @@ type ProjetoDoCliente = {
   etapa_implantacao_id: string | null
 }
 
+/** Serializa o form para comparação dirty (normaliza Set como array sorted). */
+function serializarForm(f: FormState): string {
+  return JSON.stringify({ ...f, modulos: Array.from(f.modulos).sort() })
+}
+
 export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   const [form, setForm] = useState<FormState>(emptyForm())
+  const [formInicial, setFormInicial] = useState<FormState>(emptyForm())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [etapas, setEtapas] = useState<EtapaImplantacao[]>([])
   const [projetosDoCliente, setProjetosDoCliente] = useState<ProjetoDoCliente[]>([])
+  const [confirmDescartarOpen, setConfirmDescartarOpen] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setError(null)
+    let novo: FormState
     if (cliente) {
-      setForm({
+      novo = {
         razao_social: cliente.razao_social,
         nome_fantasia: cliente.nome_fantasia,
         cnpj: cliente.cnpj,
@@ -92,11 +101,23 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         pdv_qtd: cliente.pdv_qtd,
         modulos: new Set(cliente.modulos ?? []),
         ativo: cliente.ativo,
-      })
+      }
     } else {
-      setForm(emptyForm())
+      novo = emptyForm()
     }
+    setForm(novo)
+    setFormInicial(novo)
   }, [open, cliente])
+
+  const dirty = serializarForm(form) !== serializarForm(formInicial)
+
+  const tentarFechar = useCallback(() => {
+    if (dirty && !saving) {
+      setConfirmDescartarOpen(true)
+    } else {
+      onClose()
+    }
+  }, [dirty, saving, onClose])
 
   useEffect(() => {
     if (!open) return
@@ -250,16 +271,17 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   }
 
   return (
+    <>
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={tentarFechar}
       title={cliente ? `Editar — ${cliente.nome_fantasia}` : 'Novo Cliente'}
       size="lg"
       footer={
         <>
           <button
             type="button"
-            onClick={onClose}
+            onClick={tentarFechar}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Cancelar
@@ -486,6 +508,40 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         </Secao>
       </form>
     </Modal>
+
+    <Modal
+      open={confirmDescartarOpen}
+      onClose={() => setConfirmDescartarOpen(false)}
+      title="Descartar alterações?"
+      size="sm"
+      footer={
+        <>
+          <button
+            type="button"
+            onClick={() => setConfirmDescartarOpen(false)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Continuar editando
+          </button>
+          <button
+            type="button"
+            onClick={() => { setConfirmDescartarOpen(false); onClose() }}
+            className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
+          >
+            Descartar
+          </button>
+        </>
+      }
+    >
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" aria-hidden />
+        <p className="text-sm text-gray-700">
+          Você tem alterações não salvas neste cadastro. Se sair agora, as mudanças
+          serão perdidas.
+        </p>
+      </div>
+    </Modal>
+    </>
   )
 }
 

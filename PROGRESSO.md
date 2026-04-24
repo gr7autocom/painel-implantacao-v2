@@ -602,14 +602,18 @@ Mudanças globais de baixo risco, alto retorno em a11y/mobile.
 - [x] **Skip-link** "Pular para o conteúdo" no `Layout.tsx` (classe `.skip-link` no `index.css` com `transform: translateY(-200%)` + `:focus` traz pra dentro); `<main id="main-content">`
 - [x] **`text-[10px]` → `text-caption` (11px)** em `ProjetoMonitor:589` e `MensagemBubble:112`. Counters em badges de notificação mantidos em `text-[10px]` por necessidade de caber em círculos pequenos
 
-### Sprint 1 — Crítico (≈ 4h)
+### Sprint 1 — Crítico ✅ Concluído (2026-04-24)
 
 Correções de touch e contraste que afetam usabilidade real.
 
-- [ ] **Touch targets `p-1.5` → `p-2.5`** em todos botões-ícone das tabs em `components/configuracoes/` (CategoriasTab, ChecklistTab, ClassificacoesTab, EtapasTab, ImplantacaoTab, PrioridadesTab, UsuariosTab, PermissoesTab) — atualmente 28px, abaixo dos 44pt recomendados (WCAG)
-- [ ] **TarefaModal ganha focus trap** (replica padrão de `Modal.tsx:37-54` ou refatora pra usar componente `Modal`); hoje Tab pode escapar do modal
-- [ ] **Contraste do `--color-text-tertiary`**: trocar `#858585` por `#a8a8a8` em `design-tokens.css:49` (atinge 4.5:1 em surface card #3a3a3a). Validar com Chrome DevTools A11y panel
-- [ ] **Confirmação "unsaved changes"** ao fechar `TarefaModal` ou `ClienteModal` modificados — estado `formDirty` + diálogo "Descartar alterações?"
+- [x] **Touch targets `p-1.5` → `p-2.5`** (10px padding = 36px alvo) em 8 tabs de `components/configuracoes/` via `sed` no Bash (16 ocorrências). Mais perto dos 44pt WCAG sem quebrar a altura das rows
+- [x] **Focus trap no `TarefaModal`** replicando o padrão do `Modal.tsx`: `dialogRef`, `previousFocusRef`, useEffect que captura primeiro focusable + restaura ao desmontar; useEffect de keydown que prende `Tab`/`Shift+Tab` dentro do dialog
+- [x] **Contraste melhorado em `design-tokens.css`**: `--color-text-tertiary` `#858585` → `#a8a8a8` (~4.9:1 em surface card #3a3a3a); também subiu `--color-text-secondary` `#9e9e9e` → `#b0b0b0` (~5.7:1) e `--color-text-disabled` `#6e6e6e` → `#7a7a7a` para consistência
+- [x] **Confirmação "unsaved changes"** em `TarefaModal` e `ClienteModal`:
+  - `useTarefaForm` ganha `formInicial` (snapshot capturado em `open`/`tarefa` change) + retorna no objeto do hook
+  - `TarefaModal` computa `dirty = JSON.stringify(form) !== JSON.stringify(formInicial) || (isCriando && pendingAnexos.length > 0)`
+  - `ClienteModal` faz comparação local com helper `serializarForm` que normaliza `Set<string>` para array sorted
+  - Em ambos: `tentarFechar` (useCallback) intercepta ESC + click no backdrop + botão Cancelar/Fechar/X; abre modal âmbar "Descartar alterações?" com botões "Continuar editando" / "Descartar" (vermelho); confirmar fecha o modal pai sem salvar
 
 ### Sprint 2 — High Priority (≈ 1 semana)
 
@@ -653,4 +657,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint 0 do roadmap UI/UX concluído — vh→dvh, focus-visible global, reduced-motion, skip-link, text-caption)
+**Última atualização:** 2026-04-24 (Sprint 1 do roadmap UI/UX concluído — touch targets +28%, focus trap no TarefaModal, contraste WCAG AA do tertiary, confirmação "unsaved changes" em TarefaModal/ClienteModal)
