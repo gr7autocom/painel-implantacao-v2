@@ -4,7 +4,22 @@ import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
 import { Button } from '../components/Button'
 import { usePermissao } from '../lib/permissoes'
-import type { Cliente, ClienteComEtapa, EtapaImplantacao } from '../lib/types'
+import type { Cliente, EtapaImplantacao } from '../lib/types'
+
+// Cliente carregado com os projetos ativos. A etapa exibida e editada na grid
+// é a do primeiro projeto ativo (a coluna `clientes.etapa_implantacao_id` só
+// serve como default na criação dos projetos).
+type ProjetoMin = {
+  id: string
+  ativo: boolean
+  etapa_implantacao_id: string | null
+  etapa_implantacao?: Pick<EtapaImplantacao, 'id' | 'nome' | 'cor' | 'ordem'> | null
+}
+type ClienteComProjetos = Cliente & { projetos?: ProjetoMin[] | null }
+
+function projetoPrincipal(c: ClienteComProjetos): ProjetoMin | null {
+  return (c.projetos ?? []).find((p) => p.ativo) ?? null
+}
 import { Modal } from '../components/Modal'
 import { ClienteModal } from '../components/clientes/ClienteModal'
 import { EtapaImplantacaoBadge } from '../components/projetos/EtapaImplantacaoBadge'
@@ -19,11 +34,11 @@ export function Clientes() {
   const perm = usePermissao()
   const { toast } = useToast()
   usePageTitle('Clientes')
-  const [items, setItems] = useState<ClienteComEtapa[]>([])
+  const [items, setItems] = useState<ClienteComProjetos[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<ClienteComEtapa | null>(null)
+  const [editing, setEditing] = useState<ClienteComProjetos | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
   const [busca, setBusca] = useState('')
   const [etapaFiltro, setEtapaFiltro] = useState('')
@@ -35,12 +50,12 @@ export function Clientes() {
     const [cliRes, etRes] = await Promise.all([
       supabase
         .from('clientes')
-        .select('*, etapa_implantacao:etapas_implantacao(id, nome, cor, ordem)')
+        .select('*, projetos(id, ativo, etapa_implantacao_id, etapa_implantacao:etapas_implantacao(id, nome, cor, ordem))')
         .order('nome_fantasia'),
       supabase.from('etapas_implantacao').select('*').eq('ativo', true).order('ordem'),
     ])
     if (cliRes.error) setError(cliRes.error.message)
-    else setItems((cliRes.data ?? []) as unknown as ClienteComEtapa[])
+    else setItems((cliRes.data ?? []) as unknown as ClienteComProjetos[])
     setEtapasImplantacao((etRes.data ?? []) as EtapaImplantacao[])
     setLoading(false)
   }
@@ -60,7 +75,7 @@ export function Clientes() {
           (c.responsavel_comercial?.toLowerCase().includes(b) ?? false)
         if (!match) return false
       }
-      if (etapaFiltro && c.etapa_implantacao_id !== etapaFiltro) return false
+      if (etapaFiltro && projetoPrincipal(c)?.etapa_implantacao_id !== etapaFiltro) return false
       return true
     })
   }, [items, busca, etapaFiltro])
@@ -70,7 +85,7 @@ export function Clientes() {
     setModalOpen(true)
   }
 
-  function openEdit(item: ClienteComEtapa) {
+  function openEdit(item: ClienteComProjetos) {
     setEditing(item)
     setModalOpen(true)
   }
@@ -158,7 +173,19 @@ export function Clientes() {
                   <p className="font-semibold text-gray-900 text-sm">{c.nome_fantasia}</p>
                   <p className="text-xs text-gray-500">{c.razao_social}</p>
                 </div>
-                <EtapaImplantacaoBadge clienteId={c.id} etapa={c.etapa_implantacao ?? null} compacto />
+                {(() => {
+                  const proj = projetoPrincipal(c)
+                  return (
+                    <EtapaImplantacaoBadge
+                      projetoId={proj?.id}
+                      clienteId={c.id}
+                      etapa={proj?.etapa_implantacao ?? null}
+                      editavel={!!proj}
+                      onChanged={load}
+                      compacto
+                    />
+                  )
+                })()}
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
                 {c.responsavel_comercial && <span>Resp.: {c.responsavel_comercial}</span>}
@@ -235,7 +262,19 @@ export function Clientes() {
                   <td className="px-4 py-3 font-medium text-gray-900">{c.razao_social}</td>
                   <td className="px-4 py-3 text-gray-600">{c.nome_fantasia}</td>
                   <td className="px-4 py-3">
-                    <EtapaImplantacaoBadge clienteId={c.id} etapa={c.etapa_implantacao ?? null} compacto />
+                    {(() => {
+                  const proj = projetoPrincipal(c)
+                  return (
+                    <EtapaImplantacaoBadge
+                      projetoId={proj?.id}
+                      clienteId={c.id}
+                      etapa={proj?.etapa_implantacao ?? null}
+                      editavel={!!proj}
+                      onChanged={load}
+                      compacto
+                    />
+                  )
+                })()}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{c.responsavel_comercial ?? '-'}</td>
                   <td className="px-4 py-3 text-gray-600">{c.telefone ?? '-'}</td>
