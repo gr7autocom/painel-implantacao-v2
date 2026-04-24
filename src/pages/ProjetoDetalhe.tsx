@@ -29,6 +29,7 @@ import {
 } from '../lib/tarefa-utils'
 import { MODULOS_CLIENTE } from '../lib/clientes-utils'
 import { TarefaModal } from '../components/tarefas/TarefaModal'
+import { useTarefaPorCodigo } from '../lib/useTarefaPorCodigo'
 import { ChecklistMiniBar } from '../components/tarefas/ChecklistMiniBar'
 import { ClienteModal } from '../components/clientes/ClienteModal'
 import { Modal } from '../components/Modal'
@@ -78,8 +79,10 @@ export function ProjetoDetalhe() {
     setPage(1)
     if (id) localStorage.setItem(`projeto_filtros_${id}`, JSON.stringify(f))
   }
-  const [tarefaModalOpen, setTarefaModalOpen] = useState(false)
-  const [editando, setEditando] = useState<TarefaComRelacoes | null>(null)
+  const { codigo: codigoTarefa } = useParams<{ codigo: string }>()
+  const tarefaRoute = useTarefaPorCodigo(`/projetos/${id}/tarefas`, codigoTarefa)
+  const { tarefa: tarefaUrl, naoEncontrada: tarefaNaoEncontrada, abrirTarefa, fechar: fecharTarefaUrl, recarregar: recarregarTarefaUrl } = tarefaRoute
+  const [criandoTarefa, setCriandoTarefa] = useState(false)
   const [clienteModalOpen, setClienteModalOpen] = useState(false)
   const [confirmExcluirProjeto, setConfirmExcluirProjeto] = useState(false)
   const [excluindoProjeto, setExcluindoProjeto] = useState(false)
@@ -122,6 +125,13 @@ export function ProjetoDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  useEffect(() => {
+    if (tarefaNaoEncontrada && codigoTarefa) {
+      toast(`Tarefa #${codigoTarefa} não encontrada.`, 'error')
+      fecharTarefaUrl()
+    }
+  }, [tarefaNaoEncontrada, codigoTarefa, toast, fecharTarefaUrl])
+
   const tarefasFiltradas = useMemo(() => {
     const f = tarefas.filter((t) => {
       if (filtros.titulo && !t.titulo.toLowerCase().includes(filtros.titulo.toLowerCase()))
@@ -140,19 +150,21 @@ export function ProjetoDetalhe() {
   const tarefasOrdenadas = tarefasFiltradas.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   function abrirNova() {
-    setEditando(null)
-    setTarefaModalOpen(true)
+    setCriandoTarefa(true)
   }
 
   function abrirEdicao(t: TarefaComRelacoes) {
-    setEditando(t)
-    setTarefaModalOpen(true)
+    abrirTarefa(t.codigo)
   }
 
-  function assumir(t: TarefaComRelacoes) {
+  async function assumir(t: TarefaComRelacoes) {
     if (!usuarioAtual) return
-    setEditando({ ...t, responsavel_id: usuarioAtual.id })
-    setTarefaModalOpen(true)
+    await supabase
+      .from('tarefas')
+      .update({ responsavel_id: usuarioAtual.id, updated_at: new Date().toISOString() })
+      .eq('id', t.id)
+    abrirTarefa(t.codigo)
+    load()
   }
 
   async function excluir() {
@@ -443,11 +455,18 @@ export function ProjetoDetalhe() {
       </div>
 
       <TarefaModal
-        open={tarefaModalOpen}
-        onClose={() => setTarefaModalOpen(false)}
-        onSaved={() => { toast(editando ? 'Tarefa atualizada.' : 'Tarefa criada.'); load() }}
-        onTarefaUpdated={load}
-        tarefa={editando}
+        open={criandoTarefa || !!tarefaUrl}
+        onClose={() => {
+          if (criandoTarefa) setCriandoTarefa(false)
+          else fecharTarefaUrl()
+        }}
+        onSaved={() => {
+          toast(tarefaUrl ? 'Tarefa atualizada.' : 'Tarefa criada.')
+          load()
+          if (tarefaUrl) recarregarTarefaUrl()
+        }}
+        onTarefaUpdated={() => { load(); if (tarefaUrl) recarregarTarefaUrl() }}
+        tarefa={tarefaUrl}
         projetoFixo={{ id: projeto.id, nome: projeto.nome, clienteId: projeto.cliente_id, clienteNome: projeto.cliente?.nome_fantasia ?? '' }}
       />
 

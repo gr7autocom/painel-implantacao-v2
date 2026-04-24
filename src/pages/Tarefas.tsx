@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { useTarefaPorCodigo } from '../lib/useTarefaPorCodigo'
 import { ClipboardList, FolderKanban, GitBranch, Hand, Pin, Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
@@ -70,8 +71,10 @@ export function Tarefas() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editando, setEditando] = useState<TarefaComRelacoes | null>(null)
+  const { codigo } = useParams<{ codigo: string }>()
+  const { tarefa: tarefaUrl, naoEncontrada, abrirTarefa, fechar: fecharTarefaUrl, recarregar: recarregarTarefaUrl } =
+    useTarefaPorCodigo('/tarefas', codigo)
+  const [criandoNova, setCriandoNova] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<TarefaComRelacoes | null>(null)
   const [filtros, setFiltrosState] = useState<Filtros>(lerFiltrosSalvos)
   const [page, setPage] = useState(1)
@@ -148,6 +151,15 @@ export function Tarefas() {
     load()
   }, [usuarioAtual?.id, view])
 
+  // Tarefa requisitada via URL não existe (ou é código inválido) — avisa e
+  // redireciona para a lista limpa.
+  useEffect(() => {
+    if (naoEncontrada && codigo) {
+      toast(`Tarefa #${codigo} não encontrada.`, 'error')
+      fecharTarefaUrl()
+    }
+  }, [naoEncontrada, codigo, toast, fecharTarefaUrl])
+
   useEffect(() => { setPage(1) }, [view])
 
   const tarefasFiltradas = useMemo(() => {
@@ -175,19 +187,22 @@ export function Tarefas() {
   const tarefasPaginadas = tarefasFiltradas.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   function abrirNova() {
-    setEditando(null)
-    setModalOpen(true)
+    setCriandoNova(true)
   }
 
   function abrirEdicao(t: TarefaComRelacoes) {
-    setEditando(t)
-    setModalOpen(true)
+    abrirTarefa(t.codigo)
   }
 
-  function assumir(t: TarefaComRelacoes) {
+  async function assumir(t: TarefaComRelacoes) {
     if (!usuarioAtual) return
-    setEditando({ ...t, responsavel_id: usuarioAtual.id })
-    setModalOpen(true)
+    // Atribui antes de abrir, para que a edição já reflita a nova posse.
+    await supabase
+      .from('tarefas')
+      .update({ responsavel_id: usuarioAtual.id, updated_at: new Date().toISOString() })
+      .eq('id', t.id)
+    abrirTarefa(t.codigo)
+    load()
   }
 
   async function excluir() {
@@ -372,7 +387,7 @@ export function Tarefas() {
             }
           />
         ) : (
-          tarefasPaginadas.map((t) => {
+          tarefasPaginadas.map((t, i) => {
             const prazo = prazoBadge(t)
             const prioridadeCor = t.prioridade?.cor ?? '#9CA3AF'
             const podeEditar = perm.podeEditarTarefa(t)
@@ -382,7 +397,8 @@ export function Tarefas() {
             return (
               <div
                 key={t.id}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                className="stagger-item flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-[#ffffff] font-semibold text-xs shrink-0"
@@ -538,11 +554,18 @@ export function Tarefas() {
       </div>
 
       <TarefaModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSaved={() => { toast(editando ? 'Tarefa atualizada.' : 'Tarefa criada.'); load() }}
-        onTarefaUpdated={load}
-        tarefa={editando}
+        open={criandoNova || !!tarefaUrl}
+        onClose={() => {
+          if (criandoNova) setCriandoNova(false)
+          else fecharTarefaUrl()
+        }}
+        onSaved={() => {
+          toast(tarefaUrl ? 'Tarefa atualizada.' : 'Tarefa criada.')
+          load()
+          if (tarefaUrl) recarregarTarefaUrl()
+        }}
+        onTarefaUpdated={() => { load(); if (tarefaUrl) recarregarTarefaUrl() }}
+        tarefa={tarefaUrl}
       />
 
       <Modal

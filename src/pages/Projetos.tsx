@@ -233,19 +233,24 @@ export function Projetos() {
         />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-          {itensFiltrados.map((p) => (
-            <CardProjeto
+          {itensFiltrados.map((p, i) => (
+            <div
               key={p.id}
-              projeto={p}
-              progresso={progresso[p.id] ?? PROGRESSO_VAZIO}
-              onOpen={() => navigate(`/projetos/${p.id}`)}
-              onRenomear={perm.can('cliente.editar') ? () => {
-                setNovoNome(p.nome)
-                setRenomearProjeto(p)
-                setTimeout(() => renomearInputRef.current?.focus(), 50)
-              } : undefined}
-              onExcluir={perm.can('projeto.excluir') ? () => setExcluirProjeto(p) : undefined}
-            />
+              className="stagger-item"
+              style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
+            >
+              <CardProjeto
+                projeto={p}
+                progresso={progresso[p.id] ?? PROGRESSO_VAZIO}
+                onOpen={() => navigate(`/projetos/${p.id}`)}
+                onRenomear={perm.can('cliente.editar') ? () => {
+                  setNovoNome(p.nome)
+                  setRenomearProjeto(p)
+                  setTimeout(() => renomearInputRef.current?.focus(), 50)
+                } : undefined}
+                onExcluir={perm.can('projeto.excluir') ? () => setExcluirProjeto(p) : undefined}
+              />
+            </div>
           ))}
         </div>
       )}

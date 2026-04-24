@@ -176,8 +176,13 @@ export function Inicio() {
               />
             ) : (
               <ul className="divide-y divide-gray-200">
-                {tarefasOrdenadas.slice(0, LIMITE_INICIO).map((t) => (
-                  <LinhaTarefa key={t.id} tarefa={t} onAbrir={() => setTarefaAberta(t)} />
+                {tarefasOrdenadas.slice(0, LIMITE_INICIO).map((t, i) => (
+                  <LinhaTarefa
+                    key={t.id}
+                    tarefa={t}
+                    onAbrir={() => setTarefaAberta(t)}
+                    staggerIndex={i}
+                  />
                 ))}
               </ul>
             )}
@@ -318,15 +323,20 @@ function CardTotal({
 function LinhaTarefa({
   tarefa: t,
   onAbrir,
+  staggerIndex,
 }: {
   tarefa: TarefaComRelacoes
   onAbrir: () => void
+  staggerIndex?: number
 }) {
   const prazo = prazoBadge(t)
   const prioridadeCor = t.prioridade?.cor ?? '#9CA3AF'
 
   return (
-    <li className="flex items-center gap-4 px-4 py-1.5 hover:bg-gray-50 transition-colors">
+    <li
+      className={`flex items-center gap-4 px-4 py-1.5 hover:bg-gray-50 transition-colors${staggerIndex !== undefined ? ' stagger-item' : ''}`}
+      style={staggerIndex !== undefined ? { animationDelay: `${Math.min(staggerIndex, 12) * 35}ms` } : undefined}
+    >
       <div
         className="w-6 h-6 rounded-full flex items-center justify-center text-[#ffffff] font-semibold text-xs shrink-0"
         style={{ backgroundColor: prioridadeCor }}

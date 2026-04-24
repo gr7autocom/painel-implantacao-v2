@@ -52,6 +52,17 @@ type Props = {
   abaInicial?: Aba
 }
 
+function formatarRascunhoIdade(ts: number): string {
+  const diffMs = Date.now() - ts
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'agora há pouco'
+  if (min < 60) return `${min} min atrás`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `${h}h atrás`
+  const d = Math.floor(h / 24)
+  return `${d} dia${d > 1 ? 's' : ''} atrás`
+}
+
 export function TarefaModal({
   open,
   onClose,
@@ -103,6 +114,10 @@ export function TarefaModal({
     reabrindo,
     save,
     reabrirTarefa,
+    rascunhoPendente,
+    restaurarRascunho,
+    descartarRascunho,
+    limparRascunhoAtual,
   } = useTarefaForm({
     open, tarefa, clienteFixo, projetoFixo, tarefaPaiFixa, abaInicial, etapas,
     podeAtribuirNaCriacao, usuarioAtual, pendingAnexos, onSaved, onClose,
@@ -180,6 +195,37 @@ export function TarefaModal({
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
+  // Swipe-to-dismiss (mobile <640px). Manipula transform via ref direto pra
+  // evitar re-render a cada touchmove. SWIPE_FECHA: distância em px que dispara
+  // fechamento ao soltar o dedo.
+  const SWIPE_FECHA = 100
+  const dragStartYRef = useRef(0)
+  const dragAtivoRef = useRef(false)
+  const onSwipeStart = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 640) return
+    dragStartYRef.current = e.touches[0].clientY
+    dragAtivoRef.current = true
+    if (dialogRef.current) dialogRef.current.style.transition = 'none'
+  }
+  const onSwipeMove = (e: React.TouchEvent) => {
+    if (!dragAtivoRef.current || !dialogRef.current) return
+    const delta = e.touches[0].clientY - dragStartYRef.current
+    if (delta < 0) return
+    dialogRef.current.style.transform = `translateY(${delta}px)`
+  }
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    if (!dragAtivoRef.current || !dialogRef.current) return
+    dragAtivoRef.current = false
+    const delta = e.changedTouches[0].clientY - dragStartYRef.current
+    dialogRef.current.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)'
+    if (delta > SWIPE_FECHA) {
+      dialogRef.current.style.transform = 'translateY(100%)'
+      window.setTimeout(() => tentarFechar(), 180)
+    } else {
+      dialogRef.current.style.transform = 'translateY(0)'
+    }
+  }
+
   useEffect(() => {
     if (!open) return
     previousFocusRef.current = document.activeElement as HTMLElement
@@ -219,16 +265,26 @@ export function TarefaModal({
   const titleId = 'tarefa-modal-title'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={tentarFechar} aria-hidden />
+    <div className="fixed inset-0 z-50 flex sm:justify-end">
+      <div className="absolute inset-0 bg-black/40 tarefa-slideover-backdrop" onClick={tentarFechar} aria-hidden />
       <div
         ref={dialogRef}
-        className="relative bg-white rounded-xl shadow-xl w-full max-w-full sm:max-w-3xl lg:max-w-5xl h-[96dvh] sm:h-[92dvh] flex flex-col"
+        className="tarefa-slideover relative bg-white shadow-2xl w-full h-[100dvh] sm:max-w-3xl lg:max-w-5xl sm:rounded-l-xl flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
       >
-        <div className="flex items-start justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+        <div
+          className="flex flex-col sm:block border-b border-gray-200"
+          onTouchStart={onSwipeStart}
+          onTouchMove={onSwipeMove}
+          onTouchEnd={onSwipeEnd}
+        >
+          <div
+            className="sm:hidden h-1 w-10 bg-gray-300 rounded-full mx-auto mt-2 mb-1"
+            aria-hidden
+          />
+        <div className="flex items-start justify-between px-4 sm:px-6 py-3 sm:py-4">
           <div>
             <h2 id={titleId} className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               {tarefa ? `Tarefa #${tarefa.codigo}` : form.titulo || 'Nova Tarefa'}
@@ -252,6 +308,7 @@ export function TarefaModal({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
         </div>
 
         {aguardandoConfirmacao && tarefa && (
@@ -335,6 +392,36 @@ export function TarefaModal({
             <AlertBanner>
               {error}
             </AlertBanner>
+          )}
+
+          {rascunhoPendente && (
+            <div className="mb-4 p-3 bg-amber-400/15 border border-amber-400/40 text-amber-200 text-sm rounded-lg flex items-start gap-3">
+              <span className="text-lg leading-none mt-0.5" aria-hidden>📝</span>
+              <div className="flex-1">
+                <div className="font-medium">
+                  Restaurar rascunho não salvo?
+                </div>
+                <div className="text-xs text-amber-300/80 mt-0.5">
+                  Você tinha alterações sem salvar de {formatarRascunhoIdade(rascunhoPendente.savedAt)}.
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={restaurarRascunho}
+                    className="px-3 py-1 text-xs font-semibold bg-amber-500 text-[#1e1e1e] rounded hover:bg-amber-400"
+                  >
+                    Restaurar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={descartarRascunho}
+                    className="px-3 py-1 text-xs font-medium text-amber-200 hover:bg-amber-400/15 rounded"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {!readonly && !isCriando && !podeReatribuir && (
@@ -652,7 +739,7 @@ export function TarefaModal({
             </button>
             <button
               type="button"
-              onClick={() => { setConfirmDescartarOpen(false); onClose() }}
+              onClick={() => { setConfirmDescartarOpen(false); limparRascunhoAtual(); onClose() }}
               className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
             >
               Descartar

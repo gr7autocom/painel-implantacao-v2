@@ -355,9 +355,11 @@ Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistT
 
 ### Estilo visual
 
+- **Fonte:** Inter (Google Fonts) carregada via `<link>` em [index.html](index.html); `font-family: 'Inter', system-ui, ...` no body em [src/index.css](src/index.css) com `font-feature-settings: 'cv11', 'ss01', 'ss03'` (alternates de leitura — single-storey 1, ss01/ss03)
 - **Tema:** dark "sempre" (decisão tomada na Sprint 2 do roadmap UI/UX). Não há light mode planejado. Em vez de tokens semânticos custom, **remappamos a paleta default do Tailwind** em [src/design-tokens.css](src/design-tokens.css) — `--color-white: #3a3a3a` (vira card surface), escala `gray-*` invertida (gray-50 = quase preto, gray-900 = quase branco), `border-gray-200` = `#3a3a3a`, etc. Por isso classes utilitárias do Tailwind (`bg-white`, `text-gray-700`, `border-gray-200`) **já produzem o visual dark** sem precisar de classe extra. **Regra:** ao escrever componente novo, escreva como se fosse light mode default do Tailwind — o remap cuida do resto
 - **Quando usar hex fixo `text-[#ffffff]`:** apenas em texto sobre cor sólida saturada (botão primário azul, banner Toast colorido) onde `text-white` viraria `#3a3a3a` (= o background do card e some). Padrão estabelecido em `Button.tsx`, `Toast.tsx`, `AlertBanner.tsx`
 - **Type scale** ([src/design-tokens.css](src/design-tokens.css)): `--text-display: 30px`, `--text-h1: 24px`, `--text-h2: 20px`, `--text-h3: 18px`, `--text-body: 14px`, `--text-caption: 11px`. Usar `text-display` / `text-h1` / `text-caption` etc. em vez de `text-3xl` / `text-[10px]`
+- **Animação `.stagger-item`** (em [src/index.css](src/index.css)): keyframe que faz cards/rows entrarem em cascata. Aplicado em listas/grids passando `style={{ animationDelay: \`${Math.min(i, 12) * 35}ms\` }}` no item. Cap em 12 itens pra animação total ≤ 420ms. Já respeita `prefers-reduced-motion`
 - Botão primário: `bg-blue-600 text-[#ffffff] rounded-lg`
 - Badges com cor da entidade: `backgroundColor: ${cor}20` (alpha hex) + `color: cor`
 - Avatares simples com inicial do nome (placeholder até ter foto real)
@@ -383,6 +385,46 @@ Padrões aplicados em todo o projeto (Sprints 0-2 do roadmap UI/UX):
 ### Breadcrumbs
 
 [src/components/Breadcrumb.tsx](src/components/Breadcrumb.tsx) — `<nav aria-label="Breadcrumb">` semântico com `<ol>`, ícone Home opcional (prop `comHome`, default true), último item renderizado como `<span aria-current="page">` (não-link). Usado em rotas profundas: `/projetos/:id` (Projetos › Cliente X) e `/projetos/:id/monitor` (Projetos › Cliente X › Monitor). Substitui o link "Voltar para…" tradicional.
+
+### TarefaModal — rota dedicada + slide-over + autosave
+
+Rotas que renderizam o modal pela URL (Sprint 3.4):
+
+- `/tarefas/:codigo` — abre TarefaModal sobre a página `Tarefas`
+- `/projetos/:id/tarefas/:codigo` — abre TarefaModal sobre a página `ProjetoDetalhe`
+- O `:codigo` é o `tarefas.codigo` (SERIAL público estável, ex: `9089`), não UUID
+
+Hook genérico [src/lib/useTarefaPorCodigo.ts](src/lib/useTarefaPorCodigo.ts):
+
+```ts
+const { tarefa, loading, naoEncontrada, abrirTarefa, fechar, recarregar } =
+  useTarefaPorCodigo('/tarefas', codigo)  // codigo vem de useParams()
+```
+
+Carrega a tarefa via `SELECT_TAREFA_COM_RELACOES`. `abrirTarefa(codigo)` → navigate; `fechar()` → volta pra rota base. Quando `naoEncontrada`, a página deve mostrar toast e chamar `fechar()`.
+
+**Inicio.tsx e ProjetoMonitor.tsx mantêm modal local** (sem URL routing) — link compartilhável vive em `/tarefas/:codigo`. Subtarefas continuam em modal aninhado (sem navegação) por enquanto.
+
+**Visual slide-over** ([src/components/tarefas/TarefaModal.tsx](src/components/tarefas/TarefaModal.tsx)):
+
+- Em desktop (≥640px): painel à direita, max-w-3xl/5xl, `rounded-l-xl`, anima de translateX 100% → 0 (240ms cubic-bezier)
+- Em mobile (<640px): tela cheia, anima de translateY 100% → 0 (220ms)
+- CSS keyframes `tarefa-slideover-in-desktop` / `-in-mobile` em [src/index.css](src/index.css); classe `.tarefa-slideover` no dialog
+
+**Swipe-to-dismiss** (Sprint 3.5, mobile <640px):
+
+- Touch handlers `onSwipeStart/Move/End` no header do modal manipulam `transform: translateY()` direto via ref (sem state, evita re-render a 60fps)
+- Threshold 100px → fecha animando até 100%; abaixo, volta com transition 200ms
+- Indicador visual: `<div className="sm:hidden h-1 w-10 bg-gray-300 rounded-full mx-auto mt-2 mb-1">` no topo (padrão iOS bottom sheets)
+- Só desliza pra baixo (delta < 0 ignorado)
+
+**Autosave em rascunho** ([src/components/tarefas/useTarefaForm.ts](src/components/tarefas/useTarefaForm.ts)):
+
+- Form (titulo, descricao, datas, ids) salvo em `localStorage` debounced 1.2s sempre que dirty
+- TTL 7 dias; chave por contexto: `tarefa-rascunho:${tarefaId}`, `nova-subtarefa:${paiId}:${userId}`, `nova-projeto:${projetoId}:${userId}`, `nova-cliente:${clienteId}:${userId}` ou `nova-avulsa:${userId}`
+- Ao abrir, se há rascunho mais novo que `tarefa.updated_at` (ou tarefa nova): exibe banner âmbar **"📝 Restaurar rascunho não salvo? (XX min atrás)"** com botões Restaurar / Descartar — antes do banner ser resolvido, autosave fica pausado pra não sobrescrever
+- Limpa rascunho em: save sucesso, descartar via "unsaved changes", clique em Descartar do banner
+- Anexos/comentários/checklist NÃO são rascunhados — vão direto pro banco como hoje (autosave cobre só o `FormState`)
 
 ### Datas
 

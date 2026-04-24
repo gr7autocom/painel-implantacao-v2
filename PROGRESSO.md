@@ -583,6 +583,27 @@
 - [x] **2.3 Errors per-field em ClienteModal** — estado `errors: Record<string, string>` em paralelo ao banner global; CNPJ e sistema_atual ganham `<p>` inline com `aria-invalid` + `aria-describedby` ligando ao erro; ao digitar no campo o erro é limpo. TarefaModal pulado (usa HTML5 `required` + AlertBanner; sem validações JS pra mapear)
 - [x] **2.4 Auto-focus no primeiro campo inválido** em ClienteModal: `useEffect([errors])` busca `document.getElementById('cliente-field-${primeiroErro}')` e dá `.focus()` (WCAG `focus-management`)
 
+### Sprint 3 — UI/UX Estratégico ✅ Concluído (2026-04-24)
+
+- [x] **3.1 Fonte Inter** via Google Fonts: `<link>` preconnect + stylesheet em `index.html`; `font-family: 'Inter', system-ui, ...` no `index.css` body com `font-feature-settings: 'cv11', 'ss01', 'ss03'` (alternates de leitura) + antialiased smoothing. Title da página passou para "GR7 — Painel de Implantação"
+- [x] **3.2 Stagger animation** em listas/grids: keyframe `stagger-in` (translateY 8px → 0 + opacity 0 → 1, 280ms cubic-bezier 0.22/1/0.36/1) + classe `.stagger-item` em `index.css`. Aplicado em `Projetos.tsx` (cards), `Tarefas.tsx` (rows) e `Inicio.tsx` (lista do dashboard via prop `staggerIndex` no `LinhaTarefa`). Delay = `Math.min(i, 12) * 35ms` (cap em 12 itens pra animação total ≤ 420ms). Respeita `prefers-reduced-motion` (zerado globalmente)
+- [x] **3.3 Autosave em TarefaModal** via `localStorage`:
+  - Helpers `lerRascunho`/`salvarRascunho`/`limparRascunho` + TTL 7 dias em `useTarefaForm.ts`
+  - Chave por contexto: `tarefa-rascunho:${tarefaId}`, `nova-subtarefa:${paiId}:${userId}`, `nova-projeto:${projetoId}:${userId}`, `nova-cliente:${clienteId}:${userId}` ou `nova-avulsa:${userId}`
+  - `useEffect` debounced 1.2s salva form se for dirty (e nenhum rascunho pendente esperando decisão)
+  - Ao abrir, carrega rascunho se existe E é mais novo que `tarefa.updated_at` (evita restaurar lixo após save de outra sessão)
+  - `TarefaModal` mostra banner âmbar "📝 Restaurar rascunho não salvo? (XX min atrás)" com botões Restaurar / Descartar
+  - Limpa rascunho em: save sucesso, descartar via "unsaved changes", clique em Descartar do banner
+- [x] **3.4 TarefaModal como rota dedicada** `/tarefas/:codigo` e `/projetos/:id/tarefas/:codigo`:
+  - Hook genérico `src/lib/useTarefaPorCodigo.ts` carrega tarefa por `codigo` (SERIAL público), expõe `abrirTarefa(cod)` / `fechar()` / `recarregar()`
+  - `App.tsx` ganha rotas `tarefas/:codigo` e `projetos/:id/tarefas/:codigo` (renderizam mesmo componente, leem `useParams`)
+  - `Tarefas.tsx` e `ProjetoDetalhe.tsx` substituem `editando` state por URL: `abrirEdicao(t)` faz navigate; close volta pra rota base; toast + redirect quando codigo não encontrado
+  - Botão "Assumir" agora atribui no banco antes de abrir (UX direto: "Assumir" = "minha agora")
+  - Inicio.tsx e ProjetoMonitor.tsx **mantém modal local** (sem URL routing) — link compartilhável vive no `/tarefas/:codigo`
+  - Visual: `TarefaModal` virou **slide-over à direita** (60-70% viewport ≥640px); mobile continua tela cheia. Animação `tarefa-slideover-in-desktop` (translateX) ou `mobile` (translateY), 220-240ms cubic-bezier
+  - Subtarefas continuam em modal aninhado por ora (decisão consciente — refactor "Linear-style" que perde a pai do contexto fica pra próxima sprint)
+- [x] **3.5 Swipe-to-dismiss** em mobile (`<640px`): touch handlers no header do TarefaModal manipulando `transform: translateY()` direto via ref (sem state, evita re-render a 60fps). Threshold 100px → fecha animando até `100%`. Indicador visual: barra cinza horizontal `h-1 w-10` no topo (padrão iOS bottom sheets). Só desliza pra baixo (delta < 0 ignorado). Volta pra posição com `transition transform 200ms` se não atingir o threshold
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -629,16 +650,14 @@ Correções de touch e contraste que afetam usabilidade real.
 
 Decisão tomada: **Opção B (sempre dark)** — manter o remap Tailwind documentado em vez de adotar tokens semânticos. Detalhes na seção concluída acima.
 
-### Sprint 3 — Estratégico (3-4 semanas)
+### Sprint 3 — Estratégico ✅ Concluído (2026-04-24)
 
-Mudanças arquiteturais que dão grande retorno mas pedem refactor.
+Refactor entregue: Inter, stagger, autosave, rota dedicada `/tarefas/:codigo` + slide-over, swipe-to-dismiss mobile. Light mode permanece descartado (Opção B). Detalhes na seção concluída acima.
 
-- [ ] **TarefaModal vira rota dedicada** com slide-over panel (60-70% da viewport à direita): permite deep-link, browser back, multi-tab; reduz claustrofobia em laptop pequeno; padrão moderno (Linear, Notion, GitHub Issues)
-- [ ] **Adotar fonte própria** (Inter ou Geist via Google Fonts): `font-family` no `index.css` + preload em `index.html`; reforça identidade
-- [ ] **Autosave em forms longos** (TarefaModal): debounced save em `localStorage` por `tarefa_id`; ao reabrir, oferece "Restaurar rascunho?"
-- [ ] **Light mode** (se entrar no roadmap; pré-requisito: Sprint 2 Opção A concluída)
-- [ ] **Stagger animation** em list/grid (`Projetos.tsx`, grids de cards): delay incremental 30-50ms por card
-- [ ] **Swipe-to-dismiss** em modais mobile (com `framer-motion` ou Touch Events; cuidado com conflito de scroll interno)
+### Itens fora de escopo / sprints futuras
+
+- [ ] Refactor "Linear-style" de subtarefas (perde a tarefa pai do contexto ao navegar)
+- [ ] URL routing em Inicio e ProjetoMonitor (atualmente abrem TarefaModal sem URL — link compartilhável vive no `/tarefas/:codigo`)
 
 ### O que NÃO vai mudar (decisão consciente)
 
@@ -655,4 +674,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint 2 do roadmap UI/UX concluído — Opção B sempre-dark documentada, type scale, Breadcrumb, axe-core em dev, max-w-screen-2xl, errors per-field + auto-focus em ClienteModal)
+**Última atualização:** 2026-04-24 (Sprint 3 do roadmap UI/UX concluído — fonte Inter, stagger animation em listas, autosave em TarefaModal via localStorage, rota dedicada `/tarefas/:codigo` com slide-over, swipe-to-dismiss em mobile)

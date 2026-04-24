@@ -1,7 +1,42 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { isFinalizada } from '../../lib/tarefa-utils'
 import type { Cliente, Etapa, PendingAnexo, TarefaComRelacoes, UsuarioAutenticado } from '../../lib/types'
+
+// Autosave: chave por contexto + TTL de 7 dias.
+const RASCUNHO_PREFIX = 'tarefa-rascunho:'
+const RASCUNHO_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+type RascunhoSalvo = {
+  savedAt: number
+  form: FormState
+}
+
+function lerRascunho(key: string): RascunhoSalvo | null {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as RascunhoSalvo
+    if (!parsed?.savedAt || !parsed?.form) return null
+    if (Date.now() - parsed.savedAt > RASCUNHO_TTL_MS) {
+      localStorage.removeItem(key)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function salvarRascunho(key: string, form: FormState) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), form }))
+  } catch { /* quota/private mode — ignora */ }
+}
+
+function limparRascunho(key: string) {
+  try { localStorage.removeItem(key) } catch { /* ignore */ }
+}
 
 export type Aba = 'principal' | 'participantes' | 'comentarios' | 'checklist' | 'subtarefas' | 'historico'
 
@@ -98,18 +133,33 @@ export function useTarefaForm({
   const [aba, setAba] = useState<Aba>('principal')
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false)
   const [reabrindo, setReabrindo] = useState(false)
+  const [rascunhoPendente, setRascunhoPendente] = useState<RascunhoSalvo | null>(null)
+  const rascunhoKeyRef = useRef<string | null>(null)
 
   const defaultClienteId = projetoFixo?.clienteId ?? clienteFixo?.id ?? ''
+
+  // Chave do rascunho calculada por contexto: tarefa existente, subtarefa nova,
+  // tarefa nova de projeto/cliente fixo ou avulsa.
+  const rascunhoKey = useMemo(() => {
+    if (!usuarioAtual) return null
+    if (tarefa) return `${RASCUNHO_PREFIX}${tarefa.id}`
+    if (tarefaPaiFixa) return `${RASCUNHO_PREFIX}nova-subtarefa:${tarefaPaiFixa.id}:${usuarioAtual.id}`
+    if (projetoFixo) return `${RASCUNHO_PREFIX}nova-projeto:${projetoFixo.id}:${usuarioAtual.id}`
+    if (clienteFixo) return `${RASCUNHO_PREFIX}nova-cliente:${clienteFixo.id}:${usuarioAtual.id}`
+    return `${RASCUNHO_PREFIX}nova-avulsa:${usuarioAtual.id}`
+  }, [tarefa?.id, tarefaPaiFixa?.id, projetoFixo?.id, clienteFixo?.id, usuarioAtual?.id])
 
   useEffect(() => {
     if (!open) return
     setError(null)
     setAba(abaInicial && tarefa ? abaInicial : 'principal')
     setAguardandoConfirmacao(!!tarefa && isFinalizada(tarefa))
+    rascunhoKeyRef.current = rascunhoKey
+    let novo: FormState
     if (tarefa) {
       const ini = splitDateTime(tarefa.inicio_previsto)
       const prz = splitDateTime(tarefa.prazo_entrega)
-      const novo: FormState = {
+      novo = {
         titulo: tarefa.titulo,
         descricao: tarefa.descricao ?? '',
         inicio_data: ini.data,
@@ -123,18 +173,63 @@ export function useTarefaForm({
         responsavel_id: tarefa.responsavel_id ?? '',
         cliente_id: tarefa.cliente_id ?? defaultClienteId,
       }
-      setForm(novo)
-      setFormInicial(novo)
     } else {
       // Subtarefa: default responsável = responsável da pai (com fallback ao próprio user)
       const defaultResponsavel = tarefaPaiFixa
         ? (tarefaPaiFixa.responsavelId ?? usuarioAtual?.id ?? '')
         : (podeAtribuirNaCriacao ? (usuarioAtual?.id ?? '') : '')
-      const novo = emptyForm(defaultResponsavel, defaultClienteId)
-      setForm(novo)
-      setFormInicial(novo)
+      novo = emptyForm(defaultResponsavel, defaultClienteId)
     }
-  }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa])
+    setForm(novo)
+    setFormInicial(novo)
+
+    // Verifica rascunho pendente. Para tarefa existente, ignora se mais antigo
+    // que o último updated_at (significa que outra sessão já gravou as mudanças).
+    if (rascunhoKey) {
+      const r = lerRascunho(rascunhoKey)
+      if (r) {
+        const tarefaUpdatedMs = tarefa?.updated_at ? new Date(tarefa.updated_at).getTime() : 0
+        if (r.savedAt > tarefaUpdatedMs && JSON.stringify(r.form) !== JSON.stringify(novo)) {
+          setRascunhoPendente(r)
+        } else {
+          limparRascunho(rascunhoKey)
+          setRascunhoPendente(null)
+        }
+      } else {
+        setRascunhoPendente(null)
+      }
+    }
+  }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa, rascunhoKey])
+
+  // Autosave debounced: a cada mudança no form, espera 1.2s e grava no localStorage
+  // se ainda for diferente do snapshot inicial. Não dispara se rascunho pendente
+  // ainda não foi resolvido (evita sobrescrever antes do usuário decidir).
+  useEffect(() => {
+    if (!open || !rascunhoKey || rascunhoPendente) return
+    const dirty = JSON.stringify(form) !== JSON.stringify(formInicial)
+    if (!dirty) {
+      // form voltou pro estado inicial → limpa rascunho pra não restaurar lixo
+      limparRascunho(rascunhoKey)
+      return
+    }
+    const t = setTimeout(() => salvarRascunho(rascunhoKey, form), 1200)
+    return () => clearTimeout(t)
+  }, [form, formInicial, open, rascunhoKey, rascunhoPendente])
+
+  const restaurarRascunho = useCallback(() => {
+    if (!rascunhoPendente) return
+    setForm(rascunhoPendente.form)
+    setRascunhoPendente(null)
+  }, [rascunhoPendente])
+
+  const descartarRascunho = useCallback(() => {
+    if (rascunhoKey) limparRascunho(rascunhoKey)
+    setRascunhoPendente(null)
+  }, [rascunhoKey])
+
+  const limparRascunhoAtual = useCallback(() => {
+    if (rascunhoKeyRef.current) limparRascunho(rascunhoKeyRef.current)
+  }, [])
 
   async function reabrirTarefa() {
     if (!tarefa) return
@@ -194,6 +289,7 @@ export function useTarefaForm({
         setError(result.error.code === '42501' ? 'Você não tem permissão para esta operação.' : result.error.message)
         return
       }
+      limparRascunhoAtual()
       if (responsavelMudou) {
         notificarAtribuicao(tarefa.id, novoResponsavel!)
       }
@@ -233,6 +329,7 @@ export function useTarefaForm({
         notificarAtribuicao(result.data.id, novoResponsavel!)
       }
     }
+    limparRascunhoAtual()
     onSaved()
     onClose()
   }
@@ -247,5 +344,9 @@ export function useTarefaForm({
     reabrindo,
     save,
     reabrirTarefa,
+    rascunhoPendente,
+    restaurarRascunho,
+    descartarRascunho,
+    limparRascunhoAtual,
   }
 }
