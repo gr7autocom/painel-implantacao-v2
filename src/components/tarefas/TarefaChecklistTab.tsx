@@ -41,15 +41,17 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
 
   const podeEditarItens = perm.podeColaborarTarefa(tarefa) || perm.can('checklist.editar_qualquer_tarefa')
 
-  async function load() {
-    setLoading(true)
+  // `silent=true` (default em reloads pós-ação) não mostra skeleton — preserva
+  // o scroll e evita o flash de "voltar pro topo" ao marcar/desmarcar item.
+  async function load(silent = false) {
+    if (!silent) setLoading(true)
     const { data, error: err } = await supabase
       .from('tarefa_checklist')
       .select(SELECT)
       .eq('tarefa_id', tarefa.id)
       .order('ordem')
       .order('created_at')
-    setLoading(false)
+    if (!silent) setLoading(false)
     if (err) setError(err.message)
     else setItens((data ?? []) as unknown as TarefaChecklistItemComRel[])
   }
@@ -75,7 +77,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       return
     }
     setNovoTexto('')
-    await load()
+    await load(true)
     onChange?.()
   }
 
@@ -93,7 +95,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       setError(err.code === '42501' ? 'Apenas quem marcou pode desmarcar.' : err.message)
       return
     }
-    await load()
+    await load(true)
     onChange?.()
   }
 
@@ -103,7 +105,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       setError(err.message)
       return
     }
-    await load()
+    await load(true)
     onChange?.()
   }
 
@@ -131,7 +133,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
     }
     setObsAberto(null)
     setObsRascunho('')
-    await load()
+    await load(true)
     onChange?.()
   }
 
@@ -181,7 +183,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
       return
     }
     setImportarOpen(false)
-    await load()
+    await load(true)
     onChange?.()
   }
 
