@@ -557,6 +557,7 @@
 - [x] Exclusão de tarefa em `Tarefas.tsx` e `ProjetoDetalhe.tsx` agora chama `supabase.functions.invoke('delete-tarefa')`; modal de confirmação ganha banner vermelho destacando "ação irreversível" + lista do que será apagado (subtarefas, comentários, checklist, histórico, anexos Cloudinary, participantes)
 - [x] Filtros: `Tarefas.tsx` views "Em aberto", "Todas", "Concluídas" agora restringem `tarefa_pai_id IS NULL` (só topo); "Minhas" continua incluindo tudo (responsável OR participante, em qualquer nível); `ProjetoDetalhe.tsx` lista do projeto restringe topo também
 - [x] Badge **"Subtarefa de X · Projeto Y"** (azul, ícone `GitBranch`) aparece nas linhas de `Tarefas.tsx` quando `tarefa.tarefa_pai`; em `Inicio.tsx` aparece como linha extra abaixo do título ("↳ Subtarefa de X · Projeto Y") tanto na lista principal quanto no painel "Atividades em [data]" do calendário
+- [x] **Identificação Projeto/Cliente no dashboard** (`Inicio.tsx`): lista "Suas atividades" e painel "Atividades em [data]" do calendário ganham linha extra abaixo do título — link clicável **"Projeto: X"** com ícone `FolderKanban` quando `de_projeto`, plain text **"Cliente: X"** quando avulsa com cliente, nada se for avulsa pura (mesma lógica de `/tarefas`)
 
 ## 🔄 Em Andamento
 
@@ -573,4 +574,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Subtarefas — 1 nível com aba dedicada, herança automática de cliente/projeto, auto-add do responsável da subtarefa como participante da pai, alerta ao concluir pai com subtarefas pendentes, exclusão de tarefa via Edge Function `delete-tarefa` com cleanup do Cloudinary)
+**Última atualização:** 2026-04-23 (Dashboard ganha identificação visual de Projeto/Cliente nas linhas de tarefa — alinhado com `/tarefas`)

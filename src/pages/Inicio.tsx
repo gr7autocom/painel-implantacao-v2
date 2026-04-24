@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  FolderKanban,
   Inbox,
   Pin,
 } from 'lucide-react'
@@ -346,14 +347,25 @@ function LinhaTarefa({
         <div className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate">
           {t.titulo}
         </div>
-        {t.tarefa_pai && (
+        {t.tarefa_pai ? (
           <div className="text-caption text-blue-600 truncate">
             ↳ Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
-            {t.tarefa_pai.projeto && (
-              <> · {t.tarefa_pai.projeto.nome}</>
-            )}
+            {t.tarefa_pai.projeto && <> · {t.tarefa_pai.projeto.nome}</>}
           </div>
-        )}
+        ) : t.de_projeto && t.projeto ? (
+          <Link
+            to={`/projetos/${t.projeto.id}`}
+            className="inline-flex items-center gap-1 text-caption text-blue-600 hover:text-blue-700 font-medium truncate"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FolderKanban className="w-3 h-3 shrink-0" />
+            Projeto: {t.projeto.nome}
+          </Link>
+        ) : t.cliente ? (
+          <div className="text-caption text-gray-500 truncate">
+            Cliente: <span className="font-medium">{t.cliente.nome_fantasia}</span>
+          </div>
+        ) : null}
       </button>
 
       <div className="flex items-center gap-1.5 shrink-0">
@@ -569,11 +581,15 @@ function AtividadesDoDia({
                       ↳ Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
                       {t.tarefa_pai.projeto && <> · {t.tarefa_pai.projeto.nome}</>}
                     </div>
-                  ) : t.cliente && (
-                    <div className="text-caption text-gray-500 truncate">
-                      {t.cliente.nome_fantasia}
+                  ) : t.de_projeto && t.projeto ? (
+                    <div className="text-caption text-blue-600 truncate font-medium">
+                      Projeto: {t.projeto.nome}
                     </div>
-                  )}
+                  ) : t.cliente ? (
+                    <div className="text-caption text-gray-500 truncate">
+                      Cliente: {t.cliente.nome_fantasia}
+                    </div>
+                  ) : null}
                 </button>
                 {t.etapa && (
                   <span
