@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { Paperclip, Send, X, FileText } from 'lucide-react'
+import { Mic, Paperclip, Send, X, FileText } from 'lucide-react'
 import { uploadImagemCloudinary } from '../../lib/cloudinary'
+import { GravadorAudio } from './GravadorAudio'
 
 type AnexoPendente = {
   nome_arquivo: string
@@ -15,11 +16,19 @@ type Props = {
   disabled?: boolean
 }
 
+// MediaRecorder está disponível em navegadores modernos. Fallback: esconde o botão.
+const SUPORTA_GRAVACAO =
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
+  !!navigator.mediaDevices?.getUserMedia &&
+  typeof MediaRecorder !== 'undefined'
+
 export function MensagemInput({ onEnviar, disabled }: Props) {
   const [corpo, setCorpo] = useState('')
   const [anexos, setAnexos] = useState<AnexoPendente[]>([])
   const [enviando, setEnviando] = useState(false)
   const [uploadingCount, setUploadingCount] = useState(0)
+  const [gravadorAberto, setGravadorAberto] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -66,6 +75,24 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
     setAnexos((prev) => prev.filter((_, i) => i !== idx))
   }
 
+  /** Envia o áudio gravado como uma mensagem própria, sem texto. */
+  async function enviarAudio(file: File) {
+    try {
+      const { url, public_id } = await uploadImagemCloudinary(file, 'scrap-anexos')
+      const anexo: AnexoPendente = {
+        nome_arquivo: file.name,
+        public_id,
+        url,
+        tipo_mime: file.type || 'audio/webm',
+        tamanho_bytes: file.size,
+      }
+      await onEnviar('', [anexo])
+      setGravadorAberto(false)
+    } catch (err) {
+      console.error('Falha ao enviar áudio', err)
+    }
+  }
+
   async function enviar() {
     const texto = corpo.trim()
     if (!texto && anexos.length === 0) return
@@ -91,6 +118,13 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
 
   return (
     <div className="border-t border-gray-200 bg-white p-3 flex flex-col gap-2">
+      {gravadorAberto && (
+        <GravadorAudio
+          onConfirm={enviarAudio}
+          onCancel={() => setGravadorAberto(false)}
+          disabled={disabled}
+        />
+      )}
       {(anexos.length > 0 || uploadingCount > 0) && (
         <div className="flex flex-wrap gap-2">
           {anexos.map((a, i) => (
@@ -118,12 +152,24 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled}
+          disabled={disabled || gravadorAberto}
           className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors shrink-0"
           aria-label="Anexar arquivo"
         >
           <Paperclip className="w-5 h-5" />
         </button>
+        {SUPORTA_GRAVACAO && (
+          <button
+            type="button"
+            onClick={() => setGravadorAberto(true)}
+            disabled={disabled || gravadorAberto}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-50 transition-colors shrink-0"
+            aria-label="Gravar áudio"
+            title="Gravar mensagem de voz"
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"

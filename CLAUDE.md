@@ -702,8 +702,9 @@ Chat em tempo real entre usuários do painel. Nome interno de arquivos/tabelas p
 
 - **`ConversasList`** — lista lateral com busca por nome, avatar (com `StatusDot`), preview da última mensagem (trata excluída), badge vermelho de não lidas, botão "Nova conversa"
 - **`ConversaView`** — header com avatar + status + menu "⋮" para excluir; mensagens agrupadas por dia (sticky label) e por remetente consecutivo (sem avatar repetido); auto-scroll ao fim; banner DND quando o outro está em "Não incomodar"
-- **`MensagemBubble`** — bolha colorida (azul se eu, cinza se outro); exibe texto + imagens inline + arquivos com ícone/tamanho/download; menu "⋮" no hover para excluir quando `ehMinha && can('scrap.excluir_mensagem')`
-- **`MensagemInput`** — textarea + anexos via Cloudinary (clique, drag&drop, Ctrl+V), Enter envia, Shift+Enter quebra linha
+- **`MensagemBubble`** — bolha colorida (azul se eu, cinza se outro); exibe texto + imagens inline + **áudio com `<audio controls>` nativo** (quando `tipo_mime` começa com `audio/`) + arquivos com ícone/tamanho/download; menu "⋮" no hover para excluir quando `ehMinha && can('scrap.excluir_mensagem')`
+- **`MensagemInput`** — textarea + anexos via Cloudinary (clique, drag&drop, Ctrl+V), Enter envia, Shift+Enter quebra linha; **botão de microfone** (`Mic`) abre `GravadorAudio` inline (só aparece se `MediaRecorder` é suportado)
+- **`GravadorAudio`** — usa MediaRecorder API (preferindo `audio/webm;codecs=opus`, fallback `audio/mp4` no Safari iOS); estados gravando (timer mm:ss + animação pulse + botão Parar) e preview (player play/pause + Descartar + Enviar); hard cap de 5 min (auto-stop); upload via mesmo `uploadImagemCloudinary` no preset `scrap-anexos`. Envia como mensagem de texto vazio + 1 anexo `audio/*`
 - **`NovaConversaModal`** — lista usuários ativos (exceto eu) com busca por nome/email; ao selecionar chama RPC `abrir_ou_criar_conversa` e abre
 
 ### Página `/talk` ([src/pages/Scrap.tsx](src/pages/Scrap.tsx))

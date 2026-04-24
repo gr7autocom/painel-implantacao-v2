@@ -559,6 +559,13 @@
 - [x] Badge **"Subtarefa de X · Projeto Y"** (azul, ícone `GitBranch`) aparece nas linhas de `Tarefas.tsx` quando `tarefa.tarefa_pai`; em `Inicio.tsx` aparece como linha extra abaixo do título ("↳ Subtarefa de X · Projeto Y") tanto na lista principal quanto no painel "Atividades em [data]" do calendário
 - [x] **Identificação Projeto/Cliente no dashboard** (`Inicio.tsx`): lista "Suas atividades" e painel "Atividades em [data]" do calendário ganham linha extra abaixo do título — link clicável **"Projeto: X"** com ícone `FolderKanban` quando `de_projeto`, plain text **"Cliente: X"** quando avulsa com cliente, nada se for avulsa pura (mesma lógica de `/tarefas`)
 
+### Áudio no Talk (gravar + enviar mensagem de voz)
+
+- [x] Componente `GravadorAudio.tsx`: usa `MediaRecorder` API; detecta o melhor mime suportado (`audio/webm;codecs=opus` no Chrome/Firefox, `audio/mp4` no Safari iOS); UI em 2 estados — **gravando** (animação de pulse vermelho + timer mm:ss + botão Parar) e **preview** (player play/pause + Descartar + Enviar); hard cap de **5 minutos** (auto-stop ao atingir); cleanup do stream do mic e do `URL.createObjectURL` no unmount
+- [x] `MensagemInput`: botão de microfone (`Mic`) ao lado do clipe de anexo; só renderiza se `MediaRecorder` é suportado; abre o gravador inline acima da textarea; áudio confirmado é enviado como mensagem própria (texto vazio + 1 anexo `audio/*`) via `uploadImagemCloudinary` no preset `scrap-anexos`
+- [x] `MensagemBubble`: novo helper `ehAudio` detecta `tipo_mime` começando com `audio/`; quando true renderiza `<audio controls preload="metadata">` (player nativo do navegador) num container com bg adaptado ao lado da bolha (azul escuro pra mensagem própria, cinza pra outro); demais anexos seguem como card de arquivo
+- [x] Sem mudança no banco — `scrap_anexos` já é genérica via `tipo_mime`; permissão de exclusão idem (autor da mensagem deleta tudo, incluindo anexo de áudio que vai pro Cloudinary via trigger existente)
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -574,4 +581,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Dashboard ganha identificação visual de Projeto/Cliente nas linhas de tarefa — alinhado com `/tarefas`)
+**Última atualização:** 2026-04-23 (Talk ganha gravação e envio de mensagens de voz via MediaRecorder + Cloudinary; bubble renderiza player nativo de áudio)

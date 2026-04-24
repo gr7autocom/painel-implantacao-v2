@@ -24,6 +24,10 @@ function ehImagem(mime: string | null | undefined): boolean {
   return !!mime && mime.startsWith('image/')
 }
 
+function ehAudio(mime: string | null | undefined): boolean {
+  return !!mime && mime.startsWith('audio/')
+}
+
 export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir }: Props) {
   const perm = usePermissao()
   const [menuAberto, setMenuAberto] = useState(false)
@@ -88,6 +92,18 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
                         className="rounded-lg max-w-full max-h-60 object-cover"
                       />
                     </a>
+                  ) : ehAudio(a.tipo_mime) ? (
+                    <div
+                      key={a.id}
+                      className={`rounded-lg px-2 py-2 ${ehMinha ? 'bg-blue-700' : 'bg-gray-200'}`}
+                    >
+                      <audio
+                        controls
+                        src={a.url}
+                        preload="metadata"
+                        className="w-full max-w-[260px] h-9"
+                      />
+                    </div>
                   ) : (
                     <a
                       key={a.id}
