@@ -60,11 +60,19 @@ function emptyForm(): FormState {
   }
 }
 
+type ProjetoDoCliente = {
+  id: string
+  nome: string
+  ativo: boolean
+  etapa_implantacao_id: string | null
+}
+
 export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   const [form, setForm] = useState<FormState>(emptyForm())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [etapas, setEtapas] = useState<EtapaImplantacao[]>([])
+  const [projetosDoCliente, setProjetosDoCliente] = useState<ProjetoDoCliente[]>([])
 
   useEffect(() => {
     if (!open) return
@@ -99,6 +107,23 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       .order('ordem')
       .then(({ data }) => setEtapas((data ?? []) as EtapaImplantacao[]))
   }, [open])
+
+  // Busca etapa atual via projetos do cliente (fonte de verdade desde o refactor
+  // 1 cliente → N projetos). A coluna `clientes.etapa_implantacao_id` só é usada
+  // como default na criação de novos projetos.
+  useEffect(() => {
+    if (!open || !cliente) {
+      setProjetosDoCliente([])
+      return
+    }
+    supabase
+      .from('projetos')
+      .select('id, nome, ativo, etapa_implantacao_id')
+      .eq('cliente_id', cliente.id)
+      .eq('ativo', true)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setProjetosDoCliente((data ?? []) as ProjetoDoCliente[]))
+  }, [open, cliente])
 
   function toggleModulo(id: string) {
     setForm((f) => {
@@ -404,40 +429,47 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         </Secao>
 
         <Secao titulo="Estágio de implantação">
-          {cliente ? (
-            (() => {
-              const et = etapas.find((x) => x.id === cliente.etapa_implantacao_id)
-              return (
-                <div className="flex items-center gap-3">
-                  {et ? (
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border"
-                      style={{
-                        backgroundColor: `${et.cor}15`,
-                        color: et.cor,
-                        borderColor: `${et.cor}40`,
-                      }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: et.cor }}
-                      />
-                      {et.nome}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-500">Sem etapa</span>
-                  )}
-                  <p className="text-caption text-gray-500">
-                    Altere a etapa pela página do projeto em <strong>Projetos</strong>.
-                  </p>
-                </div>
-              )
-            })()
-          ) : (
+          {!cliente ? (
             <p className="text-xs text-gray-500">
               Novos projetos começam em <strong>A fazer</strong>. Depois de criar, mude a etapa
               pela página do projeto.
             </p>
+          ) : projetosDoCliente.length === 0 ? (
+            <p className="text-xs text-gray-500">
+              Este cliente ainda não tem projeto ativo.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {projetosDoCliente.map((p) => {
+                const et = etapas.find((x) => x.id === p.etapa_implantacao_id)
+                return (
+                  <div key={p.id} className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-gray-900 truncate">{p.nome}</span>
+                    {et ? (
+                      <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border"
+                        style={{
+                          backgroundColor: `${et.cor}15`,
+                          color: et.cor,
+                          borderColor: `${et.cor}40`,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: et.cor }}
+                        />
+                        {et.nome}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-500">Sem etapa</span>
+                    )}
+                  </div>
+                )
+              })}
+              <p className="text-caption text-gray-500 pt-1">
+                A etapa de cada projeto é alterada pela página do projeto em <strong>Projetos</strong>.
+              </p>
+            </div>
           )}
         </Secao>
 
