@@ -463,7 +463,8 @@ export function ProjetoDetalhe() {
         onSaved={() => {
           toast(tarefaUrl ? 'Tarefa atualizada.' : 'Tarefa criada.')
           load()
-          if (tarefaUrl) recarregarTarefaUrl()
+          // Não chamar recarregarTarefaUrl() aqui — onClose vai navegar logo a seguir
+          // e a query em fly causaria race que abre/fecha o modal de novo
         }}
         onTarefaUpdated={() => { load(); if (tarefaUrl) recarregarTarefaUrl() }}
         tarefa={tarefaUrl}
