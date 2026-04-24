@@ -73,7 +73,7 @@ export function Tarefas() {
   const [error, setError] = useState<string | null>(null)
   const { codigo } = useParams<{ codigo: string }>()
   const { tarefa: tarefaUrl, naoEncontrada, abrirTarefa, fechar: fecharTarefaUrl, recarregar: recarregarTarefaUrl } =
-    useTarefaPorCodigo('/tarefas', codigo)
+    useTarefaPorCodigo({ fechar: '/tarefas', abrir: (cod) => `/tarefas/${cod}` }, codigo)
   const [criandoNova, setCriandoNova] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<TarefaComRelacoes | null>(null)
   const [filtros, setFiltrosState] = useState<Filtros>(lerFiltrosSalvos)

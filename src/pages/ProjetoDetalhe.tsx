@@ -80,7 +80,10 @@ export function ProjetoDetalhe() {
     if (id) localStorage.setItem(`projeto_filtros_${id}`, JSON.stringify(f))
   }
   const { codigo: codigoTarefa } = useParams<{ codigo: string }>()
-  const tarefaRoute = useTarefaPorCodigo(`/projetos/${id}/tarefas`, codigoTarefa)
+  const tarefaRoute = useTarefaPorCodigo(
+    { fechar: `/projetos/${id}`, abrir: (cod) => `/projetos/${id}/tarefas/${cod}` },
+    codigoTarefa
+  )
   const { tarefa: tarefaUrl, naoEncontrada: tarefaNaoEncontrada, abrirTarefa, fechar: fecharTarefaUrl, recarregar: recarregarTarefaUrl } = tarefaRoute
   const [criandoTarefa, setCriandoTarefa] = useState(false)
   const [clienteModalOpen, setClienteModalOpen] = useState(false)

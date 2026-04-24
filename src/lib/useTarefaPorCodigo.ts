@@ -4,12 +4,20 @@ import { supabase } from './supabase'
 import { SELECT_TAREFA_COM_RELACOES } from './tarefa-utils'
 import type { TarefaComRelacoes } from './types'
 
+type Paths = {
+  /** Path para onde voltar quando o modal fecha (ex: "/tarefas" ou "/projetos/:id"). */
+  fechar: string
+  /** Função que monta o path para abrir uma tarefa específica
+   * (ex: `(cod) => "/tarefas/" + cod` ou `(cod) => "/projetos/X/tarefas/" + cod`). */
+  abrir: (codigo: number | string) => string
+}
+
 /**
  * Hook que sincroniza a tarefa aberta com o segmento `:codigo` da rota dedicada
  * (`/tarefas/:codigo` ou `/projetos/:id/tarefas/:codigo`). Quando `codigo`
  * é definido, carrega a tarefa correspondente; quando vazio, retorna null.
  *
- * `abrirTarefa(codigo)` faz push do path; `fechar()` volta para `routeBase`.
+ * `abrirTarefa(codigo)` faz push do path; `fechar()` navega para `paths.fechar`.
  *
  * `recarregar()` recarrega a tarefa atual (usado após save/anexos).
  *
@@ -17,7 +25,7 @@ import type { TarefaComRelacoes } from './types'
  * nova chamada começar antes da anterior resolver, o resultado da antiga é
  * descartado (evita modal "ressuscitando" após fechar).
  */
-export function useTarefaPorCodigo(routeBase: string, codigo: string | undefined) {
+export function useTarefaPorCodigo(paths: Paths, codigo: string | undefined) {
   const navigate = useNavigate()
   const [tarefa, setTarefa] = useState<TarefaComRelacoes | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,11 +67,11 @@ export function useTarefaPorCodigo(routeBase: string, codigo: string | undefined
   useEffect(() => { carregar() }, [carregar])
 
   const abrirTarefa = useCallback(
-    (cod: number | string) => navigate(`${routeBase}/${cod}`),
-    [navigate, routeBase]
+    (cod: number | string) => navigate(paths.abrir(cod)),
+    [navigate, paths]
   )
 
-  const fechar = useCallback(() => navigate(routeBase), [navigate, routeBase])
+  const fechar = useCallback(() => navigate(paths.fechar), [navigate, paths])
 
   return { tarefa, loading, naoEncontrada, abrirTarefa, fechar, recarregar: carregar }
 }
