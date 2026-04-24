@@ -166,7 +166,7 @@ export function UsuariosTab() {
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <option value="todos">Todos</option>
             <option value="ativo">Somente ativos</option>
@@ -328,7 +328,7 @@ export function UsuariosTab() {
               required
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
           <div>
@@ -339,7 +339,7 @@ export function UsuariosTab() {
               disabled={!!editing}
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
             />
             {editing && (
               <p className="text-xs text-gray-500 mt-1">
@@ -354,7 +354,7 @@ export function UsuariosTab() {
               type="text"
               value={form.cargo}
               onChange={(e) => setForm({ ...form, cargo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
           <div>
@@ -362,7 +362,7 @@ export function UsuariosTab() {
             <select
               value={form.permissao_id}
               onChange={(e) => setForm({ ...form, permissao_id: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 bg-white"
             >
               <option value="">Sem permissão</option>
               {permissoes.map((p) => (

@@ -263,7 +263,7 @@ export function ChecklistTab() {
           <select
             value={filtroAtivo}
             onChange={(e) => setFiltroAtivo(e.target.value as typeof filtroAtivo)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <option value="ativo">Somente ativos</option>
             <option value="inativo">Somente inativos</option>
@@ -411,7 +411,7 @@ export function ChecklistTab() {
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               placeholder="Ex: Instalação de servidor"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
 
@@ -458,7 +458,7 @@ export function ChecklistTab() {
                       value={item.texto}
                       onChange={(e) => updateItem(idx, { texto: e.target.value })}
                       placeholder={`Item ${idx + 1}`}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
                     <div className="flex items-center gap-2">
                       <Link2 className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
@@ -467,7 +467,7 @@ export function ChecklistTab() {
                         value={item.link}
                         onChange={(e) => updateItem(idx, { link: e.target.value })}
                         placeholder="Link opcional (URL para manual, tutorial, etc.)"
-                        className="flex-1 min-w-0 px-3 py-1.5 border border-gray-300 rounded text-caption focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 min-w-0 px-3 py-1.5 border border-gray-300 rounded text-caption outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                       />
                     </div>
                   </div>

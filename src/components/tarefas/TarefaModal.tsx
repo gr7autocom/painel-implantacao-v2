@@ -173,9 +173,9 @@ export function TarefaModal({
   if (!open) return null
 
   const criadoPorNome = tarefa?.criado_por?.nome ?? usuarioAtual?.nome ?? '—'
-  const inputBase = 'w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2'
-  const inputEnabled = 'border-gray-300 focus:ring-blue-500'
-  const inputDisabled = 'border-gray-200 bg-gray-50 text-gray-600 focus:ring-transparent'
+  const inputBase = 'w-full px-3 py-2 border rounded-lg text-sm outline-none focus-visible:ring-2'
+  const inputEnabled = 'border-gray-300 focus-visible:ring-blue-500'
+  const inputDisabled = 'border-gray-200 bg-gray-50 text-gray-600 focus-visible:ring-transparent'
   const selectBg = (disabled: boolean) =>
     `${inputBase} ${disabled ? inputDisabled : inputEnabled} bg-white`
 
@@ -185,7 +185,7 @@ export function TarefaModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
-        className="relative bg-white rounded-xl shadow-xl w-full max-w-full sm:max-w-3xl lg:max-w-5xl h-[96vh] sm:h-[92vh] flex flex-col"
+        className="relative bg-white rounded-xl shadow-xl w-full max-w-full sm:max-w-3xl lg:max-w-5xl h-[96dvh] sm:h-[92dvh] flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

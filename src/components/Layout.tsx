@@ -14,7 +14,10 @@ export function Layout() {
   }, [location.pathname])
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-dvh bg-gray-50">
+      <a href="#main-content" className="skip-link">
+        Pular para o conteúdo
+      </a>
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-20 md:hidden"
@@ -24,7 +27,7 @@ export function Layout() {
 
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 transition-transform duration-200 md:sticky md:top-0 md:h-screen md:translate-x-0 md:flex md:flex-col md:shrink-0',
+          'fixed inset-y-0 left-0 z-30 w-64 transition-transform duration-200 md:sticky md:top-0 md:h-dvh md:translate-x-0 md:flex md:flex-col md:shrink-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
@@ -52,7 +55,7 @@ export function Layout() {
         <div className="hidden md:block fixed top-3 right-4 z-20">
           <NotificationBell />
         </div>
-        <main className="flex-1 p-6 md:p-8">
+        <main id="main-content" className="flex-1 p-6 md:p-8">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>

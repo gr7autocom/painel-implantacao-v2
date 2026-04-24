@@ -158,7 +158,7 @@ export function Projetos() {
           id="projetos-etapa-filtro"
           value={etapaFiltro}
           onChange={(e) => setEtapaFiltro(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-full sm:w-auto"
         >
           <option value="">Todas as etapas</option>
           {etapasImplantacao.map((e) => (
@@ -305,7 +305,7 @@ export function Projetos() {
             onChange={(e) => setNomeProjeto(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && criarProjetoEmBranco()}
             placeholder="Ex: Implantação Loja Centro"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           <p className="text-xs text-gray-400">Deixe em branco para usar "Novo projeto".</p>
         </div>
@@ -348,7 +348,7 @@ export function Projetos() {
             value={novoNome}
             onChange={(e) => setNovoNome(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && salvarNomeProjeto()}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
         </div>
       </Modal>

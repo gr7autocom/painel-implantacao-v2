@@ -588,4 +588,69 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-24 (Player de áudio do Talk agora estilo WhatsApp — waveform real via Web Audio API + velocidade 1x/1.5x/2x; corrigido fallback "(anexo)" no corpo da mensagem)
+## 🎨 UI/UX Refinement — Roadmap
+
+Plano de ação derivado do review da skill `ui-ux-pro-max` (2026-04-24). Cobre 4 sprints organizados por impacto/esforço, da menor fricção (Quick Wins) até refactors estratégicos.
+
+### Sprint 0 — Quick Wins ✅ Concluído (2026-04-24)
+
+Mudanças globais de baixo risco, alto retorno em a11y/mobile.
+
+- [x] **`vh` → `dvh`** em containers de tela cheia: `Modal.tsx`, `TarefaModal.tsx`, `Layout.tsx` (min-h + h-screen da sidebar), `RequireAuth.tsx`, `Login.tsx`, `DefinirSenha.tsx`. Modal não corta mais em iOS/Android com barra de URL
+- [x] **`focus:outline-none` + `focus:ring-*` → `outline-none` + `focus-visible:ring-*`** em 24 arquivos (~63 substituições via `sed`). Ring agora aparece só pra teclado, esconde pra mouse
+- [x] **`@media (prefers-reduced-motion: reduce)`** no `index.css` zerando `animation-duration`, `transition-duration`, `scroll-behavior` quando o SO solicita. Atende WCAG
+- [x] **Skip-link** "Pular para o conteúdo" no `Layout.tsx` (classe `.skip-link` no `index.css` com `transform: translateY(-200%)` + `:focus` traz pra dentro); `<main id="main-content">`
+- [x] **`text-[10px]` → `text-caption` (11px)** em `ProjetoMonitor:589` e `MensagemBubble:112`. Counters em badges de notificação mantidos em `text-[10px]` por necessidade de caber em círculos pequenos
+
+### Sprint 1 — Crítico (≈ 4h)
+
+Correções de touch e contraste que afetam usabilidade real.
+
+- [ ] **Touch targets `p-1.5` → `p-2.5`** em todos botões-ícone das tabs em `components/configuracoes/` (CategoriasTab, ChecklistTab, ClassificacoesTab, EtapasTab, ImplantacaoTab, PrioridadesTab, UsuariosTab, PermissoesTab) — atualmente 28px, abaixo dos 44pt recomendados (WCAG)
+- [ ] **TarefaModal ganha focus trap** (replica padrão de `Modal.tsx:37-54` ou refatora pra usar componente `Modal`); hoje Tab pode escapar do modal
+- [ ] **Contraste do `--color-text-tertiary`**: trocar `#858585` por `#a8a8a8` em `design-tokens.css:49` (atinge 4.5:1 em surface card #3a3a3a). Validar com Chrome DevTools A11y panel
+- [ ] **Confirmação "unsaved changes"** ao fechar `TarefaModal` ou `ClienteModal` modificados — estado `formDirty` + diálogo "Descartar alterações?"
+
+### Sprint 2 — High Priority (≈ 1 semana)
+
+Decisões estruturais de design system + qualidade de form.
+
+- [ ] **DECISÃO sobre tokens semânticos** (item mais importante do plano):
+  - Hoje: 6 usos de `bg-action-primary`/`text-text-primary` vs 245+ usos de `bg-white`/`text-gray-*` cru + 64 workarounds `text-[#ffffff]`
+  - **Opção A** — adotar tokens completamente (refactor incremental, viabiliza light mode futuro)
+  - **Opção B** — remover tokens semânticos não usados, documentar Tailwind remapeado no CLAUDE.md
+  - **Recomendação:** A se prevê light mode ou time crescendo; B se sempre dark + time pequeno
+- [ ] **Type scale** documentada em `design-tokens.css`: `--text-display: 30px`, `--text-h1: 24px`, `--text-h2: 20px`, `--text-h3: 18px`, `--text-body: 14px`, `--text-caption: 11px`. Migrar gradualmente
+- [ ] **Errors per-field** em `TarefaModal` e `ClienteModal`: estado `errors: { [field]: string }`, mostrar `<p>` abaixo de cada input com erro; manter banner global como sumário
+- [ ] **Auto-focus no primeiro campo inválido** após submit error (WCAG `focus-management`) — refatorar `handleSubmit` pra retornar field id
+- [ ] **Breadcrumbs** em rotas profundas (`/projetos/:id`, `/projetos/:id/monitor`): novo componente `<Breadcrumb items={[...]} />`
+- [ ] **Auditoria de contraste WCAG AA automatizada**: instalar `@axe-core/react` em dev mode OU rodar Lighthouse no CI
+- [ ] **`max-w-7xl` no Layout**: avaliar se vira `max-w-screen-2xl` (mais espaço em telas grandes) ou full-width
+
+### Sprint 3 — Estratégico (3-4 semanas)
+
+Mudanças arquiteturais que dão grande retorno mas pedem refactor.
+
+- [ ] **TarefaModal vira rota dedicada** com slide-over panel (60-70% da viewport à direita): permite deep-link, browser back, multi-tab; reduz claustrofobia em laptop pequeno; padrão moderno (Linear, Notion, GitHub Issues)
+- [ ] **Adotar fonte própria** (Inter ou Geist via Google Fonts): `font-family` no `index.css` + preload em `index.html`; reforça identidade
+- [ ] **Autosave em forms longos** (TarefaModal): debounced save em `localStorage` por `tarefa_id`; ao reabrir, oferece "Restaurar rascunho?"
+- [ ] **Light mode** (se entrar no roadmap; pré-requisito: Sprint 2 Opção A concluída)
+- [ ] **Stagger animation** em list/grid (`Projetos.tsx`, grids de cards): delay incremental 30-50ms por card
+- [ ] **Swipe-to-dismiss** em modais mobile (com `framer-motion` ou Touch Events; cuidado com conflito de scroll interno)
+
+### O que NÃO vai mudar (decisão consciente)
+
+Avaliação confirmou que estes pontos estão sólidos e não precisam de refactor:
+
+- Paleta dark theme VS Code-inspired (identidade clara)
+- Lucide como única icon library (sem emoji)
+- Sistema de toasts com 4 tipos + tag/dismiss
+- Pattern Sidebar + Outlet
+- Skeletons + EmptyState reutilizáveis
+- Filtros persistidos em localStorage
+- Modal aninhado para subtarefas (vai melhorar com breadcrumb do Sprint 2)
+- Componente `Modal` genérico com focus trap exemplar
+
+---
+
+**Última atualização:** 2026-04-24 (Sprint 0 do roadmap UI/UX concluído — vh→dvh, focus-visible global, reduced-motion, skip-link, text-caption)

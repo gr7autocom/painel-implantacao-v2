@@ -64,7 +64,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
       />
       <div
         ref={dialogRef}
-        className={`relative bg-white rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[95vh] sm:max-h-[90vh] flex flex-col [animation:modal-dialog-in_0.15s_ease-out]`}
+        className={`relative bg-white rounded-xl shadow-xl w-full ${sizeClasses[size]} max-h-[95dvh] sm:max-h-[90dvh] flex flex-col [animation:modal-dialog-in_0.15s_ease-out]`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

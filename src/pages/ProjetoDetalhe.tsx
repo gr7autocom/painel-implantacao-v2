@@ -252,7 +252,7 @@ export function ProjetoDetalhe() {
             <select
               value={filtros.responsavel}
               onChange={(e) => setFiltros({ ...filtros, responsavel: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todos</option>
               <option value="__none__">— Em aberto</option>
@@ -266,7 +266,7 @@ export function ProjetoDetalhe() {
             <select
               value={filtros.prioridade}
               onChange={(e) => setFiltros({ ...filtros, prioridade: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todas</option>
               {prioridades.map((p) => (
@@ -281,7 +281,7 @@ export function ProjetoDetalhe() {
             <select
               value={filtros.etapa}
               onChange={(e) => setFiltros({ ...filtros, etapa: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todas</option>
               {etapas.map((et) => (

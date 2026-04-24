@@ -117,7 +117,7 @@ export function ImplantacaoTab() {
           <select
             value={filtroAtivo}
             onChange={(e) => setFiltroAtivo(e.target.value as typeof filtroAtivo)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <option value="ativo">Somente ativos</option>
             <option value="inativo">Somente inativos</option>
@@ -252,7 +252,7 @@ export function ImplantacaoTab() {
               required
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
           <div>
@@ -263,7 +263,7 @@ export function ImplantacaoTab() {
               min={0}
               value={form.ordem}
               onChange={(e) => setForm({ ...form, ordem: Number(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
           <div>
@@ -279,7 +279,7 @@ export function ImplantacaoTab() {
                 type="text"
                 value={form.cor}
                 onChange={(e) => setForm({ ...form, cor: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               />
             </div>
           </div>

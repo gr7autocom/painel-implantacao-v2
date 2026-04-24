@@ -276,7 +276,7 @@ export function Tarefas() {
               id="filtro-responsavel"
               value={filtros.responsavel}
               onChange={(e) => setFiltros({ ...filtros, responsavel: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todos</option>
               <option value="__none__">— Sem responsável</option>
@@ -293,7 +293,7 @@ export function Tarefas() {
               id="filtro-prioridade"
               value={filtros.prioridade}
               onChange={(e) => setFiltros({ ...filtros, prioridade: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todas</option>
               {prioridades.map((p) => (
@@ -309,7 +309,7 @@ export function Tarefas() {
               id="filtro-etapa"
               value={filtros.etapa}
               onChange={(e) => setFiltros({ ...filtros, etapa: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <option value="">Todas</option>
               {etapas.map((et) => (
@@ -326,7 +326,7 @@ export function Tarefas() {
               type="date"
               value={filtros.prazoInicio}
               onChange={(e) => setFiltros({ ...filtros, prazoInicio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
           <div className="col-span-6 md:col-span-3">
@@ -336,7 +336,7 @@ export function Tarefas() {
               type="date"
               value={filtros.prazoFim}
               onChange={(e) => setFiltros({ ...filtros, prazoFim: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
         </div>

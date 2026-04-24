@@ -275,7 +275,7 @@ export function EtapaImplantacaoBadge({
           onChange={(e) => setComentario(e.target.value)}
           rows={3}
           autoFocus
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           placeholder="Adicione uma observação sobre esta mudança..."
         />
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

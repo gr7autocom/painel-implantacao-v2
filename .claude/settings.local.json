@@ -12,7 +12,10 @@
       "Bash(git credential-manager *)",
       "PowerShell(cmdkey /list)",
       "Bash(node node_modules/typescript/bin/tsc -b)",
-      "Bash(grep -n \"MinhaTaref\\\\|t\\\\\\\\.projeto\\\\|t\\\\\\\\.cliente\\\\|t\\\\\\\\.titulo\" src/pages/Inicio.tsx)"
+      "Bash(grep -n \"MinhaTaref\\\\|t\\\\\\\\.projeto\\\\|t\\\\\\\\.cliente\\\\|t\\\\\\\\.titulo\" src/pages/Inicio.tsx)",
+      "Read(//c/Users/PABLLO/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python scripts/search.py \"internal admin panel dashboard dark mode\" --domain ux -n 8)",
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"internal admin dashboard dark mode density\" --domain ux -n 10)"
     ]
   }
 }

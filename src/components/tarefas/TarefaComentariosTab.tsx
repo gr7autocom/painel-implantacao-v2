@@ -85,7 +85,7 @@ export function TarefaComentariosTab({ tarefa, onChange }: Props) {
             onChange={(e) => setTexto(e.target.value)}
             placeholder="Escreva um comentário..."
             rows={3}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500 resize-none"
           />
           <button
             type="button"

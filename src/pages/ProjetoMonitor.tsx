@@ -586,7 +586,7 @@ function ProximosPrazosCard({
                   </div>
                   <span
                     className={cn(
-                      'px-1.5 py-0.5 text-[10px] font-semibold rounded border shrink-0',
+                      'px-1.5 py-0.5 text-caption font-semibold rounded border shrink-0',
                       atrasada
                         ? 'bg-red-400/20 text-red-300 border-red-400/50'
                         : dias <= 3

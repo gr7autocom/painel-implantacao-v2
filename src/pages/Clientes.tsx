@@ -126,7 +126,7 @@ export function Clientes() {
           id="clientes-etapa-filtro"
           value={etapaFiltro}
           onChange={(e) => setEtapaFiltro(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-full sm:w-auto"
         >
           <option value="">Todas as etapas</option>
           {etapasImplantacao.map((e) => (

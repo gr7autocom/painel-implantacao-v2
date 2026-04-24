@@ -109,7 +109,7 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
                       <div className="flex-1 min-w-0">
                         <p className="truncate font-medium">{a.nome_arquivo ?? 'arquivo'}</p>
                         {a.tamanho_bytes && (
-                          <p className={`text-[10px] ${ehMinha ? 'opacity-80' : 'text-gray-500'}`}>
+                          <p className={`text-caption ${ehMinha ? 'opacity-80' : 'text-gray-500'}`}>
                             {formatarTamanho(a.tamanho_bytes)}
                           </p>
                         )}

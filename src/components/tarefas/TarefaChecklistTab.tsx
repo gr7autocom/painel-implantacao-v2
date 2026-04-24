@@ -224,7 +224,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
               }
             }}
             placeholder="Novo item do checklist..."
-            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           <button
             type="button"
@@ -416,7 +416,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                         disabled={!podeEditarItens}
                         placeholder="Explique o motivo ou adicione uma observação..."
                         rows={3}
-                        className="w-full px-3 py-2 border border-amber-400/40 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-gray-50 resize-none"
+                        className="w-full px-3 py-2 border border-amber-400/40 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:bg-gray-50 resize-none"
                       />
                       <div className="flex items-center justify-end gap-2 mt-2">
                         <button

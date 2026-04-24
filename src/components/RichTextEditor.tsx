@@ -171,7 +171,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <select
         value={currentFont}
         onChange={(e) => handleFontChange(e.target.value)}
-        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
         title="Família da fonte"
       >
         <option value="">Sans Serif</option>
@@ -185,7 +185,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <select
         value={currentHeading ?? 0}
         onChange={(e) => handleHeadingChange(Number(e.target.value))}
-        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
         title="Estilo do parágrafo"
       >
         {HEADING_LEVELS.map((h) => (

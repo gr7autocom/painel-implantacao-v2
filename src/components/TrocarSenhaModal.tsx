@@ -141,7 +141,7 @@ export function TrocarSenhaModal(props: Props) {
                 autoComplete="current-password"
                 value={senhaAtual}
                 onChange={(e) => setSenhaAtual(e.target.value)}
-                className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               />
               <button
                 type="button"
@@ -165,7 +165,7 @@ export function TrocarSenhaModal(props: Props) {
               value={novaSenha}
               onChange={(e) => setNovaSenha(e.target.value)}
               minLength={MIN_LENGTH}
-              className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-3 pr-9 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
             {props.modo !== 'self' && (
               <button
@@ -190,7 +190,7 @@ export function TrocarSenhaModal(props: Props) {
             value={confirmar}
             onChange={(e) => setConfirmar(e.target.value)}
             minLength={MIN_LENGTH}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
         </div>
 
