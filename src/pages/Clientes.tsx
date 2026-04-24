@@ -173,19 +173,10 @@ export function Clientes() {
                   <p className="font-semibold text-gray-900 text-sm">{c.nome_fantasia}</p>
                   <p className="text-xs text-gray-500">{c.razao_social}</p>
                 </div>
-                {(() => {
-                  const proj = projetoPrincipal(c)
-                  return (
-                    <EtapaImplantacaoBadge
-                      projetoId={proj?.id}
-                      clienteId={c.id}
-                      etapa={proj?.etapa_implantacao ?? null}
-                      editavel={!!proj}
-                      onChanged={load}
-                      compacto
-                    />
-                  )
-                })()}
+                <EtapaImplantacaoBadge
+                  etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
+                  compacto
+                />
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
                 {c.responsavel_comercial && <span>Resp.: {c.responsavel_comercial}</span>}
@@ -262,19 +253,10 @@ export function Clientes() {
                   <td className="px-4 py-3 font-medium text-gray-900">{c.razao_social}</td>
                   <td className="px-4 py-3 text-gray-600">{c.nome_fantasia}</td>
                   <td className="px-4 py-3">
-                    {(() => {
-                  const proj = projetoPrincipal(c)
-                  return (
                     <EtapaImplantacaoBadge
-                      projetoId={proj?.id}
-                      clienteId={c.id}
-                      etapa={proj?.etapa_implantacao ?? null}
-                      editavel={!!proj}
-                      onChanged={load}
-                      compacto
-                    />
-                  )
-                })()}
+                  etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
+                  compacto
+                />
                   </td>
                   <td className="px-4 py-3 text-gray-600">{c.responsavel_comercial ?? '-'}</td>
                   <td className="px-4 py-3 text-gray-600">{c.telefone ?? '-'}</td>
