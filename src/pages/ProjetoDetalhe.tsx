@@ -41,6 +41,7 @@ import { EmptyState } from '../components/EmptyState'
 import { SkeletonRow } from '../components/SkeletonRow'
 import { usePageTitle, readLocalStorage } from '../lib/utils'
 import { SearchInput } from '../components/SearchInput'
+import { Breadcrumb } from '../components/Breadcrumb'
 
 type Filtros = {
   titulo: string
@@ -216,12 +217,12 @@ export function ProjetoDetalhe() {
 
   return (
     <div>
-      <Link
-        to="/projetos"
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" /> Voltar para Projetos
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: 'Projetos', to: '/projetos' },
+          { label: projeto.nome },
+        ]}
+      />
 
       <HeaderProjeto
         projeto={projeto}

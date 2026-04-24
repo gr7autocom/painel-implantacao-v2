@@ -78,6 +78,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   const [formInicial, setFormInicial] = useState<FormState>(emptyForm())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [etapas, setEtapas] = useState<EtapaImplantacao[]>([])
   const [projetosDoCliente, setProjetosDoCliente] = useState<ProjetoDoCliente[]>([])
   const [confirmDescartarOpen, setConfirmDescartarOpen] = useState(false)
@@ -85,6 +86,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   useEffect(() => {
     if (!open) return
     setError(null)
+    setErrors({})
     let novo: FormState
     if (cliente) {
       novo = {
@@ -110,6 +112,14 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   }, [open, cliente])
 
   const dirty = serializarForm(form) !== serializarForm(formInicial)
+
+  // Auto-focus no primeiro campo com erro (a11y).
+  useEffect(() => {
+    const primeiroErro = Object.keys(errors)[0]
+    if (!primeiroErro) return
+    const el = document.getElementById(`cliente-field-${primeiroErro}`)
+    if (el && 'focus' in el) (el as HTMLElement).focus()
+  }, [errors])
 
   const tentarFechar = useCallback(() => {
     if (dirty && !saving) {
@@ -159,14 +169,18 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
     e.preventDefault()
     setError(null)
 
+    const novosErros: Record<string, string> = {}
     if (!cnpjValido(form.cnpj)) {
-      setError('CNPJ inválido. Deve ter 14 dígitos.')
-      return
+      novosErros.cnpj = 'CNPJ inválido. Deve ter 14 dígitos.'
     }
     if (form.importar_dados && !form.sistema_atual.trim()) {
-      setError('Informe o nome do sistema atual.')
+      novosErros.sistema_atual = 'Informe o nome do sistema atual.'
+    }
+    if (Object.keys(novosErros).length > 0) {
+      setErrors(novosErros)
       return
     }
+    setErrors({})
 
     setSaving(true)
     const payload = {
@@ -329,13 +343,24 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
             <div className="col-span-12 md:col-span-4">
               <Label>CNPJ *</Label>
               <input
+                id="cliente-field-cnpj"
                 type="text"
                 required
                 value={form.cnpj}
-                onChange={(e) => setForm({ ...form, cnpj: formatarCnpj(e.target.value) })}
+                onChange={(e) => {
+                  setForm({ ...form, cnpj: formatarCnpj(e.target.value) })
+                  if (errors.cnpj) setErrors((prev) => { const { cnpj: _omit, ...rest } = prev; return rest })
+                }}
                 placeholder="00.000.000/0000-00"
                 className={inputClass}
+                aria-invalid={!!errors.cnpj}
+                aria-describedby={errors.cnpj ? 'cliente-field-cnpj-erro' : undefined}
               />
+              {errors.cnpj && (
+                <p id="cliente-field-cnpj-erro" className="text-caption text-red-400 mt-1">
+                  {errors.cnpj}
+                </p>
+              )}
             </div>
             <div className="col-span-12 md:col-span-4">
               <Label>Telefone de contato</Label>
@@ -394,12 +419,23 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
             <div>
               <Label>Nome do sistema atual *</Label>
               <input
+                id="cliente-field-sistema_atual"
                 type="text"
                 value={form.sistema_atual}
-                onChange={(e) => setForm({ ...form, sistema_atual: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, sistema_atual: e.target.value })
+                  if (errors.sistema_atual) setErrors((prev) => { const { sistema_atual: _omit, ...rest } = prev; return rest })
+                }}
                 className={inputClass}
                 placeholder="Ex.: Sistema Antigo X"
+                aria-invalid={!!errors.sistema_atual}
+                aria-describedby={errors.sistema_atual ? 'cliente-field-sistema_atual-erro' : undefined}
               />
+              {errors.sistema_atual && (
+                <p id="cliente-field-sistema_atual-erro" className="text-caption text-red-400 mt-1">
+                  {errors.sistema_atual}
+                </p>
+              )}
             </div>
           )}
         </Secao>

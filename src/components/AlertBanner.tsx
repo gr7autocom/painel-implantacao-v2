@@ -3,15 +3,17 @@ import { cn } from '../lib/utils'
 
 type AlertType = 'error' | 'warning' | 'success' | 'info'
 
+// Cores fixas em hex (não dependem dos tokens Tailwind remapeados — garantia
+// de contraste no dark theme; mesma estratégia do Toast).
 const typeClasses: Record<AlertType, string> = {
   error:
-    'bg-feedback-error-bg border-feedback-error text-feedback-error',
+    'bg-[#2e1a1a] border-[#f14c4c] text-[#f14c4c]',
   warning:
-    'bg-feedback-warning-bg border-feedback-warning text-feedback-warning',
+    'bg-[#2e2a1a] border-[#dcdcaa] text-[#dcdcaa]',
   success:
-    'bg-feedback-success-bg border-feedback-success text-feedback-success',
+    'bg-[#1a3330] border-[#4ec9b0] text-[#4ec9b0]',
   info:
-    'bg-feedback-info-bg border-feedback-info text-feedback-info',
+    'bg-[#1a3050] border-[#569cd6] text-[#569cd6]',
 }
 
 type AlertBannerProps = {

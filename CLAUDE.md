@@ -355,10 +355,34 @@ Integração em [TarefaChecklistTab.tsx](src/components/tarefas/TarefaChecklistT
 
 ### Estilo visual
 
-- Tema claro, fundo `bg-white`, bordas `border-gray-200`
-- Botão primário: `bg-blue-600 text-white rounded-lg`
+- **Tema:** dark "sempre" (decisão tomada na Sprint 2 do roadmap UI/UX). Não há light mode planejado. Em vez de tokens semânticos custom, **remappamos a paleta default do Tailwind** em [src/design-tokens.css](src/design-tokens.css) — `--color-white: #3a3a3a` (vira card surface), escala `gray-*` invertida (gray-50 = quase preto, gray-900 = quase branco), `border-gray-200` = `#3a3a3a`, etc. Por isso classes utilitárias do Tailwind (`bg-white`, `text-gray-700`, `border-gray-200`) **já produzem o visual dark** sem precisar de classe extra. **Regra:** ao escrever componente novo, escreva como se fosse light mode default do Tailwind — o remap cuida do resto
+- **Quando usar hex fixo `text-[#ffffff]`:** apenas em texto sobre cor sólida saturada (botão primário azul, banner Toast colorido) onde `text-white` viraria `#3a3a3a` (= o background do card e some). Padrão estabelecido em `Button.tsx`, `Toast.tsx`, `AlertBanner.tsx`
+- **Type scale** ([src/design-tokens.css](src/design-tokens.css)): `--text-display: 30px`, `--text-h1: 24px`, `--text-h2: 20px`, `--text-h3: 18px`, `--text-body: 14px`, `--text-caption: 11px`. Usar `text-display` / `text-h1` / `text-caption` etc. em vez de `text-3xl` / `text-[10px]`
+- Botão primário: `bg-blue-600 text-[#ffffff] rounded-lg`
 - Badges com cor da entidade: `backgroundColor: ${cor}20` (alpha hex) + `color: cor`
 - Avatares simples com inicial do nome (placeholder até ter foto real)
+- **Largura máxima de conteúdo:** `max-w-screen-2xl` (1536px) em [Layout.tsx](src/components/Layout.tsx)
+
+### Acessibilidade (a11y)
+
+Padrões aplicados em todo o projeto (Sprints 0-2 do roadmap UI/UX):
+
+- **`focus-visible:ring-*`** (não `focus:ring-*`) — ring aparece só pra teclado, esconde pra mouse
+- **`100dvh`** (não `100vh`) em containers full-screen — não corta com URL bar mobile
+- **`prefers-reduced-motion`** zerado globalmente em `index.css`
+- **Skip-link** "Pular para o conteúdo" no Layout (classe `.skip-link`); `<main id="main-content">`
+- **Touch targets ≥ 36px** (preferir `p-2.5` para ícones em rows densas; `p-3` em primary actions)
+- **Focus trap** no `Modal.tsx` e `TarefaModal.tsx` — Tab/Shift+Tab presos dentro do dialog, foco restaurado ao desmontar
+- **axe-core em DEV:** [src/main.tsx](src/main.tsx) carrega `@axe-core/react` dinamicamente sob `import.meta.env.DEV`. Warnings de WCAG aparecem no console em desenvolvimento; build de produção descarta o módulo (tree-shake)
+- **Errors per-field + auto-focus** (padrão em forms longos como `ClienteModal`):
+  - Estado paralelo `errors: Record<string, string>` ao banner global `error: string`
+  - Cada input erróneo recebe `id="modal-field-${nome}"`, `aria-invalid={!!errors.nome}`, `aria-describedby={errors.nome ? 'modal-field-${nome}-erro' : undefined}` e `<p id="modal-field-${nome}-erro" className="text-caption text-red-400 mt-1">{errors.nome}</p>` logo abaixo
+  - `onChange` limpa o erro do campo enquanto o usuário digita
+  - `useEffect([errors])` faz `document.getElementById('modal-field-${primeiroErro}')?.focus()` (WCAG `focus-management`)
+
+### Breadcrumbs
+
+[src/components/Breadcrumb.tsx](src/components/Breadcrumb.tsx) — `<nav aria-label="Breadcrumb">` semântico com `<ol>`, ícone Home opcional (prop `comHome`, default true), último item renderizado como `<span aria-current="page">` (não-link). Usado em rotas profundas: `/projetos/:id` (Projetos › Cliente X) e `/projetos/:id/monitor` (Projetos › Cliente X › Monitor). Substitui o link "Voltar para…" tradicional.
 
 ### Datas
 

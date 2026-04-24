@@ -573,9 +573,19 @@
 - [x] Novo componente `AudioPlayerWhats.tsx`: play/pause redondo + **waveform real** (40 barras com altura calculada via Web Audio API decodificando o áudio) + tempo decorrido (ou duração quando parado) + botão de velocidade (1x → 1.5x → 2x cicla); clicar nas barras pula pra posição; cores adaptam ao contexto da bolha (branco em mensagem própria azul, azul em mensagem cinza); fallback de barras pulsantes durante decodificação
 - [x] `MensagemBubble` substitui o `<audio controls>` nativo (que aparecia minúsculo no dark theme) pelo `AudioPlayerWhats`
 
+### Sprint 2 — UI/UX High Priority ✅ Concluído (2026-04-24)
+
+- [x] **2.1 Opção B (sempre dark)** — `design-tokens.css` reescrito: removidos tokens semânticos não usados (`--color-surface-*`, `--color-text-*`, `--color-border-*`, `--color-action-*`, `--color-feedback-*`, `--color-progress-*`); mantidos só primitivos + bloco de comentário documentando a estratégia de remapeamento Tailwind (`--color-white: #3a3a3a` etc.); `Button.tsx` migrado para Tailwind direto (`bg-blue-600`, `bg-white`, `bg-red-600`, etc.); `AlertBanner.tsx` migrado para hex fixo (mesmo padrão do Toast)
+- [x] **2.2 Type scale** em `design-tokens.css`: `--text-display: 30px`, `--text-h1: 24px`, `--text-h2: 20px`, `--text-h3: 18px`, `--text-body: 14px`, `--text-caption: 11px` (já gerou utilities `text-display`/`text-h1`/etc. via Tailwind v4)
+- [x] **2.5 Breadcrumb** — novo componente `src/components/Breadcrumb.tsx` com `<nav aria-label="Breadcrumb">` semântico, `<ol>` com chevrons, ícone Home opcional, último item como `<span aria-current="page">`. Integrado em `ProjetoDetalhe` (Projetos › Cliente X) e `ProjetoMonitor` (Projetos › Cliente X › Monitor) substituindo o link "Voltar para…"
+- [x] **2.6 axe-core** em dev mode: `@axe-core/react` instalado; init dinâmico em `src/main.tsx` dentro de `if (import.meta.env.DEV)` com tree-shake garantido em produção
+- [x] **2.7 max-w-7xl → max-w-screen-2xl** em `Layout.tsx` (1280 → 1536px de conteúdo em telas grandes)
+- [x] **2.3 Errors per-field em ClienteModal** — estado `errors: Record<string, string>` em paralelo ao banner global; CNPJ e sistema_atual ganham `<p>` inline com `aria-invalid` + `aria-describedby` ligando ao erro; ao digitar no campo o erro é limpo. TarefaModal pulado (usa HTML5 `required` + AlertBanner; sem validações JS pra mapear)
+- [x] **2.4 Auto-focus no primeiro campo inválido** em ClienteModal: `useEffect([errors])` busca `document.getElementById('cliente-field-${primeiroErro}')` e dá `.focus()` (WCAG `focus-management`)
+
 ## 🔄 Em Andamento
 
-Nenhuma tarefa em andamento.
+_Nada em andamento no momento._
 
 ## 📋 Próximos Passos
 
@@ -615,21 +625,9 @@ Correções de touch e contraste que afetam usabilidade real.
   - `ClienteModal` faz comparação local com helper `serializarForm` que normaliza `Set<string>` para array sorted
   - Em ambos: `tentarFechar` (useCallback) intercepta ESC + click no backdrop + botão Cancelar/Fechar/X; abre modal âmbar "Descartar alterações?" com botões "Continuar editando" / "Descartar" (vermelho); confirmar fecha o modal pai sem salvar
 
-### Sprint 2 — High Priority (≈ 1 semana)
+### Sprint 2 — High Priority ✅ Concluído (2026-04-24)
 
-Decisões estruturais de design system + qualidade de form.
-
-- [ ] **DECISÃO sobre tokens semânticos** (item mais importante do plano):
-  - Hoje: 6 usos de `bg-action-primary`/`text-text-primary` vs 245+ usos de `bg-white`/`text-gray-*` cru + 64 workarounds `text-[#ffffff]`
-  - **Opção A** — adotar tokens completamente (refactor incremental, viabiliza light mode futuro)
-  - **Opção B** — remover tokens semânticos não usados, documentar Tailwind remapeado no CLAUDE.md
-  - **Recomendação:** A se prevê light mode ou time crescendo; B se sempre dark + time pequeno
-- [ ] **Type scale** documentada em `design-tokens.css`: `--text-display: 30px`, `--text-h1: 24px`, `--text-h2: 20px`, `--text-h3: 18px`, `--text-body: 14px`, `--text-caption: 11px`. Migrar gradualmente
-- [ ] **Errors per-field** em `TarefaModal` e `ClienteModal`: estado `errors: { [field]: string }`, mostrar `<p>` abaixo de cada input com erro; manter banner global como sumário
-- [ ] **Auto-focus no primeiro campo inválido** após submit error (WCAG `focus-management`) — refatorar `handleSubmit` pra retornar field id
-- [ ] **Breadcrumbs** em rotas profundas (`/projetos/:id`, `/projetos/:id/monitor`): novo componente `<Breadcrumb items={[...]} />`
-- [ ] **Auditoria de contraste WCAG AA automatizada**: instalar `@axe-core/react` em dev mode OU rodar Lighthouse no CI
-- [ ] **`max-w-7xl` no Layout**: avaliar se vira `max-w-screen-2xl` (mais espaço em telas grandes) ou full-width
+Decisão tomada: **Opção B (sempre dark)** — manter o remap Tailwind documentado em vez de adotar tokens semânticos. Detalhes na seção concluída acima.
 
 ### Sprint 3 — Estratégico (3-4 semanas)
 
@@ -657,4 +655,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint 1 do roadmap UI/UX concluído — touch targets +28%, focus trap no TarefaModal, contraste WCAG AA do tertiary, confirmação "unsaved changes" em TarefaModal/ClienteModal)
+**Última atualização:** 2026-04-24 (Sprint 2 do roadmap UI/UX concluído — Opção B sempre-dark documentada, type scale, Breadcrumb, axe-core em dev, max-w-screen-2xl, errors per-field + auto-focus em ClienteModal)

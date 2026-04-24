@@ -1,27 +1,49 @@
+/*
+ * DESIGN TOKENS — VS Code Dark Theme
+ *
+ * ESTRATÉGIA (decisão Sprint 2 — Opção B):
+ *   O projeto é dark-only. Em vez de usar tokens semânticos no JSX
+ *   (`bg-action-primary`), remapeamos as classes Tailwind padrão para a paleta
+ *   dark e usamos `bg-blue-600`/`text-gray-900`/etc. direto. Funciona porque
+ *   `--color-white` foi remapeado pra `#3a3a3a` (cor de card), `--color-gray-50`
+ *   virou page-bg, e a escala de cinza está invertida.
+ *
+ * GOTCHA: `text-white` literal NÃO funciona (vira cinza). Use `text-[#ffffff]`
+ * em texto branco real (botões primários, etc.).
+ *
+ * MAPEAMENTO MENTAL pra ler o código:
+ *   bg-white         → card escuro (#3a3a3a)
+ *   bg-gray-50       → page bg (#1e1e1e)
+ *   bg-gray-100      → sidebar / hover (#2d2d2d)
+ *   bg-gray-200      → borders / divisores
+ *   text-gray-900    → texto principal (claro, #e8e8e8)
+ *   text-gray-700    → corpo de texto
+ *   text-gray-500    → secundário, muted
+ *   text-gray-400    → placeholders, terciário
+ *   text-[#ffffff]   → branco real (em botão azul/vermelho)
+ */
+
 @theme {
-  /* ─── Global Color Primitives (VS Code Dark Theme) ─── */
+  /* ─── Color primitives (escala invertida para dark) ─── */
 
-  /* White remapped to card surface — clearly distinct from page bg */
-  --color-white: #3a3a3a;
-
-  /* Gray scale — inverted for dark theme */
-  --color-gray-50: #1e1e1e;   /* page background */
-  --color-gray-100: #2d2d2d;  /* sidebar, hover states */
-  --color-gray-200: #515151;  /* borders — visíveis no fundo escuro */
-  --color-gray-300: #666666;  /* borders secundários */
-  --color-gray-400: #7a7a7a;  /* placeholder text */
-  --color-gray-500: #9a9a9a;  /* muted text */
-  --color-gray-600: #b0b0b0;  /* secondary text */
-  --color-gray-700: #cccccc;  /* body text */
-  --color-gray-800: #d8d8d8;  /* slightly brighter body */
-  --color-gray-900: #e8e8e8;  /* headings / brightest text */
+  --color-white: #3a3a3a;       /* === surface-card. NÃO é branco real! */
+  --color-gray-50: #1e1e1e;     /* page background */
+  --color-gray-100: #2d2d2d;    /* sidebar, hover states */
+  --color-gray-200: #515151;    /* borders */
+  --color-gray-300: #666666;    /* borders secundários */
+  --color-gray-400: #7a7a7a;    /* placeholder text */
+  --color-gray-500: #a8a8a8;    /* muted text (4.9:1 em surface card) */
+  --color-gray-600: #b0b0b0;    /* secondary text (5.7:1) */
+  --color-gray-700: #cccccc;    /* body text */
+  --color-gray-800: #d8d8d8;    /* slightly brighter */
+  --color-gray-900: #e8e8e8;    /* headings / brightest */
 
   /* Blue scale — VS Code accent blues */
   --color-blue-50: #1a3050;
   --color-blue-100: #1e3a5f;
   --color-blue-200: #2e5a8e;
   --color-blue-500: #569cd6;
-  --color-blue-600: #0078d4;
+  --color-blue-600: #0078d4;    /* accent principal */
   --color-blue-700: #005a9e;
 
   /* Status colors */
@@ -33,52 +55,15 @@
   --color-red-500: #f14c4c;
   --color-red-600: #cd3131;
 
-  /* ─── Semantic Color Tokens ─── */
-
-  /* Surfaces */
-  --color-surface-page: #1e1e1e;
-  --color-surface-card: #3a3a3a;
-  --color-surface-elevated: #444444;
-  --color-surface-hover: #424242;
-  --color-surface-active: #4a4a4a;
-  --color-surface-disabled: #2d2d2d;
-
-  /* Text */
-  --color-text-primary: #e8e8e8;
-  --color-text-secondary: #b0b0b0;
-  --color-text-tertiary: #a8a8a8;
-  --color-text-disabled: #7a7a7a;
-  --color-text-inverse: #ffffff;
-
-  /* Borders */
-  --color-border-default: #3c3c3c;
-  --color-border-hover: #555555;
-  --color-border-focus: #569cd6;
-  --color-border-error: #f14c4c;
-
-  /* Actions */
-  --color-action-primary: #0078d4;
-  --color-action-primary-hover: #005a9e;
-  --color-action-primary-text: #ffffff;
-  --color-action-danger: #cd3131;
-  --color-action-danger-hover: #b02020;
-
-  /* Feedback */
-  --color-feedback-success: #4ec9b0;
-  --color-feedback-success-bg: #1a3330;
-  --color-feedback-warning: #dcdcaa;
-  --color-feedback-warning-bg: #2e2a1a;
-  --color-feedback-error: #f14c4c;
-  --color-feedback-error-bg: #2e1a1a;
-  --color-feedback-info: #569cd6;
-  --color-feedback-info-bg: #1a3050;
-
-  /* Progress Bar Colors */
-  --color-progress-empty: #3c3c3c;
-  --color-progress-low: #dcdcaa;
-  --color-progress-mid: #569cd6;
-  --color-progress-high: #4ec9b0;
-  --color-progress-complete: #4ec9b0;
+  /* ─── Type scale (registrada como tokens; Tailwind cru ainda funciona) ─── */
+  /* Quando usada via classe (ex: text-h1), pega aqui. Migração das telas é
+     gradual — o existente usa text-xs/sm/base/lg/xl/2xl normalmente. */
+  --text-display: 30px;
+  --text-h1: 24px;
+  --text-h2: 20px;
+  --text-h3: 18px;
+  --text-body: 14px;
+  --text-caption: 11px;
 
   /* ─── Border Radius ─── */
   --radius-sm: 4px;

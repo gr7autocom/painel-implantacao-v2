@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/SkeletonCard'
+import { Breadcrumb } from '../components/Breadcrumb'
 import { formatarDataCompleta, formatarTempoRelativo } from '../lib/historico-utils'
 import { supabase } from '../lib/supabase'
 import type {
@@ -204,12 +205,13 @@ export function ProjetoMonitor() {
 
   return (
     <div>
-      <Link
-        to={`/projetos/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-4"
-      >
-        <ArrowLeft className="w-4 h-4" /> Voltar para o Projeto
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: 'Projetos', to: '/projetos' },
+          { label: projeto.nome, to: `/projetos/${id}` },
+          { label: 'Monitor' },
+        ]}
+      />
 
       <HeaderMonitor
         projeto={projeto}
