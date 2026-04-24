@@ -199,7 +199,10 @@ export function useTarefaForm({
         setRascunhoPendente(null)
       }
     }
-  }, [open, tarefa, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa, rascunhoKey])
+    // Dep `tarefa?.id` (não `tarefa`) — recarregar a mesma tarefa não deve
+    // resetar form/aba (caso contrário marcar checklist joga o user pra "Principal").
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, tarefa?.id, usuarioAtual?.id, podeAtribuirNaCriacao, defaultClienteId, abaInicial, tarefaPaiFixa?.id, rascunhoKey])
 
   // Autosave debounced: a cada mudança no form, espera 1.2s e grava no localStorage
   // se ainda for diferente do snapshot inicial. Não dispara se rascunho pendente
