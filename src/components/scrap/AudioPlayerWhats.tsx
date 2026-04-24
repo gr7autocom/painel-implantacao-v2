@@ -99,22 +99,22 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
   const tempoExibido = tocando || tempoAtual > 0 ? tempoAtual : duracao
 
   return (
-    <div className="flex items-center gap-2.5 min-w-[260px]">
+    <div className="flex items-center gap-2 w-[320px] max-w-full h-[58px]">
       <button
         type="button"
         onClick={alternar}
-        className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${corBtn}`}
+        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${corBtn}`}
         aria-label={tocando ? 'Pausar' : 'Reproduzir'}
       >
-        {tocando ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4 ml-0.5" fill="currentColor" />}
+        {tocando ? <Pause className="w-3.5 h-3.5" fill="currentColor" /> : <Play className="w-3.5 h-3.5 ml-0.5" fill="currentColor" />}
       </button>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
         {/* Waveform / barras */}
         <div
           ref={barrasRef}
           onClick={pular}
-          className="relative h-8 flex items-center gap-[2px] cursor-pointer select-none"
+          className="relative h-6 flex items-center gap-[2px] cursor-pointer select-none"
           aria-label="Barra de progresso do áudio"
         >
           {picos === null ? (
@@ -123,13 +123,13 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
               <span
                 key={i}
                 className={`flex-1 rounded-full ${corBarraOff} animate-pulse`}
-                style={{ height: '6px' }}
+                style={{ height: '4px' }}
               />
             ))
           ) : (
             picos.map((p, i) => {
               const passou = i / NUM_BARRAS < progresso
-              const altura = Math.max(3, p * 28)
+              const altura = Math.max(2, p * 22)
               return (
                 <span
                   key={i}
@@ -141,14 +141,14 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
           )}
         </div>
         {/* Tempo + velocidade */}
-        <div className="flex items-center justify-between mt-1">
-          <span className={`text-[11px] font-medium ${corTexto}`}>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className={`text-[10px] font-medium leading-none ${corTexto}`}>
             {formatarTempo(tempoExibido)}
           </span>
           <button
             type="button"
             onClick={ciclarVelocidade}
-            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${corVelBg}`}
+            className={`text-[9px] font-bold px-1.5 py-px rounded-full leading-none transition-colors ${corVelBg}`}
             aria-label="Velocidade de reprodução"
             title={`Velocidade ${VELOCIDADES[velIdx]}x — clique para alterar`}
           >
