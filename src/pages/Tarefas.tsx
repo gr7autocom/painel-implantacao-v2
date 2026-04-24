@@ -541,6 +541,7 @@ export function Tarefas() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSaved={() => { toast(editando ? 'Tarefa atualizada.' : 'Tarefa criada.'); load() }}
+        onTarefaUpdated={load}
         tarefa={editando}
       />
 

@@ -308,6 +308,7 @@ export function ProjetoMonitor() {
         open={!!tarefaAberta}
         onClose={() => setTarefaAberta(null)}
         onSaved={load}
+        onTarefaUpdated={load}
         tarefa={tarefaAberta}
         abaInicial={abaAberta}
         projetoFixo={{ id: projeto.id, nome: projeto.nome, clienteId: projeto.cliente_id, clienteNome: projeto.cliente?.nome_fantasia ?? '' }}

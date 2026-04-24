@@ -12,9 +12,11 @@ type Props = {
   onAbrirSubtarefa: (subtarefa: TarefaComRelacoes) => void
   onCriarSubtarefa: () => void
   onChange?: () => void
+  /** Quando este número muda, a lista é recarregada (usado pra forçar refresh externo). */
+  versao?: number
 }
 
-export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa }: Props) {
+export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa, versao }: Props) {
   const perm = usePermissao()
   const [subtarefas, setSubtarefas] = useState<TarefaComRelacoes[]>([])
   const [loading, setLoading] = useState(false)
@@ -37,7 +39,7 @@ export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tarefa.id])
+  }, [tarefa.id, versao])
 
   const concluidas = subtarefas.filter((s) => isFinalizada(s) && !s.etapa?.nome.toLowerCase().includes('cancel')).length
   const pendentes = subtarefas.filter((s) => !isFinalizada(s)).length

@@ -33,7 +33,14 @@ import type { Cliente, PendingAnexo, TarefaComRelacoes } from '../../lib/types'
 type Props = {
   open: boolean
   onClose: () => void
+  /** Disparado após save do form principal (toast + reload no consumidor). */
   onSaved: () => void
+  /**
+   * Disparado após mudanças intermediárias (importar checklist, marcar item,
+   * criar subtarefa, comentar, alterar participantes). O consumidor deve só
+   * recarregar dados (sem toast). Se omitido, mudanças não propagam até fechar.
+   */
+  onTarefaUpdated?: () => void
   tarefa: TarefaComRelacoes | null
   /** Quando vem de uma página de projeto: cliente fixo, não pode trocar */
   clienteFixo?: Pick<Cliente, 'id' | 'nome_fantasia'> | null
@@ -49,6 +56,7 @@ export function TarefaModal({
   open,
   onClose,
   onSaved,
+  onTarefaUpdated,
   tarefa,
   clienteFixo,
   projetoFixo,
@@ -70,6 +78,13 @@ export function TarefaModal({
   const [verificandoChecklist, setVerificandoChecklist] = useState(false)
   const [subtarefaCriarOpen, setSubtarefaCriarOpen] = useState(false)
   const [subtarefaAberta, setSubtarefaAberta] = useState<TarefaComRelacoes | null>(null)
+  /** Incrementa quando uma aba muda dados — força refresh em quem observa esse contador. */
+  const [versaoMudancas, setVersaoMudancas] = useState(0)
+
+  function notificarMudanca() {
+    setVersaoMudancas((v) => v + 1)
+    onTarefaUpdated?.()
+  }
 
   const isCriando = !tarefa
   const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefa!)
@@ -258,13 +273,14 @@ export function TarefaModal({
           <div className="flex-1 min-w-0 flex flex-col">
             {aba !== 'principal' && tarefa && (
               <div className="px-6 py-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-                {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefa} onChange={onSaved} />}
-                {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefa} />}
-                {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefa} />}
+                {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefa} onChange={notificarMudanca} />}
+                {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefa} onChange={notificarMudanca} />}
+                {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefa} onChange={notificarMudanca} />}
                 {aba === 'subtarefas' && (
                   <TarefaSubtarefasTab
                     tarefa={tarefa}
-                    onChange={onSaved}
+                    versao={versaoMudancas}
+                    onChange={notificarMudanca}
                     onCriarSubtarefa={() => setSubtarefaCriarOpen(true)}
                     onAbrirSubtarefa={(s) => setSubtarefaAberta(s)}
                   />
@@ -511,7 +527,8 @@ export function TarefaModal({
         <TarefaModal
           open={subtarefaCriarOpen}
           onClose={() => setSubtarefaCriarOpen(false)}
-          onSaved={() => { setSubtarefaCriarOpen(false); onSaved() }}
+          onSaved={() => { setSubtarefaCriarOpen(false); notificarMudanca(); onSaved() }}
+          onTarefaUpdated={notificarMudanca}
           tarefa={null}
           tarefaPaiFixa={{ id: tarefa.id, responsavelId: tarefa.responsavel_id }}
         />
@@ -521,7 +538,8 @@ export function TarefaModal({
       <TarefaModal
         open={!!subtarefaAberta}
         onClose={() => setSubtarefaAberta(null)}
-        onSaved={() => { setSubtarefaAberta(null); onSaved() }}
+        onSaved={() => { setSubtarefaAberta(null); notificarMudanca(); onSaved() }}
+        onTarefaUpdated={notificarMudanca}
         tarefa={subtarefaAberta}
       />
 

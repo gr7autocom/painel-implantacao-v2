@@ -445,6 +445,7 @@ export function ProjetoDetalhe() {
         open={tarefaModalOpen}
         onClose={() => setTarefaModalOpen(false)}
         onSaved={() => { toast(editando ? 'Tarefa atualizada.' : 'Tarefa criada.'); load() }}
+        onTarefaUpdated={load}
         tarefa={editando}
         projetoFixo={{ id: projeto.id, nome: projeto.nome, clienteId: projeto.cliente_id, clienteNome: projeto.cliente?.nome_fantasia ?? '' }}
       />

@@ -214,6 +214,7 @@ export function Inicio() {
         open={!!tarefaAberta}
         onClose={() => setTarefaAberta(null)}
         onSaved={load}
+        onTarefaUpdated={load}
         tarefa={tarefaAberta}
         clienteFixo={
           tarefaAberta?.de_projeto && tarefaAberta.cliente
