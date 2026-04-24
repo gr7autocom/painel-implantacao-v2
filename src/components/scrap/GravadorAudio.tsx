@@ -38,6 +38,29 @@ function extensaoDoMime(mime: string): string {
   return 'webm'
 }
 
+/** Mensagem de erro de mic com instrução específica do dispositivo/navegador. */
+function mensagemErroMicrofone(err: unknown): string {
+  const e = err as { name?: string }
+  if (e?.name === 'NotFoundError' || e?.name === 'DevicesNotFoundError') {
+    return 'Nenhum microfone foi detectado neste dispositivo.'
+  }
+  if (e?.name === 'NotReadableError' || e?.name === 'TrackStartError') {
+    return 'O microfone está sendo usado por outro programa. Feche-o e tente de novo.'
+  }
+  // NotAllowedError, PermissionDeniedError ou erro desconhecido → instrução por SO
+  if (typeof navigator === 'undefined') return 'Permissão do microfone foi negada.'
+  const ua = navigator.userAgent
+  const isIOS = /iPad|iPhone|iPod/.test(ua)
+  const isAndroid = /Android/.test(ua)
+  if (isIOS) {
+    return 'Acesso ao microfone bloqueado. Vá em Ajustes → Safari → Microfone e ative para este site.'
+  }
+  if (isAndroid) {
+    return 'Acesso ao microfone bloqueado. Toque no cadeado na barra de endereço → Permissões → Microfone → Permitir.'
+  }
+  return 'Acesso ao microfone bloqueado. Clique no cadeado ao lado da URL → Permissões do site → Microfone → Permitir, e recarregue a página.'
+}
+
 export function GravadorAudio({ onConfirm, onCancel, disabled }: Props) {
   const [estado, setEstado] = useState<'gravando' | 'preview'>('gravando')
   const [erro, setErro] = useState<string | null>(null)
@@ -106,8 +129,8 @@ export function GravadorAudio({ onConfirm, onCancel, disabled }: Props) {
             return novo
           })
         }, 1000)
-      } catch {
-        setErro('Permita o acesso ao microfone nas configurações do navegador.')
+      } catch (err) {
+        setErro(mensagemErroMicrofone(err))
       }
     }
     iniciar()
@@ -167,13 +190,13 @@ export function GravadorAudio({ onConfirm, onCancel, disabled }: Props) {
 
   if (erro) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-        <Mic className="w-4 h-4 shrink-0" />
-        <span className="flex-1">{erro}</span>
+      <div className="flex items-start gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <Mic className="w-4 h-4 shrink-0 mt-0.5" />
+        <span className="flex-1 leading-snug">{erro}</span>
         <button
           type="button"
           onClick={onCancel}
-          className="p-1 text-red-700 hover:bg-red-100 rounded"
+          className="p-1 text-red-700 hover:bg-red-100 rounded shrink-0"
           aria-label="Fechar"
         >
           <Trash2 className="w-4 h-4" />

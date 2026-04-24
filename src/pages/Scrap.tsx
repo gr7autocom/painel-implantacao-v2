@@ -108,6 +108,7 @@ export function Scrap() {
               setSearchParams({})
               recarregar()
             }}
+            onNovaConversa={() => setModalNovaOpen(true)}
           />
         </div>
       </div>

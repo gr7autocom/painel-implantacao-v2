@@ -9,6 +9,9 @@ type Props = {
 
 const NUM_BARRAS = 40
 const VELOCIDADES = [1, 1.5, 2] as const
+// Tempo máximo para decodificar o áudio. Se falhar (CORS, formato), usa
+// barra de progresso simples no lugar do waveform.
+const DECODE_TIMEOUT_MS = 5000
 
 function formatarTempo(seg: number): string {
   if (!Number.isFinite(seg) || seg < 0) return '0:00'
@@ -53,14 +56,20 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
   const [tocando, setTocando] = useState(false)
   const [tempoAtual, setTempoAtual] = useState(0)
   const [duracao, setDuracao] = useState(0)
-  const [picos, setPicos] = useState<number[] | null>(null)
+  // 'loading' enquanto decodifica; 'fallback' se demorar demais ou falhar; array com picos no caso normal
+  const [picos, setPicos] = useState<number[] | 'loading' | 'fallback'>('loading')
   const [velIdx, setVelIdx] = useState(0)
 
-  // Decodifica o áudio para extrair as barras (lazy, uma vez)
+  // Decodifica o áudio para extrair as barras (lazy, uma vez).
+  // Se exceder DECODE_TIMEOUT_MS ou falhar, cai em fallback (barra simples).
   useEffect(() => {
     let cancelado = false
-    calcularPicos(src, NUM_BARRAS).then((p) => {
-      if (!cancelado) setPicos(p)
+    setPicos('loading')
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), DECODE_TIMEOUT_MS))
+    Promise.race([calcularPicos(src, NUM_BARRAS), timeout]).then((p) => {
+      if (cancelado) return
+      if (!p || p.length === 0) setPicos('fallback')
+      else setPicos(p)
     })
     return () => { cancelado = true }
   }, [src])
@@ -117,8 +126,8 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
           className="relative h-6 flex items-center gap-[2px] cursor-pointer select-none"
           aria-label="Barra de progresso do áudio"
         >
-          {picos === null ? (
-            // Loading / fallback: barras de placeholder uniformes pulsando
+          {picos === 'loading' ? (
+            // Decodificando: barras de placeholder uniformes pulsando
             Array.from({ length: NUM_BARRAS }).map((_, i) => (
               <span
                 key={i}
@@ -126,6 +135,14 @@ export function AudioPlayerWhats({ src, ehMinha }: Props) {
                 style={{ height: '4px' }}
               />
             ))
+          ) : picos === 'fallback' ? (
+            // Decode falhou ou demorou: barra de progresso simples (linha horizontal)
+            <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full ${corBarraOff} overflow-hidden`}>
+              <div
+                className={`h-full ${corBarraOn} transition-all`}
+                style={{ width: `${progresso * 100}%` }}
+              />
+            </div>
           ) : (
             picos.map((p, i) => {
               const passou = i / NUM_BARRAS < progresso

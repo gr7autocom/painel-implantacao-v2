@@ -1,7 +1,22 @@
 import { useRef, useState } from 'react'
-import { Mic, Paperclip, Send, X, FileText } from 'lucide-react'
+import { Mic, Paperclip, Send, X, FileText, Music, Loader2 } from 'lucide-react'
 import { uploadImagemCloudinary } from '../../lib/cloudinary'
 import { GravadorAudio } from './GravadorAudio'
+import { useToast } from '../Toast'
+
+// Limite de upload por arquivo (Cloudinary aceita mais, mas isso protege a UX
+// e evita cobrança absurda de bandwidth em casos acidentais).
+const MAX_FILE_SIZE_MB = 25
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+function formatarTamanho(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+function ehImagem(mime: string): boolean { return mime.startsWith('image/') }
+function ehAudio(mime: string): boolean { return mime.startsWith('audio/') }
 
 type AnexoPendente = {
   nome_arquivo: string
@@ -26,6 +41,7 @@ const SUPORTA_GRAVACAO =
   typeof MediaRecorder !== 'undefined'
 
 export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
+  const { toast } = useToast()
   const [corpo, setCorpo] = useState('')
   const [anexos, setAnexos] = useState<AnexoPendente[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -59,6 +75,14 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
   }
 
   async function subirArquivo(file: File) {
+    // D2: validação de tamanho antes de iniciar upload
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      toast(
+        `"${file.name}" tem ${formatarTamanho(file.size)} — limite é ${MAX_FILE_SIZE_MB} MB`,
+        'error'
+      )
+      return
+    }
     setUploadingCount((c) => c + 1)
     try {
       const { url, public_id } = await uploadImagemCloudinary(file, 'scrap-anexos')
@@ -71,6 +95,7 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
       }])
     } catch (err) {
       console.error('Upload falhou', err)
+      toast(`Falha ao enviar "${file.name}". Tente de novo.`, 'error')
     } finally {
       setUploadingCount((c) => c - 1)
     }
@@ -154,22 +179,51 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
       )}
       {(anexos.length > 0 || uploadingCount > 0) && (
         <div className="flex flex-wrap gap-2">
-          {anexos.map((a, i) => (
-            <div key={i} className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-2 py-1.5 text-xs max-w-full">
-              <FileText className="w-3.5 h-3.5 text-gray-500 shrink-0" />
-              <span className="truncate max-w-[160px] text-gray-900">{a.nome_arquivo}</span>
-              <button
-                type="button"
-                onClick={() => removerAnexo(i)}
-                className="text-gray-400 hover:text-red-600 transition-colors"
-                aria-label="Remover anexo"
+          {anexos.map((a, i) => {
+            const imagem = ehImagem(a.tipo_mime)
+            const audio = ehAudio(a.tipo_mime)
+            return (
+              <div
+                key={i}
+                className="relative group flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg p-1.5 pr-7 max-w-full"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
+                {imagem ? (
+                  <img
+                    src={a.url}
+                    alt={a.nome_arquivo}
+                    className="w-10 h-10 rounded object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                    {audio ? (
+                      <Music className="w-5 h-5 text-blue-500" />
+                    ) : (
+                      <FileText className="w-5 h-5 text-gray-500" />
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-medium text-gray-900 truncate max-w-[140px]">
+                    {a.nome_arquivo}
+                  </span>
+                  <span className="text-[10px] text-gray-500">
+                    {formatarTamanho(a.tamanho_bytes)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removerAnexo(i)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-gray-700/80 text-[#ffffff] hover:bg-red-600 transition-colors flex items-center justify-center"
+                  aria-label={`Remover ${a.nome_arquivo}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )
+          })}
           {uploadingCount > 0 && (
-            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 text-xs text-blue-600">
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-600">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               Enviando {uploadingCount} arquivo{uploadingCount > 1 ? 's' : ''}...
             </div>
           )}

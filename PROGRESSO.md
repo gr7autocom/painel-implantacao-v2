@@ -619,6 +619,20 @@ Pacotes A (Exclusão & Mobile) + B (Scroll & Leitura) + C (Status & Tempo Real).
 - [x] **C2 Typing indicator** — canal Supabase Realtime Presence dedicado por conversa (`scrap-typing-{id}`) com `key=usuarioId`. `MensagemInput` recebe prop `onDigitando` e emite debounced (true imediato, false após 2s sem nova tecla, ou ao enviar/blur). `ConversaView` faz `track({ typing })` e escuta `presence:sync` do outro user. Header mostra "digitando..." em italic azul substituindo o status normal
 - [x] **C3 Status de envio com retry** — fluxo optimistic: cria `tempId`, push imediato no state com status `sending`, mostra `Loader2` na bolha. Após INSERT OK, swap pelo id real e remove status. Em erro, marca `error`, guarda payload em `retryPayloadsRef` e renderiza linha vermelha "Falha ao enviar — Tentar de novo / Descartar" abaixo da bolha. Menu excluir é escondido em mensagens com status pendente
 
+### Sprint Talk — Fase 2 ✅ Concluído (2026-04-24)
+
+Pacotes D (Anexos & Mídia) + E (Empty state). Todos os 4 HIGH + 1 MEDIUM + 1 polimento da auditoria UX que sobraram.
+
+- [x] **D1 Preview rico de anexos** — `MensagemInput`: imagens viram **thumbnail 40×40 real** (renderizado da URL Cloudinary), áudios mostram ícone `Music` azul, outros arquivos `FileText` cinza. Cada card tem nome + tamanho formatado e botão `X` no canto superior direito (estilo overlay escuro, padrão WhatsApp). Counter de uploads em fly ganhou ícone `Loader2` animado
+- [x] **D2 Validação de tamanho** — constante `MAX_FILE_SIZE_MB = 25`. Em `subirArquivo()`, tamanho é checado ANTES do upload e dispara toast vermelho com formato amigável: `"foto.png" tem 38.4 MB — limite é 25 MB`. Erro de upload também ganhou toast (antes era só `console.error`)
+- [x] **D3 Erro de mic com instrução por navegador** — helper `mensagemErroMicrofone(err)` distingue:
+  - `NotFoundError` → "Nenhum microfone foi detectado neste dispositivo."
+  - `NotReadableError` → "O microfone está sendo usado por outro programa..."
+  - `NotAllowedError` (default) → instrução específica: iOS ("Ajustes → Safari → Microfone"), Android ("toque no cadeado..."), Desktop ("clique no cadeado ao lado da URL...")
+  - Bloco de erro ajustado pra `items-start` + `leading-snug` pra acomodar texto multi-linha
+- [x] **D4 Timeout do audio waveform** — `AudioPlayerWhats`: state `picos` virou `'loading' | 'fallback' | number[]`. `Promise.race` entre `calcularPicos` e timeout de 5s; se decode demorar/falhar, vira `fallback` e mostra **barra de progresso simples horizontal** (linha h-1 + preenchimento) em vez de barras pulsando pra sempre. Estados loading e normal continuam iguais
+- [x] **E1 Empty state com CTA** — `ConversaView` quando `!conversa`: ícone `MessageSquareText` 40px dentro de círculo azul claro, título h3 **"Sem conversa selecionada"**, descrição contextual, botão azul **"Iniciar conversa"** com ícone `MessageSquarePlus` que dispara nova prop `onNovaConversa` (passada por `Scrap.tsx` → abre o `NovaConversaModal`)
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -689,4 +703,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint Talk Fase 1 concluída — exclusão com Undo, botão excluir em mobile, lista navegável por teclado, auto-scroll inteligente + botão "↓ N novas", timestamps inline, cache de scroll por conversa, busca dentro da conversa, read receipts ✓✓, typing indicator e status de envio com retry)
+**Última atualização:** 2026-04-24 (Sprint Talk Fase 2 concluída — preview rico de anexos, limite 25MB com toast, erro de mic com instrução por navegador, timeout no waveform, empty state com CTA "Iniciar conversa")

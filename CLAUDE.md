@@ -811,6 +811,16 @@ Padrões introduzidos pela Sprint Talk Fase 1 (2026-04-24):
 - **Timestamps inline na bolha** (padrão WhatsApp) — `text-[10px] tabular-nums` no canto inferior direito da bolha (não mais abaixo). Cor adapta ao contexto (`text-blue-100/80` em própria, `text-gray-500` em outra)
 - **Busca dentro da conversa** — botão `Search` no header toggle barra com input. Filtra por `corpo` ou `nome_arquivo` de anexo (case insensitive). Esc fecha. Empty state dedicado "Nenhuma mensagem encontrada"
 
+### Sprint Talk Fase 2 — Anexos, mídia e empty state
+
+Padrões introduzidos pela Sprint Talk Fase 2 (2026-04-24):
+
+- **Limite de upload por arquivo** — constante `MAX_FILE_SIZE_MB = 25` em `MensagemInput`. Validado ANTES do upload pra evitar bandwidth desperdiçado. Erro vira toast formatado: `"foto.png" tem 38.4 MB — limite é 25 MB`. Erro de upload (rede/Cloudinary) também vira toast em vez de só `console.error`
+- **Preview rico de anexos pendentes** — `MensagemInput` renderiza cada anexo como card 40px de altura: imagens com thumbnail real (URL Cloudinary), áudios com `Music` azul, outros com `FileText`. Nome + tamanho. Botão `X` em overlay no canto superior direito (padrão WhatsApp / Slack). Counter de uploads em andamento ganha `Loader2` animado
+- **Erro de microfone com instrução por dispositivo** — helper `mensagemErroMicrofone(err)` em `GravadorAudio` distingue `NotFoundError`, `NotReadableError`, `NotAllowedError`. Para permissão negada, detecta UA e dá instrução literal: iOS ("Ajustes → Safari → Microfone"), Android ("cadeado na URL → Permissões → Microfone"), Desktop ("cadeado ao lado da URL → Permissões do site → Microfone → Permitir, e recarregue"). Bloco de erro com `items-start` + `leading-snug` acomoda texto multi-linha
+- **Timeout no decode do audio waveform** — `AudioPlayerWhats`: state `picos: 'loading' | 'fallback' | number[]`. `Promise.race([calcularPicos, timeout(5000)])` evita as barras pulsando pra sempre quando o decode falha (CORS, formato exótico). Em `fallback`, renderiza barra de progresso horizontal simples (linha h-1 + preenchimento conforme `progresso`) — UX degradada mas funcional
+- **Empty state com CTA acionável** — `ConversaView` quando `!conversa` agora tem ícone `MessageSquareText` 40px em círculo azul + título h3 + descrição contextual + botão **"Iniciar conversa"** que dispara prop `onNovaConversa` (abre o `NovaConversaModal`). Padrão pra qualquer empty state futuro: ícone grande visualmente distinguível, título h3, descrição que explica o que/por que, botão CTA com ação concreta
+
 ---
 
 ## Presença e status do usuário

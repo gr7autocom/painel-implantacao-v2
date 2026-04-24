@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowLeft, BellOff, MessageSquare, MoreVertical, Search, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, BellOff, MessageSquarePlus, MessageSquareText, MoreVertical, Search, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { UserAvatar } from '../UserAvatar'
 import { MensagemBubble } from './MensagemBubble'
@@ -28,9 +28,11 @@ type Props = {
   onMensagemEnviada: () => void
   onVoltar?: () => void
   onConversaExcluida?: () => void
+  /** Abre o modal de "Nova conversa" — usado pelo CTA do empty state. */
+  onNovaConversa?: () => void
 }
 
-export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, onVoltar, onConversaExcluida }: Props) {
+export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, onVoltar, onConversaExcluida, onNovaConversa }: Props) {
   const perm = usePermissao()
   const { presenca } = usePresence()
   const { toast } = useToast()
@@ -429,10 +431,25 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
 
   if (!conversa) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 gap-3 p-8 text-center">
-        <MessageSquare className="w-12 h-12 text-gray-300" />
-        <p className="text-sm font-medium">Selecione uma conversa</p>
-        <p className="text-xs">Escolha uma conversa à esquerda ou inicie uma nova.</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+        <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+          <MessageSquareText className="w-10 h-10 text-blue-500" aria-hidden />
+        </div>
+        <h2 className="text-h3 font-semibold text-gray-900 mb-1">Sem conversa selecionada</h2>
+        <p className="text-sm text-gray-500 max-w-sm mb-6">
+          Escolha uma conversa à esquerda para continuar onde parou,
+          ou inicie uma nova com qualquer pessoa do time.
+        </p>
+        {onNovaConversa && (
+          <button
+            type="button"
+            onClick={onNovaConversa}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-[#ffffff] hover:bg-blue-700 transition-colors"
+          >
+            <MessageSquarePlus className="w-4 h-4" />
+            Iniciar conversa
+          </button>
+        )}
       </div>
     )
   }
