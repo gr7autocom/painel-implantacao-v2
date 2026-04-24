@@ -5,6 +5,7 @@ import { horaMensagem } from '../../lib/scrap-utils'
 import { usePermissao } from '../../lib/permissoes'
 import type { MensagemComAnexos, Usuario } from '../../lib/types'
 import { AudioPlayerWhats } from './AudioPlayerWhats'
+import { ReacaoChips, ReacaoPicker } from './MensagemReacoes'
 
 type Props = {
   mensagem: MensagemComAnexos
@@ -16,6 +17,12 @@ type Props = {
   statusEnvio?: 'sending' | 'error'
   onRetry?: () => void
   onDescartar?: () => void
+  /** Meu user_id — pra agrupar/marcar minhas reactions. */
+  meuId: string
+  /** Nome do outro participante da conversa — pra tooltip de reactions. */
+  nomeOutro: string
+  /** Toggle de reaction: adiciona se não tem, remove se já reagi com esse emoji. */
+  onToggleReacao?: (mensagemId: string, emoji: string) => void
 }
 
 function formatarTamanho(bytes: number | null | undefined): string {
@@ -33,7 +40,7 @@ function ehAudio(mime: string | null | undefined): boolean {
   return !!mime && mime.startsWith('audio/')
 }
 
-export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir, statusEnvio, onRetry, onDescartar }: Props) {
+export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir, statusEnvio, onRetry, onDescartar, meuId, nomeOutro, onToggleReacao }: Props) {
   const perm = usePermissao()
   const [menuAberto, setMenuAberto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -145,6 +152,14 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
               )}
             </div>
           </div>
+          {/* Reaction picker — não aparece em mensagens excluídas/em fly */}
+          {onToggleReacao && !mensagem.excluida && !statusEnvio && (
+            <ReacaoPicker
+              onSelect={(emoji) => onToggleReacao(mensagem.id, emoji)}
+              alinhar={ehMinha ? 'direita' : 'esquerda'}
+              triggerClassName="p-2 sm:p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100 transition-opacity"
+            />
+          )}
           {/* Esconde menu de excluir quando a mensagem ainda está sendo enviada ou falhou */}
           {podeExcluir && !statusEnvio && (
             <div className="relative" ref={menuRef}>
@@ -176,6 +191,16 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
             </div>
           )}
         </div>
+        {/* Chips de reactions agrupados por emoji — abaixo da bolha, mesmo alinhamento */}
+        {onToggleReacao && !mensagem.excluida && !statusEnvio && mensagem.reacoes && mensagem.reacoes.length > 0 && (
+          <ReacaoChips
+            reacoes={mensagem.reacoes}
+            meuId={meuId}
+            nomeOutro={nomeOutro}
+            onToggle={(emoji) => onToggleReacao(mensagem.id, emoji)}
+            alinhar={ehMinha ? 'direita' : 'esquerda'}
+          />
+        )}
         {statusEnvio === 'error' && (
           <div className="flex items-center gap-2 mt-1 text-[11px] text-red-500">
             <AlertCircle className="w-3 h-3 shrink-0" aria-hidden />

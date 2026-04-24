@@ -31,6 +31,14 @@ export type ScrapAnexo = {
   created_at: string
 }
 
+export type ScrapReacao = {
+  id: string
+  mensagem_id: string
+  usuario_id: string
+  emoji: string
+  created_at: string
+}
+
 export type ConversaComRelacoes = ScrapConversa & {
   outro_usuario: Pick<Usuario, 'id' | 'nome' | 'email' | 'foto_url' | 'status_manual'>
   ultima_mensagem?: Pick<ScrapMensagem, 'id' | 'corpo' | 'created_at' | 'remetente_id' | 'excluida'> | null
@@ -39,6 +47,7 @@ export type ConversaComRelacoes = ScrapConversa & {
 
 export type MensagemComAnexos = ScrapMensagem & {
   anexos?: ScrapAnexo[]
+  reacoes?: ScrapReacao[]
 }
 
 export type NotificacaoTipo = 'tarefa_atribuida' | 'prazo_vencendo'

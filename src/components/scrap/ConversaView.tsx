@@ -11,7 +11,7 @@ import { diaMensagem, resolverStatus } from '../../lib/scrap-utils'
 import { usePresence } from '../../lib/usePresence'
 import { usePermissao } from '../../lib/permissoes'
 import { LABEL_STATUS } from '../StatusDot'
-import type { ConversaComRelacoes, MensagemComAnexos, ScrapAnexo, ScrapMensagem, Usuario } from '../../lib/types'
+import type { ConversaComRelacoes, MensagemComAnexos, ScrapAnexo, ScrapMensagem, ScrapReacao, Usuario } from '../../lib/types'
 
 type AnexoPendente = {
   nome_arquivo: string
@@ -57,21 +57,17 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
 
   async function carregarMensagens(conversaId: string) {
     setCarregando(true)
-    const [{ data: msgs }, { data: anexos }] = await Promise.all([
-      supabase
-        .from('scrap_mensagens')
-        .select('*')
-        .eq('conversa_id', conversaId)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('scrap_anexos')
-        .select('*')
-        .in('mensagem_id',
-          (await supabase
-            .from('scrap_mensagens')
-            .select('id')
-            .eq('conversa_id', conversaId)).data?.map((m) => m.id) ?? [],
-        ),
+    // 1ª query: pega ids das mensagens da conversa
+    const { data: msgs } = await supabase
+      .from('scrap_mensagens')
+      .select('*')
+      .eq('conversa_id', conversaId)
+      .order('created_at', { ascending: true })
+    const ids = (msgs ?? []).map((m) => m.id)
+    // 2 queries paralelas: anexos + reações (filtrando pelos ids)
+    const [{ data: anexos }, { data: reacoes }] = await Promise.all([
+      supabase.from('scrap_anexos').select('*').in('mensagem_id', ids),
+      supabase.from('scrap_reacoes').select('*').in('mensagem_id', ids),
     ])
 
     const anexosPorMensagem = new Map<string, ScrapAnexo[]>()
@@ -80,10 +76,17 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
       arr.push(a as ScrapAnexo)
       anexosPorMensagem.set(a.mensagem_id, arr)
     })
+    const reacoesPorMensagem = new Map<string, ScrapReacao[]>()
+    ;(reacoes ?? []).forEach((r) => {
+      const arr = reacoesPorMensagem.get(r.mensagem_id) ?? []
+      arr.push(r as ScrapReacao)
+      reacoesPorMensagem.set(r.mensagem_id, arr)
+    })
 
     const comAnexos: MensagemComAnexos[] = (msgs ?? []).map((m) => ({
       ...(m as ScrapMensagem),
       anexos: anexosPorMensagem.get(m.id) ?? [],
+      reacoes: reacoesPorMensagem.get(m.id) ?? [],
     }))
 
     setMensagens(comAnexos)
@@ -141,6 +144,34 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
               ? { ...m, lida: atualizada.lida, excluida: atualizada.excluida, corpo: atualizada.corpo }
               : m
           ))
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'scrap_reacoes' },
+        (payload) => {
+          // Filtra no client por mensagem_id pra ignorar reactions de outras conversas.
+          // (filter por IN não é suportado nativamente no postgres_changes do Supabase.)
+          const r = (payload.new ?? payload.old) as ScrapReacao
+          if (!r?.mensagem_id) return
+          setMensagens((prev) => {
+            if (!prev.some((m) => m.id === r.mensagem_id)) return prev
+            if (payload.eventType === 'INSERT') {
+              return prev.map((m) => {
+                if (m.id !== r.mensagem_id) return m
+                const ja = (m.reacoes ?? []).some((x) => x.id === r.id)
+                if (ja) return m
+                return { ...m, reacoes: [...(m.reacoes ?? []), payload.new as ScrapReacao] }
+              })
+            }
+            if (payload.eventType === 'DELETE') {
+              return prev.map((m) => m.id === r.mensagem_id
+                ? { ...m, reacoes: (m.reacoes ?? []).filter((x) => x.id !== r.id) }
+                : m
+              )
+            }
+            return prev
+          })
         }
       )
       .subscribe()
@@ -355,6 +386,67 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
       return next
     })
     retryPayloadsRef.current.delete(tempId)
+  }
+
+  /**
+   * Toggle de reaction: se já reagi com esse emoji nessa mensagem, remove (DELETE);
+   * se não, adiciona (INSERT). Atualiza local optimistic e deixa o realtime
+   * confirmar/dedupe via id.
+   */
+  async function toggleReacao(mensagemId: string, emoji: string) {
+    const msg = mensagens.find((m) => m.id === mensagemId)
+    if (!msg) return
+    const minha = (msg.reacoes ?? []).find((r) => r.usuario_id === meuId && r.emoji === emoji)
+    if (minha) {
+      // Optimistic remove
+      setMensagens((prev) => prev.map((m) => m.id === mensagemId
+        ? { ...m, reacoes: (m.reacoes ?? []).filter((r) => r.id !== minha.id) }
+        : m
+      ))
+      const { error: err } = await supabase.from('scrap_reacoes').delete().eq('id', minha.id)
+      if (err) {
+        // Reverte
+        setMensagens((prev) => prev.map((m) => m.id === mensagemId
+          ? { ...m, reacoes: [...(m.reacoes ?? []), minha] }
+          : m
+        ))
+      }
+      return
+    }
+    // Adicionar: optimistic insert com id temporário
+    const tempId = `tmp-reacao-${crypto.randomUUID()}`
+    const optimistic: ScrapReacao = {
+      id: tempId,
+      mensagem_id: mensagemId,
+      usuario_id: meuId,
+      emoji,
+      created_at: new Date().toISOString(),
+    }
+    setMensagens((prev) => prev.map((m) => m.id === mensagemId
+      ? { ...m, reacoes: [...(m.reacoes ?? []), optimistic] }
+      : m
+    ))
+    const { data, error: err } = await supabase
+      .from('scrap_reacoes')
+      .insert({ mensagem_id: mensagemId, usuario_id: meuId, emoji })
+      .select('id, created_at')
+      .single()
+    if (err || !data) {
+      // Reverte
+      setMensagens((prev) => prev.map((m) => m.id === mensagemId
+        ? { ...m, reacoes: (m.reacoes ?? []).filter((r) => r.id !== tempId) }
+        : m
+      ))
+      return
+    }
+    // Substitui o tempId pelo id real (ou remove se realtime já trouxe)
+    setMensagens((prev) => prev.map((m) => {
+      if (m.id !== mensagemId) return m
+      const reacoes = m.reacoes ?? []
+      const jaTemReal = reacoes.some((r) => r.id === data.id)
+      if (jaTemReal) return { ...m, reacoes: reacoes.filter((r) => r.id !== tempId) }
+      return { ...m, reacoes: reacoes.map((r) => r.id === tempId ? { ...r, id: data.id, created_at: data.created_at } : r) }
+    }))
   }
 
   /**
@@ -612,6 +704,9 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
                       statusEnvio={statusEnvio[m.id]}
                       onRetry={statusEnvio[m.id] === 'error' ? () => retryEnvio(m.id) : undefined}
                       onDescartar={statusEnvio[m.id] === 'error' ? () => descartarEnvioComErro(m.id) : undefined}
+                      meuId={meuId}
+                      nomeOutro={conversa.outro_usuario.nome}
+                      onToggleReacao={toggleReacao}
                     />
                   </div>
                 )

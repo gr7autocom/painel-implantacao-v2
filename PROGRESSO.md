@@ -633,6 +633,17 @@ Pacotes D (Anexos & Mídia) + E (Empty state). Todos os 4 HIGH + 1 MEDIUM + 1 po
 - [x] **D4 Timeout do audio waveform** — `AudioPlayerWhats`: state `picos` virou `'loading' | 'fallback' | number[]`. `Promise.race` entre `calcularPicos` e timeout de 5s; se decode demorar/falhar, vira `fallback` e mostra **barra de progresso simples horizontal** (linha h-1 + preenchimento) em vez de barras pulsando pra sempre. Estados loading e normal continuam iguais
 - [x] **E1 Empty state com CTA** — `ConversaView` quando `!conversa`: ícone `MessageSquareText` 40px dentro de círculo azul claro, título h3 **"Sem conversa selecionada"**, descrição contextual, botão azul **"Iniciar conversa"** com ícone `MessageSquarePlus` que dispara nova prop `onNovaConversa` (passada por `Scrap.tsx` → abre o `NovaConversaModal`)
 
+### Sprint Talk — Fase 3 ✅ Concluído (2026-04-24)
+
+Reactions emoji em mensagens do Talk (único item escolhido do Pacote F; URL preview, Reply/Quote, Edit, Mention foram descartados).
+
+- [x] **Migration [`20260424215031_scrap_reacoes.sql`](supabase/migrations/20260424215031_scrap_reacoes.sql)** — tabela `scrap_reacoes (id, mensagem_id FK CASCADE, usuario_id FK CASCADE, emoji TEXT CHECK 1-16, created_at; UNIQUE (mensagem_id, usuario_id, emoji))`. Índices em `mensagem_id` e `usuario_id`. RLS: SELECT por participante via `is_scrap_participante(m.conversa_id)`; INSERT requer `usuario_id = current_user_id() AND mensagem.excluida = FALSE`; DELETE requer `usuario_id = current_user_id()`. `ALTER PUBLICATION supabase_realtime ADD TABLE scrap_reacoes`
+- [x] **Migration [`20260424215403_scrap_reacoes_replica_full.sql`](supabase/migrations/20260424215403_scrap_reacoes_replica_full.sql)** — `REPLICA IDENTITY FULL` para que o payload do DELETE no realtime inclua `mensagem_id` (necessário pra atualizar state correto quando outra sessão remove uma reaction)
+- [x] **Tipos** — `ScrapReacao` e `MensagemComAnexos.reacoes?: ScrapReacao[]` em [src/lib/types.ts](src/lib/types.ts)
+- [x] **Componentes [`MensagemReacoes.tsx`](src/components/scrap/MensagemReacoes.tsx)** — `EMOJIS_REACOES` constante (6 emojis fixos: 👍 ❤️ 😂 😮 😢 🎉). `ReacaoPicker`: botão `SmilePlus` que abre popover horizontal pílula com os emojis (hover scale 125%, click + close, ESC fecha). `ReacaoChips`: agrupa reactions por emoji, conta, marca minhas (anel azul), tooltip "Você reagiu" / "X reagiu" / "Você e X reagiram"
+- [x] **`MensagemBubble`** — props novas: `meuId`, `nomeOutro`, `onToggleReacao`. Picker renderizado ao lado do menu ⋮ (hover-show no desktop, sempre visível no mobile, escondido em mensagens excluídas/em fly). Chips abaixo da bolha alinhados ao mesmo lado (própria=direita, outra=esquerda)
+- [x] **`ConversaView`** — `carregarMensagens` ganhou 3ª query paralela `scrap_reacoes`. Realtime listener `'*'` em `scrap_reacoes` filtra no client por `mensagem_id` presente nas mensagens visíveis. Handler `toggleReacao(mensagemId, emoji)`: optimistic insert/delete + reverte se erro; substitui `tempId` pelo id real no INSERT bem-sucedido (deduplica caso realtime já tenha trazido)
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -703,4 +714,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint Talk Fase 2 concluída — preview rico de anexos, limite 25MB com toast, erro de mic com instrução por navegador, timeout no waveform, empty state com CTA "Iniciar conversa")
+**Última atualização:** 2026-04-24 (Sprint Talk Fase 3 concluída — Reactions emoji em mensagens com 6 emojis fixos, picker horizontal, chips agrupados, realtime e RLS dedicados)

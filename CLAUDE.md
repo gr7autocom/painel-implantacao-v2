@@ -735,6 +735,7 @@ Chat em tempo real entre usuários do painel. Nome interno de arquivos/tabelas p
 - **`scrap_conversas`** (1 linha por par de usuários; CHECK `usuario_a_id < usuario_b_id` normaliza ordem; `ultima_mensagem_em` atualizada por trigger)
 - **`scrap_mensagens`** (conversa_id, remetente_id, corpo, lida, `excluida BOOLEAN`, created_at)
 - **`scrap_anexos`** (mensagem_id, public_id Cloudinary, url, tipo_mime, tamanho_bytes)
+- **`scrap_reacoes`** ([20260424215031](supabase/migrations/20260424215031_scrap_reacoes.sql)) (id, mensagem_id FK CASCADE, usuario_id FK CASCADE, emoji TEXT CHECK length 1-16, created_at; `UNIQUE (mensagem_id, usuario_id, emoji)` — mesmo user pode reagir com vários emojis distintos na mesma mensagem mas não duplicar). RLS: SELECT por participante via `is_scrap_participante`; INSERT requer `usuario_id = current_user_id() AND mensagem.excluida = FALSE`; DELETE requer `usuario_id = current_user_id()`. `REPLICA IDENTITY FULL` ([20260424215403](supabase/migrations/20260424215403_scrap_reacoes_replica_full.sql)) faz o payload de DELETE no realtime trazer todas as colunas (necessário pra atualizar state correto)
 
 ### RLS + helpers
 
@@ -795,7 +796,8 @@ Hook global (usado no Sidebar) que:
 ### Publicação Realtime
 
 - `ALTER PUBLICATION supabase_realtime ADD TABLE scrap_mensagens` ([20260421110000_scrap_realtime.sql](supabase/migrations/20260421110000_scrap_realtime.sql)) — obrigatório no Supabase hosted
-- O `ConversaView` escuta tanto INSERT (mensagem nova) quanto **UPDATE** (campo `lida` virou true → atualiza checkmark de read receipt em tempo real; também propaga `excluida` se outra sessão excluir)
+- `ALTER PUBLICATION supabase_realtime ADD TABLE scrap_reacoes` ([20260424215031](supabase/migrations/20260424215031_scrap_reacoes.sql)) + `REPLICA IDENTITY FULL` ([20260424215403](supabase/migrations/20260424215403_scrap_reacoes_replica_full.sql))
+- O `ConversaView` escuta tanto INSERT (mensagem nova) quanto **UPDATE** (campo `lida` virou true → atualiza checkmark de read receipt em tempo real; também propaga `excluida` se outra sessão excluir) e ainda eventos **`*` em `scrap_reacoes`** (filtrado no client por `mensagem_id` presente no state)
 
 ### Sprint Talk Fase 1 — UX patterns
 
@@ -820,6 +822,18 @@ Padrões introduzidos pela Sprint Talk Fase 2 (2026-04-24):
 - **Erro de microfone com instrução por dispositivo** — helper `mensagemErroMicrofone(err)` em `GravadorAudio` distingue `NotFoundError`, `NotReadableError`, `NotAllowedError`. Para permissão negada, detecta UA e dá instrução literal: iOS ("Ajustes → Safari → Microfone"), Android ("cadeado na URL → Permissões → Microfone"), Desktop ("cadeado ao lado da URL → Permissões do site → Microfone → Permitir, e recarregue"). Bloco de erro com `items-start` + `leading-snug` acomoda texto multi-linha
 - **Timeout no decode do audio waveform** — `AudioPlayerWhats`: state `picos: 'loading' | 'fallback' | number[]`. `Promise.race([calcularPicos, timeout(5000)])` evita as barras pulsando pra sempre quando o decode falha (CORS, formato exótico). Em `fallback`, renderiza barra de progresso horizontal simples (linha h-1 + preenchimento conforme `progresso`) — UX degradada mas funcional
 - **Empty state com CTA acionável** — `ConversaView` quando `!conversa` agora tem ícone `MessageSquareText` 40px em círculo azul + título h3 + descrição contextual + botão **"Iniciar conversa"** que dispara prop `onNovaConversa` (abre o `NovaConversaModal`). Padrão pra qualquer empty state futuro: ícone grande visualmente distinguível, título h3, descrição que explica o que/por que, botão CTA com ação concreta
+
+### Sprint Talk Fase 3 — Reactions
+
+Reactions emoji em mensagens (Sprint Talk Fase 3, 2026-04-24). Único item escolhido do Pacote F — URL preview, Reply/Quote, Edit, Mention foram descartados:
+
+- **6 emojis fixos** (`EMOJIS_REACOES` em [MensagemReacoes.tsx](src/components/scrap/MensagemReacoes.tsx)): 👍 ❤️ 😂 😮 😢 🎉 — mesmo conjunto do WhatsApp. Sem dependência de emoji-picker library
+- **`ReacaoPicker`** — botão `SmilePlus` na hover-area da bolha (mesma região do menu ⋮); abre popover horizontal pílula com hover-scale 125% nos emojis. Click + Esc + click-fora fecham
+- **`ReacaoChips`** — abaixo da bolha (mesmo alinhamento — direita pra própria, esquerda pra outra). Agrupa por emoji, conta, marca minhas com anel azul. Tooltip diz "Você reagiu" / "Pedro reagiu" / "Você e Pedro reagiram"
+- **Toggle** — click num chip OU repetir mesmo emoji no picker remove minha reação. UNIQUE no banco impede duplicar mesmo emoji do mesmo user, mas user pode reagir com vários emojis distintos
+- **Optimistic update** — `toggleReacao` em `ConversaView` insere/remove no state local antes da chamada Supabase. Em erro reverte. INSERT bem-sucedido troca `tempId` pelo id real (deduplica caso o realtime já tenha trazido)
+- **Realtime** — listener `'*'` em `scrap_reacoes` (sem filter — IN não suportado pelo postgres_changes); filtra no client por `mensagem_id` presente no state. `REPLICA IDENTITY FULL` é obrigatório pra que o payload do DELETE traga `mensagem_id` (default só traz a PK)
+- **Restrições** — picker e chips são escondidos em mensagens excluídas (tombstone) e em mensagens com `statusEnvio` pendente (sending/error). RLS no banco também bloqueia INSERT em mensagem excluída via condição `m.excluida = FALSE` no WITH CHECK
 
 ---
 
