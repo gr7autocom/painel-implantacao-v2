@@ -4,6 +4,7 @@ import { UserAvatar } from '../UserAvatar'
 import { horaMensagem } from '../../lib/scrap-utils'
 import { usePermissao } from '../../lib/permissoes'
 import type { MensagemComAnexos, Usuario } from '../../lib/types'
+import { AudioPlayerWhats } from './AudioPlayerWhats'
 
 type Props = {
   mensagem: MensagemComAnexos
@@ -93,17 +94,7 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
                       />
                     </a>
                   ) : ehAudio(a.tipo_mime) ? (
-                    <div
-                      key={a.id}
-                      className={`rounded-lg px-2 py-2 ${ehMinha ? 'bg-blue-700' : 'bg-gray-200'}`}
-                    >
-                      <audio
-                        controls
-                        src={a.url}
-                        preload="metadata"
-                        className="w-full max-w-[260px] h-9"
-                      />
-                    </div>
+                    <AudioPlayerWhats key={a.id} src={a.url} ehMinha={ehMinha} />
                   ) : (
                     <a
                       key={a.id}

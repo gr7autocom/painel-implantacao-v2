@@ -566,6 +566,13 @@
 - [x] `MensagemBubble`: novo helper `ehAudio` detecta `tipo_mime` começando com `audio/`; quando true renderiza `<audio controls preload="metadata">` (player nativo do navegador) num container com bg adaptado ao lado da bolha (azul escuro pra mensagem própria, cinza pra outro); demais anexos seguem como card de arquivo
 - [x] Sem mudança no banco — `scrap_anexos` já é genérica via `tipo_mime`; permissão de exclusão idem (autor da mensagem deleta tudo, incluindo anexo de áudio que vai pro Cloudinary via trigger existente)
 
+### Player de áudio estilo WhatsApp + fix do "(anexo)"
+
+- [x] Removido fallback `corpo: corpo || '(anexo)'` no `ConversaView.enviar` — corpo de mensagem só com anexo agora vai vazio (a coluna aceita); `MensagemBubble` já não renderiza `<p>` quando corpo é falsy
+- [x] `ConversasList`: preview de "Você: " quando corpo vazio mas tem anexo agora mostra **"📎 Anexo"** em vez de string vazia
+- [x] Novo componente `AudioPlayerWhats.tsx`: play/pause redondo + **waveform real** (40 barras com altura calculada via Web Audio API decodificando o áudio) + tempo decorrido (ou duração quando parado) + botão de velocidade (1x → 1.5x → 2x cicla); clicar nas barras pula pra posição; cores adaptam ao contexto da bolha (branco em mensagem própria azul, azul em mensagem cinza); fallback de barras pulsantes durante decodificação
+- [x] `MensagemBubble` substitui o `<audio controls>` nativo (que aparecia minúsculo no dark theme) pelo `AudioPlayerWhats`
+
 ## 🔄 Em Andamento
 
 Nenhuma tarefa em andamento.
@@ -581,4 +588,4 @@ Nenhuma tarefa em andamento.
 
 ---
 
-**Última atualização:** 2026-04-23 (Talk ganha gravação e envio de mensagens de voz via MediaRecorder + Cloudinary; bubble renderiza player nativo de áudio)
+**Última atualização:** 2026-04-24 (Player de áudio do Talk agora estilo WhatsApp — waveform real via Web Audio API + velocidade 1x/1.5x/2x; corrigido fallback "(anexo)" no corpo da mensagem)

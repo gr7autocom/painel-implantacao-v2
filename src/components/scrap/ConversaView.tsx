@@ -135,7 +135,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
       .insert({
         conversa_id: conversa.id,
         remetente_id: meuId,
-        corpo: corpo || '(anexo)',
+        corpo: corpo,
       })
       .select('id')
       .single()

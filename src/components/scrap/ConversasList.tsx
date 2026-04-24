@@ -87,11 +87,14 @@ export function ConversasList({
                     )}
                   </div>
                   <p className={`text-xs truncate mt-0.5 ${c.ultima_mensagem?.excluida ? 'text-gray-400 italic' : (c.nao_lidas > 0 ? 'text-gray-800 font-medium' : 'text-gray-500')}`}>
-                    {c.ultima_mensagem
-                      ? (c.ultima_mensagem.excluida
-                          ? `${ultimaEhMinha ? 'Você: ' : ''}🚫 Mensagem excluída`
-                          : `${ultimaEhMinha ? 'Você: ' : ''}${preview(c.ultima_mensagem.corpo, 50)}`)
-                      : 'Sem mensagens ainda'}
+                    {(() => {
+                      if (!c.ultima_mensagem) return 'Sem mensagens ainda'
+                      if (c.ultima_mensagem.excluida) {
+                        return `${ultimaEhMinha ? 'Você: ' : ''}🚫 Mensagem excluída`
+                      }
+                      const texto = preview(c.ultima_mensagem.corpo, 50)
+                      return `${ultimaEhMinha ? 'Você: ' : ''}${texto || '📎 Anexo'}`
+                    })()}
                   </p>
                 </div>
                 {c.nao_lidas > 0 && (
