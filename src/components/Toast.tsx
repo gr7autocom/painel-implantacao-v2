@@ -6,15 +6,30 @@ const TOAST_DURATION = 5000
 
 type ToastType = 'success' | 'error' | 'info' | 'task'
 
+type ToastAction = {
+  label: string
+  onClick: () => void
+}
+
 type ToastItem = {
   id: string
   message: string
   type: ToastType
   tag?: string
+  action?: ToastAction
+  /** Callback chamado se o toast desaparecer SEM o action ter sido clicado.
+   * Útil pra "soft delete com undo" — comita a mutação se ninguém desfez. */
+  onDismiss?: () => void
+}
+
+type ToastOptions = {
+  tag?: string
+  action?: ToastAction
+  onDismiss?: () => void
 }
 
 type ToastContextValue = {
-  toast: (message: string, type?: ToastType, options?: { tag?: string }) => void
+  toast: (message: string, type?: ToastType, options?: ToastOptions) => void
   dismissByTag: (tag: string) => void
 }
 
@@ -27,9 +42,9 @@ export function useToast() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback((message: string, type: ToastType = 'success', options?: { tag?: string }) => {
+  const toast = useCallback((message: string, type: ToastType = 'success', options?: ToastOptions) => {
     const id = Math.random().toString(36).slice(2)
-    setToasts((prev) => [...prev, { id, message, type, tag: options?.tag }])
+    setToasts((prev) => [...prev, { id, message, type, tag: options?.tag, action: options?.action, onDismiss: options?.onDismiss }])
   }, [])
 
   const dismissByTag = useCallback((tag: string) => {
@@ -62,9 +77,14 @@ const CONFIG: Record<ToastType, { icon: ReactNode; cls: string }> = {
 function ToastBubble({ item, onRemove }: { item: ToastItem; onRemove: () => void }) {
   const { icon, cls } = CONFIG[item.type]
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const acaoClicadaRef = useRef(false)
 
   function startTimer() {
-    timerRef.current = setTimeout(onRemove, TOAST_DURATION)
+    timerRef.current = setTimeout(() => {
+      // expirou sem o action ter sido clicado → comita a operação pendente
+      if (!acaoClicadaRef.current && item.onDismiss) item.onDismiss()
+      onRemove()
+    }, TOAST_DURATION)
   }
 
   function pauseTimer() {
@@ -76,6 +96,20 @@ function ToastBubble({ item, onRemove }: { item: ToastItem; onRemove: () => void
     return pauseTimer
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function handleAction() {
+    acaoClicadaRef.current = true
+    pauseTimer()
+    item.action?.onClick()
+    onRemove()
+  }
+
+  function handleClose() {
+    // Fechar via X conta como "dispensar sem desfazer" → comita
+    if (!acaoClicadaRef.current && item.onDismiss) item.onDismiss()
+    pauseTimer()
+    onRemove()
+  }
 
   return (
     <div
@@ -89,9 +123,18 @@ function ToastBubble({ item, onRemove }: { item: ToastItem; onRemove: () => void
     >
       {icon}
       <span className="flex-1">{item.message}</span>
+      {item.action && (
+        <button
+          type="button"
+          onClick={handleAction}
+          className="px-2.5 py-1 text-xs font-semibold rounded bg-white/20 hover:bg-white/30 transition-colors"
+        >
+          {item.action.label}
+        </button>
+      )}
       <button
         type="button"
-        onClick={onRemove}
+        onClick={handleClose}
         className="opacity-70 hover:opacity-100 transition-opacity"
         aria-label="Fechar notificação"
       >

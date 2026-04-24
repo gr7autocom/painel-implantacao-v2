@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Ban, Download, FileText, MoreVertical, Trash2 } from 'lucide-react'
+import { AlertCircle, Ban, Check, CheckCheck, Download, FileText, Loader2, MoreVertical, RotateCcw, Trash2 } from 'lucide-react'
 import { UserAvatar } from '../UserAvatar'
 import { horaMensagem } from '../../lib/scrap-utils'
 import { usePermissao } from '../../lib/permissoes'
@@ -12,6 +12,10 @@ type Props = {
   remetente: Pick<Usuario, 'id' | 'nome' | 'foto_url'>
   mostrarAvatar: boolean
   onExcluir?: (id: string) => void
+  /** Status de envio optimistic: 'sending' (em fly), 'error' (falhou). Ausente = enviado OK. */
+  statusEnvio?: 'sending' | 'error'
+  onRetry?: () => void
+  onDescartar?: () => void
 }
 
 function formatarTamanho(bytes: number | null | undefined): string {
@@ -29,7 +33,7 @@ function ehAudio(mime: string | null | undefined): boolean {
   return !!mime && mime.startsWith('audio/')
 }
 
-export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir }: Props) {
+export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir, statusEnvio, onRetry, onDescartar }: Props) {
   const perm = usePermissao()
   const [menuAberto, setMenuAberto] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -56,8 +60,8 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
           <div className="rounded-2xl px-3.5 py-2 bg-gray-100 text-gray-500 italic flex items-center gap-2">
             <Ban className="w-3.5 h-3.5 shrink-0" />
             <span className="text-sm">Mensagem excluída</span>
+            <span className="text-[10px] opacity-70 ml-1 self-end">{horaMensagem(mensagem.created_at)}</span>
           </div>
-          <span className="text-caption text-gray-400 mt-0.5 px-1">{horaMensagem(mensagem.created_at)}</span>
         </div>
       </div>
     )
@@ -73,7 +77,7 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
       <div className={`max-w-[75%] flex flex-col ${ehMinha ? 'items-end' : 'items-start'}`}>
         <div className={`relative flex items-center gap-1 ${ehMinha ? 'flex-row-reverse' : ''}`}>
           <div
-            className={`rounded-2xl px-3.5 py-2 ${
+            className={`rounded-2xl px-3.5 py-1.5 ${
               ehMinha
                 ? 'bg-blue-600 text-[#ffffff] rounded-br-md'
                 : 'bg-gray-100 text-gray-900 rounded-bl-md'
@@ -120,13 +124,34 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
                 ))}
               </div>
             )}
+            <div className={`flex items-center gap-1 mt-0.5 ${ehMinha ? 'justify-end' : 'justify-start'}`}>
+              <span
+                className={`text-[10px] tabular-nums ${
+                  ehMinha ? 'text-blue-100/80' : 'text-gray-500'
+                }`}
+              >
+                {horaMensagem(mensagem.created_at)}
+              </span>
+              {ehMinha && (
+                statusEnvio === 'sending' ? (
+                  <Loader2 className="w-3.5 h-3.5 text-blue-100/80 animate-spin" aria-label="Enviando" />
+                ) : statusEnvio === 'error' ? (
+                  <AlertCircle className="w-3.5 h-3.5 text-red-200" aria-label="Falha ao enviar" />
+                ) : mensagem.lida ? (
+                  <CheckCheck className="w-3.5 h-3.5 text-sky-200" aria-label="Lido" />
+                ) : (
+                  <Check className="w-3.5 h-3.5 text-blue-100/60" aria-label="Enviado" />
+                )
+              )}
+            </div>
           </div>
-          {podeExcluir && (
+          {/* Esconde menu de excluir quando a mensagem ainda está sendo enviada ou falhou */}
+          {podeExcluir && !statusEnvio && (
             <div className="relative" ref={menuRef}>
               <button
                 type="button"
                 onClick={() => setMenuAberto((v) => !v)}
-                className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 opacity-0 group-hover:opacity-100 sm:focus:opacity-100 transition-opacity"
+                className="p-2 sm:p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100 transition-opacity"
                 aria-label="Opções da mensagem"
               >
                 <MoreVertical className="w-4 h-4" />
@@ -151,7 +176,31 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
             </div>
           )}
         </div>
-        <span className="text-caption text-gray-400 mt-0.5 px-1">{horaMensagem(mensagem.created_at)}</span>
+        {statusEnvio === 'error' && (
+          <div className="flex items-center gap-2 mt-1 text-[11px] text-red-500">
+            <AlertCircle className="w-3 h-3 shrink-0" aria-hidden />
+            <span>Falha ao enviar.</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center gap-0.5 font-semibold underline hover:no-underline"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Tentar de novo
+              </button>
+            )}
+            {onDescartar && (
+              <button
+                type="button"
+                onClick={onDescartar}
+                className="font-semibold text-gray-500 hover:text-gray-700 hover:underline"
+              >
+                Descartar
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

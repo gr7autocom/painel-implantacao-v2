@@ -604,6 +604,21 @@
   - Subtarefas continuam em modal aninhado por ora (decisão consciente — refactor "Linear-style" que perde a pai do contexto fica pra próxima sprint)
 - [x] **3.5 Swipe-to-dismiss** em mobile (`<640px`): touch handlers no header do TarefaModal manipulando `transform: translateY()` direto via ref (sem state, evita re-render a 60fps). Threshold 100px → fecha animando até `100%`. Indicador visual: barra cinza horizontal `h-1 w-10` no topo (padrão iOS bottom sheets). Só desliza pra baixo (delta < 0 ignorado). Volta pra posição com `transition transform 200ms` se não atingir o threshold
 
+### Sprint Talk — Fase 1 ✅ Concluído (2026-04-24)
+
+Pacotes A (Exclusão & Mobile) + B (Scroll & Leitura) + C (Status & Tempo Real). Todos os CRITICAL + 5 HIGH + 1 MEDIUM da auditoria UX do Talk.
+
+- [x] **A1 Toast Undo 5s** — `Toast.tsx` ganhou prop `action: { label, onClick }` e `onDismiss` (chamado se expirar sem clicar action). `ConversaView.excluirMensagem` agora marca optimistic local + abre toast vermelho "Mensagem excluída" com botão "Desfazer"; UPDATE no banco só é comitado quando o toast expira (cumprindo a regra do trigger `validar_update_scrap_mensagem` que proíbe TRUE→FALSE)
+- [x] **A2 Excluir visível em mobile** — `MensagemBubble` trocou `opacity-0 group-hover:opacity-100` por `opacity-100 sm:opacity-0 sm:group-hover:opacity-100` e `p-2 sm:p-1.5` (touch target 36px+ em mobile)
+- [x] **A3 Lista navegável por teclado** — `ConversasList` ganhou `role="listbox"` no container scrollable + `tabIndex={0}` + handler de ArrowUp/Down/Home/End/Enter; cada item recebe `role="option"`, `aria-selected`, `id` único e `aria-activedescendant` no container; ring azul indica item focado
+- [x] **B1+B2 Auto-scroll inteligente + botão flutuante** — só rola pra baixo se já está no bottom (<100px) ou se a mensagem é minha; senão incrementa contador `novasNaoLidas`. Botão flutuante azul `↓ N novas` aparece bottom-right do scroll. `handleScroll` atualiza `estaNoBottomRef` em tempo real; reset ao chegar no bottom
+- [x] **B3 Timestamps sempre visíveis** — movido de fora pra dentro da bolha (canto inferior direito, `text-[10px] tabular-nums`), padrão WhatsApp. Tombstone "Mensagem excluída" também ganhou hora inline
+- [x] **B4 Cache de scroll por conversa** — `Map<conversaId, scrollTop>` em ref persistente; `handleScroll` salva em tempo real; ao trocar conversa, salva a anterior e restaura a nova (ou vai pro fundo se primeira visita); `conversaIdAnteriorRef` rastreia o último id pra cleanup correto
+- [x] **B5 Busca dentro da conversa** — botão `Search` no header do `ConversaView`; abre/fecha barra com input. Filtra mensagens por `corpo` ou `nome_arquivo` de anexo (case insensitive). Esc fecha. Empty state dedicado para "Nenhuma mensagem encontrada"
+- [x] **C1 Read receipts ✓✓** — `MensagemBubble` renderiza `Loader2` (sending), `AlertCircle` (error), `CheckCheck` sky-200 (lida) ou `Check` blue-100/60 (entregue) ao lado do timestamp em mensagens próprias. Realtime UPDATE listener no `ConversaView` sincroniza `lida` quando o destinatário marca como lida via RPC
+- [x] **C2 Typing indicator** — canal Supabase Realtime Presence dedicado por conversa (`scrap-typing-{id}`) com `key=usuarioId`. `MensagemInput` recebe prop `onDigitando` e emite debounced (true imediato, false após 2s sem nova tecla, ou ao enviar/blur). `ConversaView` faz `track({ typing })` e escuta `presence:sync` do outro user. Header mostra "digitando..." em italic azul substituindo o status normal
+- [x] **C3 Status de envio com retry** — fluxo optimistic: cria `tempId`, push imediato no state com status `sending`, mostra `Loader2` na bolha. Após INSERT OK, swap pelo id real e remove status. Em erro, marca `error`, guarda payload em `retryPayloadsRef` e renderiza linha vermelha "Falha ao enviar — Tentar de novo / Descartar" abaixo da bolha. Menu excluir é escondido em mensagens com status pendente
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -674,4 +689,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint 3 do roadmap UI/UX concluído — fonte Inter, stagger animation em listas, autosave em TarefaModal via localStorage, rota dedicada `/tarefas/:codigo` com slide-over, swipe-to-dismiss em mobile)
+**Última atualização:** 2026-04-24 (Sprint Talk Fase 1 concluída — exclusão com Undo, botão excluir em mobile, lista navegável por teclado, auto-scroll inteligente + botão "↓ N novas", timestamps inline, cache de scroll por conversa, busca dentro da conversa, read receipts ✓✓, typing indicator e status de envio com retry)

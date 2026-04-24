@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, BellOff, MessageSquare, MoreVertical, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowLeft, BellOff, MessageSquare, MoreVertical, Search, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { UserAvatar } from '../UserAvatar'
 import { MensagemBubble } from './MensagemBubble'
 import { MensagemInput } from './MensagemInput'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
+import { useToast } from '../Toast'
 import { diaMensagem, resolverStatus } from '../../lib/scrap-utils'
 import { usePresence } from '../../lib/usePresence'
 import { usePermissao } from '../../lib/permissoes'
@@ -32,6 +33,7 @@ type Props = {
 export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, onVoltar, onConversaExcluida }: Props) {
   const perm = usePermissao()
   const { presenca } = usePresence()
+  const { toast } = useToast()
   const [mensagens, setMensagens] = useState<MensagemComAnexos[]>([])
   const [carregando, setCarregando] = useState(false)
   const [menuHeaderAberto, setMenuHeaderAberto] = useState(false)
@@ -40,6 +42,16 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
   const [erroExclusao, setErroExclusao] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const menuHeaderRef = useRef<HTMLDivElement>(null)
+  // Snapshots de mensagens excluídas otimisticamente (para restaurar no Undo)
+  const snapshotsExcluidasRef = useRef<Map<string, MensagemComAnexos>>(new Map())
+  // Status de envio optimistic: id local → 'sending' | 'error' (sucesso = ausente no map)
+  const [statusEnvio, setStatusEnvio] = useState<Record<string, 'sending' | 'error'>>({})
+  // Payload das mensagens com erro pra permitir retry
+  const retryPayloadsRef = useRef<Map<string, { corpo: string; anexos: AnexoPendente[] }>>(new Map())
+  // Auto-scroll inteligente: só rola pra baixo se o usuário está perto do bottom
+  const estaNoBottomRef = useRef(true)
+  const [novasNaoLidas, setNovasNaoLidas] = useState(0)
+  const ultimoIdRef = useRef<string | null>(null)
 
   async function carregarMensagens(conversaId: string) {
     setCarregando(true)
@@ -116,6 +128,19 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
           }
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'scrap_mensagens', filter: `conversa_id=eq.${conversa.id}` },
+        (payload) => {
+          // Mantém anexos locais; só atualiza colunas mutáveis (lida, excluida, corpo)
+          const atualizada = payload.new as ScrapMensagem
+          setMensagens((prev) => prev.map((m) =>
+            m.id === atualizada.id
+              ? { ...m, lida: atualizada.lida, excluida: atualizada.excluida, corpo: atualizada.corpo }
+              : m
+          ))
+        }
+      )
       .subscribe()
     } catch (err) {
       console.warn('Realtime conversa falhou', err)
@@ -123,13 +148,145 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [conversa?.id, meuId])
 
-  // Auto-scroll ao fundo quando chegam novas mensagens
+  // Cache de scroll position por conversa (Map persistente entre re-renders)
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map())
+  const conversaIdAnteriorRef = useRef<string | null>(null)
+
+  // Typing indicator: presence channel separado por conversa
+  const [outroDigitando, setOutroDigitando] = useState(false)
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
   useEffect(() => {
+    setOutroDigitando(false)
+    if (!conversa) {
+      if (typingChannelRef.current) {
+        supabase.removeChannel(typingChannelRef.current)
+        typingChannelRef.current = null
+      }
+      return
+    }
+    const ch = supabase.channel(`scrap-typing-${conversa.id}`, {
+      config: { presence: { key: meuId } },
+    })
+    ch.on('presence', { event: 'sync' }, () => {
+      const state = ch.presenceState()
+      const outroId = conversa.outro_usuario.id
+      const presencas = state[outroId] as Array<{ typing?: boolean }> | undefined
+      const digitando = !!presencas?.some((p) => p.typing === true)
+      setOutroDigitando(digitando)
+    }).subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await ch.track({ typing: false })
+      }
+    })
+    typingChannelRef.current = ch
+    return () => {
+      supabase.removeChannel(ch)
+      typingChannelRef.current = null
+    }
+  }, [conversa?.id, meuId])
+
+  function emitirTyping(digitando: boolean) {
+    typingChannelRef.current?.track({ typing: digitando })
+  }
+
+  // Busca dentro da conversa
+  const [buscaAberta, setBuscaAberta] = useState(false)
+  const [buscaTermo, setBuscaTermo] = useState('')
+  const buscaInputRef = useRef<HTMLInputElement>(null)
+
+  function toggleBusca() {
+    setBuscaAberta((aberta) => {
+      const novo = !aberta
+      if (!novo) setBuscaTermo('')
+      else requestAnimationFrame(() => buscaInputRef.current?.focus())
+      return novo
+    })
+  }
+
+  // Auto-scroll inteligente: só rola pra baixo se já está no bottom OU se a
+  // nova mensagem é minha (sempre quero ver o que acabei de enviar).
+  // Se o usuário está lendo histórico antigo, mostra contador "↓ N novas".
+  // Na 1ª passagem após trocar de conversa, restaura scroll salvo (ou vai no fundo).
+  useEffect(() => {
+    const ultima = mensagens[mensagens.length - 1]
+    if (!ultima) { ultimoIdRef.current = null; return }
+    if (ultimoIdRef.current === null) {
+      // Carga inicial: restaurar position salva, ou fundo se nunca visitou
+      ultimoIdRef.current = ultima.id
+      const idAtual = conversa?.id
+      requestAnimationFrame(() => {
+        if (!scrollRef.current) return
+        const saved = idAtual ? scrollPositionsRef.current.get(idAtual) : undefined
+        scrollRef.current.scrollTop = saved !== undefined ? saved : scrollRef.current.scrollHeight
+      })
+      return
+    }
+    if (ultima.id === ultimoIdRef.current) return // mesma última, não é nova
+    ultimoIdRef.current = ultima.id
+
+    const minha = ultima.remetente_id === meuId
+    if (estaNoBottomRef.current || minha) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+      })
+      setNovasNaoLidas(0)
+    } else {
+      setNovasNaoLidas((c) => c + 1)
+    }
+  }, [mensagens, meuId, conversa?.id])
+
+  function handleScroll() {
+    const el = scrollRef.current
+    if (!el) return
+    const distancia = el.scrollHeight - el.scrollTop - el.clientHeight
+    estaNoBottomRef.current = distancia < 100
+    if (estaNoBottomRef.current && novasNaoLidas > 0) setNovasNaoLidas(0)
+    // Persistir posição em tempo real (cache por conversa)
+    if (conversa) scrollPositionsRef.current.set(conversa.id, el.scrollTop)
+  }
+
+  function irParaBaixo() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [mensagens.length])
+    setNovasNaoLidas(0)
+  }
+
+  // Salva posição da conversa anterior antes de trocar e reseta state da nova
+  useEffect(() => {
+    if (conversaIdAnteriorRef.current && scrollRef.current) {
+      scrollPositionsRef.current.set(conversaIdAnteriorRef.current, scrollRef.current.scrollTop)
+    }
+    conversaIdAnteriorRef.current = conversa?.id ?? null
+    estaNoBottomRef.current = true
+    setNovasNaoLidas(0)
+    ultimoIdRef.current = null
+  }, [conversa?.id])
 
   async function enviar(corpo: string, anexosPendentes: AnexoPendente[]) {
     if (!conversa) return
+    // Optimistic: insere mensagem com tempId no state imediatamente
+    const tempId = `tmp-${crypto.randomUUID()}`
+    const optimistic: MensagemComAnexos = {
+      id: tempId,
+      conversa_id: conversa.id,
+      remetente_id: meuId,
+      corpo: corpo,
+      lida: false,
+      excluida: false,
+      created_at: new Date().toISOString(),
+      anexos: anexosPendentes.map((a, i) => ({
+        id: `tmp-anexo-${i}`,
+        mensagem_id: tempId,
+        nome_arquivo: a.nome_arquivo,
+        public_id: a.public_id,
+        url: a.url,
+        tipo_mime: a.tipo_mime,
+        tamanho_bytes: a.tamanho_bytes,
+      })),
+    } as MensagemComAnexos
+    setMensagens((prev) => [...prev, optimistic])
+    setStatusEnvio((prev) => ({ ...prev, [tempId]: 'sending' }))
+
     const { data: msg, error: err } = await supabase
       .from('scrap_mensagens')
       .insert({
@@ -139,7 +296,12 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
       })
       .select('id')
       .single()
-    if (err || !msg) return
+    if (err || !msg) {
+      // Marca como erro e guarda payload pra permitir retry
+      setStatusEnvio((prev) => ({ ...prev, [tempId]: 'error' }))
+      retryPayloadsRef.current.set(tempId, { corpo, anexos: anexosPendentes })
+      return
+    }
 
     if (anexosPendentes.length > 0) {
       await supabase.from('scrap_anexos').insert(
@@ -153,22 +315,94 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
         }))
       )
     }
-    // A mensagem chegará de volta via Realtime
+
+    // Substitui o tempId pelo id real (ou remove se realtime já trouxe a versão real)
+    setMensagens((prev) => {
+      const jaTemReal = prev.some((m) => m.id === msg.id)
+      if (jaTemReal) return prev.filter((m) => m.id !== tempId)
+      return prev.map((m) => m.id === tempId ? { ...m, id: msg.id } : m)
+    })
+    setStatusEnvio((prev) => {
+      const next = { ...prev }
+      delete next[tempId]
+      return next
+    })
+    retryPayloadsRef.current.delete(tempId)
     onMensagemEnviada()
   }
 
-  async function excluirMensagem(mensagemId: string) {
+  function retryEnvio(tempId: string) {
+    const payload = retryPayloadsRef.current.get(tempId)
+    if (!payload) return
+    // Remove o optimistic com erro e re-envia (criará novo tempId)
+    setMensagens((prev) => prev.filter((m) => m.id !== tempId))
+    setStatusEnvio((prev) => {
+      const next = { ...prev }
+      delete next[tempId]
+      return next
+    })
+    retryPayloadsRef.current.delete(tempId)
+    enviar(payload.corpo, payload.anexos)
+  }
+
+  function descartarEnvioComErro(tempId: string) {
+    setMensagens((prev) => prev.filter((m) => m.id !== tempId))
+    setStatusEnvio((prev) => {
+      const next = { ...prev }
+      delete next[tempId]
+      return next
+    })
+    retryPayloadsRef.current.delete(tempId)
+  }
+
+  /**
+   * Exclusão com Undo: marca a mensagem como excluída APENAS no state local
+   * (mostra tombstone), guarda snapshot, e mostra toast com botão "Desfazer".
+   * O UPDATE no banco só acontece quando o toast expira (5s) sem o usuário
+   * ter clicado em desfazer. Se desfizer, restaura o snapshot e descarta.
+   *
+   * O trigger SQL `validar_update_scrap_mensagem` proíbe `excluida` voltar de
+   * TRUE para FALSE, então NÃO podemos mandar UPDATE imediatamente — precisa
+   * esperar a janela de undo.
+   */
+  function excluirMensagem(mensagemId: string) {
     if (!conversa) return
-    const { error: err } = await supabase
-      .from('scrap_mensagens')
-      .update({ excluida: true })
-      .eq('id', mensagemId)
-    if (err) {
-      console.error('Erro ao excluir mensagem', err)
-      return
-    }
-    setMensagens((prev) => prev.map((m) => m.id === mensagemId ? { ...m, excluida: true, corpo: '', anexos: [] } : m))
-    onMensagemEnviada()
+    const original = mensagens.find((m) => m.id === mensagemId)
+    if (!original) return
+    // Já está excluída ou em processo? Ignora click duplicado
+    if (original.excluida || snapshotsExcluidasRef.current.has(mensagemId)) return
+
+    snapshotsExcluidasRef.current.set(mensagemId, original)
+    setMensagens((prev) => prev.map((m) =>
+      m.id === mensagemId ? { ...m, excluida: true, corpo: '', anexos: [] } : m
+    ))
+
+    toast('Mensagem excluída', 'error', {
+      tag: `scrap-undo-${mensagemId}`,
+      action: {
+        label: 'Desfazer',
+        onClick: () => {
+          const snap = snapshotsExcluidasRef.current.get(mensagemId)
+          if (snap) {
+            setMensagens((prev) => prev.map((m) => m.id === mensagemId ? snap : m))
+            snapshotsExcluidasRef.current.delete(mensagemId)
+          }
+        },
+      },
+      onDismiss: async () => {
+        // Comita no banco — só agora o UPDATE acontece
+        snapshotsExcluidasRef.current.delete(mensagemId)
+        const { error: err } = await supabase
+          .from('scrap_mensagens')
+          .update({ excluida: true })
+          .eq('id', mensagemId)
+        if (err) {
+          console.error('Erro ao excluir mensagem', err)
+          // Reverter visual seria ideal, mas raro o suficiente que aceitamos o estado inconsistente
+        }
+        onMensagemEnviada()
+      },
+    })
   }
 
   async function excluirConversa() {
@@ -203,9 +437,20 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
     )
   }
 
+  // Filtra por busca (corpo OU nome de arquivo de anexo) — case insensitive
+  const termoBusca = buscaTermo.trim().toLowerCase()
+  const mensagensVisiveis = termoBusca
+    ? mensagens.filter((m) => {
+        if (m.excluida) return false
+        if (m.corpo && m.corpo.toLowerCase().includes(termoBusca)) return true
+        if (m.anexos?.some((a) => (a.nome_arquivo ?? '').toLowerCase().includes(termoBusca))) return true
+        return false
+      })
+    : mensagens
+
   // Agrupa mensagens por dia e decide se mostra avatar (consecutivo do mesmo remetente = agrupa)
   const gruposPorDia: Record<string, MensagemComAnexos[]> = {}
-  for (const m of mensagens) {
+  for (const m of mensagensVisiveis) {
     const dia = diaMensagem(m.created_at)
     if (!gruposPorDia[dia]) gruposPorDia[dia] = []
     gruposPorDia[dia].push(m)
@@ -231,8 +476,23 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
             <UserAvatar nome={conversa.outro_usuario.nome} fotoUrl={conversa.outro_usuario.foto_url} size="md" status={statusHeader} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{conversa.outro_usuario.nome}</p>
-              <p className="text-xs text-gray-500 truncate">{LABEL_STATUS[statusHeader]}</p>
+              {outroDigitando ? (
+                <p className="text-xs text-blue-600 truncate italic">digitando...</p>
+              ) : (
+                <p className="text-xs text-gray-500 truncate">{LABEL_STATUS[statusHeader]}</p>
+              )}
             </div>
+            <button
+              type="button"
+              onClick={toggleBusca}
+              className={`p-2 rounded-lg transition-colors shrink-0 ${
+                buscaAberta ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              aria-label={buscaAberta ? 'Fechar busca' : 'Buscar nesta conversa'}
+              aria-pressed={buscaAberta}
+            >
+              <Search className="w-5 h-5" />
+            </button>
             {perm.can('scrap.excluir_conversa') && (
               <div className="relative shrink-0" ref={menuHeaderRef}>
                 <button
@@ -264,14 +524,55 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
         )
       })()}
 
-      {/* Mensagens */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col gap-3">
+      {/* Barra de busca (colapsada por padrão) */}
+      {buscaAberta && (
+        <div className="px-3 sm:px-4 py-2 border-b border-gray-200 bg-white flex items-center gap-2">
+          <Search className="w-4 h-4 text-gray-400 shrink-0" aria-hidden />
+          <input
+            ref={buscaInputRef}
+            type="text"
+            value={buscaTermo}
+            onChange={(e) => setBuscaTermo(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') toggleBusca() }}
+            placeholder="Buscar nesta conversa..."
+            className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-gray-400"
+            aria-label="Buscar mensagens"
+          />
+          {termoBusca && (
+            <span className="text-caption text-gray-500 whitespace-nowrap">
+              {mensagensVisiveis.length} {mensagensVisiveis.length === 1 ? 'resultado' : 'resultados'}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={toggleBusca}
+            className="p-1 rounded text-gray-500 hover:text-gray-700 hover:bg-gray-100 shrink-0"
+            aria-label="Fechar busca"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Mensagens (wrapper relative pra ancorar o botão "↓ N novas") */}
+      <div className="relative flex-1 flex flex-col min-h-0">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 bg-gray-50 flex flex-col gap-3"
+      >
         {carregando ? (
           <div className="flex items-center justify-center py-10 text-gray-500 text-sm">Carregando...</div>
         ) : mensagens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-gray-500 gap-2 text-center">
             <p className="text-sm">Sem mensagens ainda.</p>
             <p className="text-xs">Envie a primeira abaixo.</p>
+          </div>
+        ) : mensagensVisiveis.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-gray-500 gap-2 text-center">
+            <Search className="w-6 h-6 text-gray-300" />
+            <p className="text-sm">Nenhuma mensagem encontrada.</p>
+            <p className="text-xs">Tente outro termo.</p>
           </div>
         ) : (
           Object.entries(gruposPorDia).map(([dia, msgs]) => (
@@ -291,12 +592,27 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
                       remetente={ehMinha ? meuUsuario : conversa.outro_usuario}
                       mostrarAvatar={mostrarAvatar}
                       onExcluir={excluirMensagem}
+                      statusEnvio={statusEnvio[m.id]}
+                      onRetry={statusEnvio[m.id] === 'error' ? () => retryEnvio(m.id) : undefined}
+                      onDescartar={statusEnvio[m.id] === 'error' ? () => descartarEnvioComErro(m.id) : undefined}
                     />
                   </div>
                 )
               })}
             </div>
           ))
+        )}
+      </div>
+        {novasNaoLidas > 0 && (
+          <button
+            type="button"
+            onClick={irParaBaixo}
+            className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-[#ffffff] rounded-full shadow-lg hover:bg-blue-700 text-xs font-semibold transition-colors"
+            aria-label={`Ir para o fim da conversa, ${novasNaoLidas} ${novasNaoLidas === 1 ? 'nova mensagem' : 'novas mensagens'}`}
+          >
+            <ArrowDown className="w-3.5 h-3.5" />
+            {novasNaoLidas} {novasNaoLidas === 1 ? 'nova' : 'novas'}
+          </button>
         )}
       </div>
 
@@ -311,7 +627,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
       )}
 
       {/* Input */}
-      <MensagemInput onEnviar={enviar} />
+      <MensagemInput onEnviar={enviar} onDigitando={emitirTyping} />
 
       {/* Modal de confirmação: excluir conversa */}
       <Modal

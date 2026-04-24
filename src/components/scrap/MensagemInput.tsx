@@ -14,6 +14,8 @@ type AnexoPendente = {
 type Props = {
   onEnviar: (corpo: string, anexos: AnexoPendente[]) => Promise<void>
   disabled?: boolean
+  /** Callback chamado quando o usuário começa/para de digitar (debounced). */
+  onDigitando?: (digitando: boolean) => void
 }
 
 // MediaRecorder está disponível em navegadores modernos. Fallback: esconde o botão.
@@ -23,7 +25,7 @@ const SUPORTA_GRAVACAO =
   !!navigator.mediaDevices?.getUserMedia &&
   typeof MediaRecorder !== 'undefined'
 
-export function MensagemInput({ onEnviar, disabled }: Props) {
+export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
   const [corpo, setCorpo] = useState('')
   const [anexos, setAnexos] = useState<AnexoPendente[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -31,6 +33,30 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
   const [gravadorAberto, setGravadorAberto] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Typing indicator: emite true ao digitar, debounced para false após 2s sem nova tecla
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const estaDigitandoRef = useRef(false)
+
+  function notificarDigitando() {
+    if (!onDigitando) return
+    if (!estaDigitandoRef.current) {
+      estaDigitandoRef.current = true
+      onDigitando(true)
+    }
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+    typingTimerRef.current = setTimeout(() => {
+      estaDigitandoRef.current = false
+      onDigitando(false)
+    }, 2000)
+  }
+
+  function pararDeDigitar() {
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+    if (estaDigitandoRef.current && onDigitando) {
+      estaDigitandoRef.current = false
+      onDigitando(false)
+    }
+  }
 
   async function subirArquivo(file: File) {
     setUploadingCount((c) => c + 1)
@@ -97,6 +123,7 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
     const texto = corpo.trim()
     if (!texto && anexos.length === 0) return
     setEnviando(true)
+    pararDeDigitar()
     try {
       await onEnviar(texto, anexos)
       setCorpo('')
@@ -181,8 +208,9 @@ export function MensagemInput({ onEnviar, disabled }: Props) {
         <textarea
           ref={textareaRef}
           value={corpo}
-          onChange={(e) => setCorpo(e.target.value)}
+          onChange={(e) => { setCorpo(e.target.value); notificarDigitando() }}
           onKeyDown={onKeyDown}
+          onBlur={pararDeDigitar}
           onPaste={onPaste}
           placeholder="Escreva uma mensagem..."
           disabled={disabled}

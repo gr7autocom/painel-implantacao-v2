@@ -795,6 +795,21 @@ Hook global (usado no Sidebar) que:
 ### Publicação Realtime
 
 - `ALTER PUBLICATION supabase_realtime ADD TABLE scrap_mensagens` ([20260421110000_scrap_realtime.sql](supabase/migrations/20260421110000_scrap_realtime.sql)) — obrigatório no Supabase hosted
+- O `ConversaView` escuta tanto INSERT (mensagem nova) quanto **UPDATE** (campo `lida` virou true → atualiza checkmark de read receipt em tempo real; também propaga `excluida` se outra sessão excluir)
+
+### Sprint Talk Fase 1 — UX patterns
+
+Padrões introduzidos pela Sprint Talk Fase 1 (2026-04-24):
+
+- **Toast com Undo** — [Toast.tsx](src/components/Toast.tsx) aceita `action: { label, onClick }` e `onDismiss`. Se o toast expirar (5s) sem o action ter sido clicado, `onDismiss` é chamado. Padrão "soft delete then commit" usado para excluir mensagem do Talk: marca local como `excluida=true` (mostra tombstone), abre toast Desfazer, e só faz UPDATE no banco em `onDismiss` — necessário porque o trigger SQL `validar_update_scrap_mensagem` proíbe `excluida` voltar de TRUE para FALSE
+- **Auto-scroll inteligente em chat** — `ConversaView` mantém ref `estaNoBottomRef` atualizado pelo `onScroll` (distância < 100px do bottom). Mensagem nova: rola se `estaNoBottom OR remetente=eu`; senão incrementa `novasNaoLidas` e mostra botão flutuante `↓ N novas` no canto inferior direito do scroll. Reset do contador acontece ao chegar no bottom OU clicar no botão
+- **Cache de scroll por conversa** — `Map<conversaId, scrollTop>` em `useRef`; `handleScroll` salva em tempo real, `useEffect([conversa?.id])` salva a anterior antes de trocar e restaura a nova (ou vai pro fundo se primeira visita)
+- **Listbox navegável por teclado** — `ConversasList` usa `role="listbox"` no container scrollable + `tabIndex={0}` + handler de ArrowUp/Down/Home/End/Enter. Cada item recebe `role="option"`, `aria-selected`, `id` único, `tabIndex={-1}`. Container indica item ativo via `aria-activedescendant`
+- **Typing indicator via Presence** — canal Supabase Realtime Presence dedicado por conversa (`scrap-typing-{id}`) com `key=meuId`. `MensagemInput` aceita prop `onDigitando` e emite debounced (true imediato no `onChange`, false após 2s sem nova tecla, ou ao enviar/blur). `ConversaView` faz `track({ typing: bool })` e escuta `presence:sync` filtrando pela `key` do outro user. Header substitui o status habitual por "digitando..." em italic azul quando `outroDigitando=true`
+- **Read receipts** — `MensagemBubble` renderiza checkmark ao lado do timestamp em mensagens próprias: `Loader2` (sending optimistic), `AlertCircle` (error), `CheckCheck` sky-200 (lida) ou `Check` blue-100/60 (entregue). Mudança de `lida` no banco vem via realtime UPDATE listener
+- **Status de envio optimistic** — `ConversaView.enviar()` cria `tempId`, push imediato no state (com status `sending` no map separado `statusEnvio`), faz INSERT, em sucesso swap pelo id real e remove status. Em erro, marca `error`, guarda payload em `retryPayloadsRef` e mostra linha "Falha ao enviar — Tentar de novo / Descartar" abaixo da bolha. `MensagemBubble` esconde menu excluir quando `statusEnvio` está pendente
+- **Timestamps inline na bolha** (padrão WhatsApp) — `text-[10px] tabular-nums` no canto inferior direito da bolha (não mais abaixo). Cor adapta ao contexto (`text-blue-100/80` em própria, `text-gray-500` em outra)
+- **Busca dentro da conversa** — botão `Search` no header toggle barra com input. Filtra por `corpo` ou `nome_arquivo` de anexo (case insensitive). Esc fecha. Empty state dedicado "Nenhuma mensagem encontrada"
 
 ---
 

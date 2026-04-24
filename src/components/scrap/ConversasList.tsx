@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { MessageSquarePlus } from 'lucide-react'
 import { UserAvatar } from '../UserAvatar'
 import { SearchInput } from '../SearchInput'
@@ -23,6 +24,40 @@ export function ConversasList({
   const filtradas = termo
     ? conversas.filter((c) => c.outro_usuario.nome.toLowerCase().includes(termo))
     : conversas
+  const [indiceFocado, setIndiceFocado] = useState(-1)
+  const listaRef = useRef<HTMLDivElement>(null)
+
+  // Reseta índice quando a lista filtrada muda (busca ou nova conversa)
+  useEffect(() => {
+    if (indiceFocado >= filtradas.length) setIndiceFocado(filtradas.length - 1)
+  }, [filtradas.length, indiceFocado])
+
+  // Mantém o item focado visível ao rolar
+  useEffect(() => {
+    if (indiceFocado < 0) return
+    const el = listaRef.current?.querySelector<HTMLElement>(`[data-conv-idx="${indiceFocado}"]`)
+    el?.scrollIntoView({ block: 'nearest' })
+  }, [indiceFocado])
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (filtradas.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setIndiceFocado((i) => Math.min(i + 1, filtradas.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setIndiceFocado((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      setIndiceFocado(0)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      setIndiceFocado(filtradas.length - 1)
+    } else if (e.key === 'Enter' && indiceFocado >= 0) {
+      e.preventDefault()
+      onSelecionar(filtradas[indiceFocado].id)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -49,7 +84,16 @@ export function ConversasList({
       </div>
 
       {/* Lista */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        ref={listaRef}
+        role="listbox"
+        aria-label="Conversas"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onFocus={() => { if (indiceFocado < 0 && filtradas.length > 0) setIndiceFocado(0) }}
+        aria-activedescendant={indiceFocado >= 0 ? `scrap-conv-${filtradas[indiceFocado]?.id}` : undefined}
+        className="flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+      >
         {filtradas.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-500 px-6 text-center">
             <MessageSquarePlus className="w-8 h-8 text-gray-300" />
@@ -61,18 +105,27 @@ export function ConversasList({
             </p>
           </div>
         ) : (
-          filtradas.map((c) => {
+          filtradas.map((c, idx) => {
             const ativa = c.id === conversaAtivaId
+            const focado = idx === indiceFocado
             const ultimaEhMinha = c.ultima_mensagem?.remetente_id === meuId
             const status = resolverStatus(presenca.get(c.outro_usuario.id), c.outro_usuario.status_manual)
             return (
               <button
                 key={c.id}
+                id={`scrap-conv-${c.id}`}
+                role="option"
+                aria-selected={ativa}
+                data-conv-idx={idx}
+                tabIndex={-1}
                 type="button"
                 onClick={() => onSelecionar(c.id)}
+                onMouseEnter={() => setIndiceFocado(idx)}
                 className={`w-full flex items-start gap-3 px-4 py-3 border-b border-gray-200 text-left transition-colors ${
                   ativa ? 'bg-blue-50' : 'hover:bg-gray-100'
-                } ${c.nao_lidas > 0 && !ativa ? 'bg-blue-50/30' : ''}`}
+                } ${c.nao_lidas > 0 && !ativa ? 'bg-blue-50/30' : ''} ${
+                  focado && !ativa ? 'ring-2 ring-blue-500 ring-inset' : ''
+                }`}
               >
                 <UserAvatar nome={c.outro_usuario.nome} fotoUrl={c.outro_usuario.foto_url} size="md" status={status} />
                 <div className="flex-1 min-w-0">
