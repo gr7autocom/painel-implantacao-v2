@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Outlet, useParams } from 'react-router-dom'
 import { useTarefaPorCodigo } from '../lib/useTarefaPorCodigo'
 import { ClipboardList, FolderKanban, GitBranch, Hand, Pin, Plus, Pencil, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -630,6 +630,9 @@ export function Tarefas() {
           </div>
         )}
       </Modal>
+
+      {/* Sub-rota :codigo (sem render próprio) — necessário para useParams matchar */}
+      <Outlet />
     </div>
   )
 }

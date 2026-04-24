@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Activity,
@@ -592,6 +592,9 @@ export function ProjetoDetalhe() {
           </div>
         </div>
       </Modal>
+
+      {/* Sub-rota tarefas/:codigo (sem render próprio) — necessário para useParams matchar */}
+      <Outlet />
     </div>
   )
 }

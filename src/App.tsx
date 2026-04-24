@@ -36,11 +36,13 @@ function App() {
               <Route index element={<ErrorBoundary><Inicio /></ErrorBoundary>} />
               <Route path="clientes" element={<ErrorBoundary><Clientes /></ErrorBoundary>} />
               <Route path="projetos" element={<ErrorBoundary><Projetos /></ErrorBoundary>} />
-              <Route path="projetos/:id" element={<ErrorBoundary><ProjetoDetalhe /></ErrorBoundary>} />
-              <Route path="projetos/:id/tarefas/:codigo" element={<ErrorBoundary><ProjetoDetalhe /></ErrorBoundary>} />
+              <Route path="projetos/:id" element={<ErrorBoundary><ProjetoDetalhe /></ErrorBoundary>}>
+                <Route path="tarefas/:codigo" element={null} />
+              </Route>
               <Route path="projetos/:id/monitor" element={<ErrorBoundary><ProjetoMonitor /></ErrorBoundary>} />
-              <Route path="tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>} />
-              <Route path="tarefas/:codigo" element={<ErrorBoundary><Tarefas /></ErrorBoundary>} />
+              <Route path="tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>}>
+                <Route path=":codigo" element={null} />
+              </Route>
               <Route path="talk" element={<ErrorBoundary><Scrap /></ErrorBoundary>} />
               <Route path="scrap" element={<ScrapRedirect />} />
               <Route element={<RequireRole acao="configuracoes.acessar" />}>
