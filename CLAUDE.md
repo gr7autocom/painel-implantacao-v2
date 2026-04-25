@@ -176,14 +176,25 @@ Fluxo:
   - `EtapaImplantacaoBadge` — badge colorido; se `editavel=true`, abre popover com lista das etapas; ao selecionar nova etapa, abre modal de confirmação com textarea de comentário opcional
   - `StatusAtividadeBadge` — badge do status derivado
 
-### Histórico de eventos do projeto (`cliente_historico`)
+### Histórico de eventos do projeto (`cliente_historico`) — log unificado
 
-- Tabela `cliente_historico` (id, cliente_id, ator_id → usuarios ON DELETE SET NULL, tipo TEXT, descricao TEXT, metadata JSONB, created_at TIMESTAMPTZ)
-- `tipo` atualmente: `'etapa_mudada'` (inserido por trigger SECURITY DEFINER) | `'comentario'` (inserido pelo frontend via RLS)
+Tabela `cliente_historico` ([20260419135237](supabase/migrations/20260419135237_cliente_historico.sql) + [20260424221549](supabase/migrations/20260424221549_cliente_historico_comentario_tarefa.sql)):
+
+- Colunas: `id, cliente_id FK CASCADE, projeto_id FK projetos NULLABLE (nullable, legado=NULL), ator_id → usuarios ON DELETE SET NULL, tipo TEXT, descricao TEXT, metadata JSONB, created_at TIMESTAMPTZ`
+- `tipo`: `'etapa_mudada'` | `'comentario'` (do projeto) | `'comentario_tarefa'` (de uma tarefa do projeto)
 - RLS: SELECT para autenticados; INSERT requer `can('cliente.editar')`
-- Trigger `cliente_etapa_historico` — `AFTER UPDATE OF etapa_implantacao_id` em `clientes`; resolve nomes das etapas e ator via `auth.uid()`
-- Se comentário fornecido no modal, frontend insere `tipo='comentario'` com `ator_id = usuarioAtual.id`
-- Aba "Atividade" do `ProjetoMonitor` mescla `tarefa_historico` + `cliente_historico` ordenados por `created_at` desc; eventos de projeto renderizados pelo subcomponente `ProjetoEventoLinha` (ícones: `ArrowRightLeft` para etapa, `MessageSquareText` para comentário)
+
+**Triggers SECURITY DEFINER:**
+
+- `cliente_etapa_historico` em `AFTER UPDATE OF etapa_implantacao_id em clientes` — resolve nomes das etapas + ator via `auth.uid()`. metadata `{ etapa_antiga_id/nome, etapa_nova_id/nome }`
+- `trg_historico_comentario_tarefa` em `AFTER INSERT em tarefa_comentarios` — se a tarefa tem `cliente_id E projeto_id`, insere row com `tipo='comentario_tarefa'`, `descricao = NEW.texto`, metadata `{ comentario_id, tarefa_id, tarefa_codigo, tarefa_titulo }`. **Tarefa avulsa (sem projeto) não dispara**. **Texto fossilizado** — edit/delete posteriores na tarefa não atualizam aqui (log imutável)
+
+**Frontend (Monitor do projeto):**
+
+- Aba **"Atividade"** mescla `tarefa_historico` (filtrado pra remover `tipo='comentou'` — evita duplicar com `comentario_tarefa`) + `cliente_historico` ordenados por `created_at` desc; eventos de projeto renderizados pelo `ProjetoEventoLinha` (ícones: `ArrowRightLeft` para etapa, `MessageSquareText` para comentário)
+- Aba **"Comentários"** lê de `cliente_historico` filtrado por `tipo IN ('comentario', 'comentario_tarefa')` E `projeto_id = atual OR projeto_id IS NULL` (registros antigos). Cada item tem badge "Projeto" (indigo) ou "Tarefa" (azul); para `comentario_tarefa` mostra link `#9089 — Título` clicável que abre o `TarefaModal` na aba Comentários
+- **Input pra comentar no projeto** no topo da aba Comentários (textarea + botão; visível com `can('cliente.editar')`; Ctrl/⌘+Enter envia). INSERT em `cliente_historico` com `tipo='comentario'` + `projeto_id`
+- Comentário também pode ser inserido pelo modal de mudança de etapa (já existia) via `EtapaImplantacaoBadge`
 
 ### Monitor do projeto (`/projetos/:id/monitor`)
 

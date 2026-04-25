@@ -358,13 +358,17 @@ export type TarefaAnexoComAutor = TarefaAnexo & {
   criado_por?: Pick<Usuario, 'id' | 'nome'> | null
 }
 
+export type ClienteHistoricoTipo = 'etapa_mudada' | 'comentario' | 'comentario_tarefa'
+
 export type ClienteHistoricoEvento = {
   id: string
   cliente_id: string
+  /** Adicionado em 2026-04-24 — null em registros antigos. */
+  projeto_id: string | null
   ator_id: string | null
-  tipo: string
+  tipo: ClienteHistoricoTipo | string
   descricao: string
   metadata: Record<string, unknown> | null
   created_at: string
-  ator?: Pick<Usuario, 'id' | 'nome'> | null
+  ator?: Pick<Usuario, 'id' | 'nome' | 'foto_url'> | null
 }

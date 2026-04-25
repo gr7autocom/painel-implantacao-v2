@@ -644,6 +644,17 @@ Reactions emoji em mensagens do Talk (único item escolhido do Pacote F; URL pre
 - [x] **`MensagemBubble`** — props novas: `meuId`, `nomeOutro`, `onToggleReacao`. Picker renderizado ao lado do menu ⋮ (hover-show no desktop, sempre visível no mobile, escondido em mensagens excluídas/em fly). Chips abaixo da bolha alinhados ao mesmo lado (própria=direita, outra=esquerda)
 - [x] **`ConversaView`** — `carregarMensagens` ganhou 3ª query paralela `scrap_reacoes`. Realtime listener `'*'` em `scrap_reacoes` filtra no client por `mensagem_id` presente nas mensagens visíveis. Handler `toggleReacao(mensagemId, emoji)`: optimistic insert/delete + reverte se erro; substitui `tempId` pelo id real no INSERT bem-sucedido (deduplica caso realtime já tenha trazido)
 
+### Histórico unificado de comentários ✅ Concluído (2026-04-24)
+
+Comentário em tarefa de projeto agora aparece TAMBÉM no histórico do projeto, com referência à tarefa. Aba Comentários do Monitor mostra tudo (projeto + tarefas) com contexto.
+
+- [x] **Migration [`20260424221549`](supabase/migrations/20260424221549_cliente_historico_comentario_tarefa.sql)** — coluna `projeto_id UUID FK projetos ON DELETE CASCADE` (nullable, legado fica NULL); trigger `trg_historico_comentario_tarefa` SECURITY DEFINER em `AFTER INSERT em tarefa_comentarios`: se a tarefa tem `cliente_id` e `projeto_id`, insere row em `cliente_historico` com `tipo='comentario_tarefa'`, descricao = texto completo do comentário, metadata `{ comentario_id, tarefa_id, tarefa_codigo, tarefa_titulo }`. **Tarefa avulsa NÃO gera entrada** (sem projeto). **Backfill idempotente** (NOT EXISTS check) replica todos os comentários antigos
+- [x] **Texto fossilizado** — edit/delete posteriores do comentário na tarefa NÃO atualizam o histórico do projeto. Log imutável (decisão consciente — evita complicação de manter sincronizado)
+- [x] **Tipos** — `ClienteHistoricoEvento.projeto_id: string | null`; novo type union `ClienteHistoricoTipo = 'etapa_mudada' | 'comentario' | 'comentario_tarefa'`; `ator` agora inclui `foto_url`
+- [x] **`ComentariosFeed` refatorado** — lê de `cliente_historico` (não mais `tarefa_comentarios`). Cada item mostra avatar + nome + data + badge **"Projeto"** (indigo, ícone `FolderKanban`) ou **"Tarefa"** (azul, ícone `ListChecks`). Quando `comentario_tarefa`, mostra link **"#9089 — Título da tarefa"** clicável que abre o `TarefaModal` na aba Comentários
+- [x] **Input pra comentar no projeto** — textarea + botão "Comentar" no topo da aba (só visível com `can('cliente.editar')`); INSERT direto em `cliente_historico` com `tipo='comentario'` + `projeto_id`. Atalho **Ctrl/⌘+Enter** envia
+- [x] **Filtro de duplicação na aba Atividade** — `historico` (vindo de `tarefa_historico`) tem `tipo='comentou'` removido no client (`historicoSemComentarios`). Como o mesmo comentário agora vem via `cliente_historico` como `comentario_tarefa`, evita duplicar. A aba "Histórico" individual da tarefa (no TarefaModal) continua mostrando o `comentou` normalmente
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -714,4 +725,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Sprint Talk Fase 3 concluída — Reactions emoji em mensagens com 6 emojis fixos, picker horizontal, chips agrupados, realtime e RLS dedicados)
+**Última atualização:** 2026-04-24 (Histórico unificado de comentários — comentário em tarefa de projeto vira registro no histórico do projeto via trigger; aba Comentários do Monitor mostra projeto + tarefas com contexto e link; input pra comentar direto no projeto)

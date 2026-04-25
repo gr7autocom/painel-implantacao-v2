@@ -9,10 +9,14 @@ import {
   FolderKanban,
   History as HistoryIcon,
   Inbox,
+  ListChecks,
   MessageSquare,
   MessageSquareText,
+  Send,
   Users,
 } from 'lucide-react'
+import { useUsuarioAtual } from '../lib/auth'
+import { useToast } from '../components/Toast'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonCard } from '../components/SkeletonCard'
 import { Breadcrumb } from '../components/Breadcrumb'
@@ -22,7 +26,6 @@ import type {
   ClienteHistoricoEvento,
   ProjetoComRelacoes,
   TarefaComRelacoes,
-  TarefaComentarioComAutor,
   TarefaHistoricoEventoComAtor,
 } from '../lib/types'
 import {
@@ -44,12 +47,6 @@ type Aba = 'atividade' | 'comentarios'
 const PROJETO_SELECT =
   '*, cliente:clientes(id, nome_fantasia, razao_social, responsavel_comercial, data_venda), etapa_implantacao:etapas_implantacao(id, nome, cor, ordem)'
 
-const COMENTARIO_SELECT = `
-  *,
-  autor:usuarios!tarefa_comentarios_autor_id_fkey(id, nome, foto_url),
-  tarefa:tarefas!inner(id, codigo, titulo, projeto_id)
-`
-
 const HISTORICO_SELECT = `
   *,
   ator:usuarios!tarefa_historico_ator_id_fkey(id, nome),
@@ -58,12 +55,9 @@ const HISTORICO_SELECT = `
 
 const CLIENTE_HISTORICO_SELECT = `
   *,
-  ator:usuarios!cliente_historico_ator_id_fkey(id, nome)
+  ator:usuarios!cliente_historico_ator_id_fkey(id, nome, foto_url)
 `
 
-type ComentarioComTarefa = TarefaComentarioComAutor & {
-  tarefa?: { id: string; codigo: number; titulo: string; projeto_id: string | null } | null
-}
 type HistoricoComTarefa = TarefaHistoricoEventoComAtor & {
   tarefa?: { id: string; codigo: number; titulo: string; projeto_id: string | null } | null
 }
@@ -71,11 +65,12 @@ type HistoricoComTarefa = TarefaHistoricoEventoComAtor & {
 export function ProjetoMonitor() {
   const { id } = useParams<{ id: string }>()
   const perm = usePermissao()
+  const usuario = useUsuarioAtual()
+  const { toast } = useToast()
   const [projeto, setProjeto] = useState<ProjetoComRelacoes | null>(null)
   usePageTitle(projeto ? `${projeto.nome} — Monitor` : 'Monitor')
   const [tarefas, setTarefas] = useState<TarefaComRelacoes[]>([])
   const [progresso, setProgresso] = useState<Progresso>(PROGRESSO_VAZIO)
-  const [comentarios, setComentarios] = useState<ComentarioComTarefa[]>([])
   const [historico, setHistorico] = useState<HistoricoComTarefa[]>([])
   const [clienteHistorico, setClienteHistorico] = useState<ClienteHistoricoEvento[]>([])
   const [aba, setAba] = useState<Aba>('atividade')
@@ -109,26 +104,18 @@ export function ProjetoMonitor() {
     setProgresso((progRes.data as Progresso | null) ?? PROGRESSO_VAZIO)
 
     const tarefaIds = tars.map((t) => t.id)
-    const fetchesTarefas = tarefaIds.length > 0
-      ? [
-          supabase
-            .from('tarefa_comentarios')
-            .select(COMENTARIO_SELECT)
-            .in('tarefa_id', tarefaIds)
-            .order('created_at', { ascending: false })
-            .limit(50),
-          supabase
-            .from('tarefa_historico')
-            .select(HISTORICO_SELECT)
-            .in('tarefa_id', tarefaIds)
-            .order('created_at', { ascending: false })
-            .limit(100),
-        ]
-      : [Promise.resolve({ data: [], error: null }), Promise.resolve({ data: [], error: null })]
+    const histPromise = tarefaIds.length > 0
+      ? supabase
+          .from('tarefa_historico')
+          .select(HISTORICO_SELECT)
+          .in('tarefa_id', tarefaIds)
+          .order('created_at', { ascending: false })
+          .limit(100)
+      : Promise.resolve({ data: [], error: null })
 
     const clienteId = proj?.cliente_id
-    const [comRes, hisRes, cliHisRes] = await Promise.all([
-      ...fetchesTarefas,
+    const [hisRes, cliHisRes] = await Promise.all([
+      histPromise,
       clienteId
         ? supabase
             .from('cliente_historico')
@@ -138,7 +125,6 @@ export function ProjetoMonitor() {
             .limit(100)
         : Promise.resolve({ data: [], error: null }),
     ])
-    setComentarios((comRes.data ?? []) as unknown as ComentarioComTarefa[])
     setHistorico((hisRes.data ?? []) as unknown as HistoricoComTarefa[])
     setClienteHistorico((cliHisRes.data ?? []) as unknown as ClienteHistoricoEvento[])
     setLoading(false)
@@ -157,6 +143,24 @@ export function ProjetoMonitor() {
   }, [tarefas])
 
   const equipe = useMemo(() => calcularEquipe(tarefas), [tarefas])
+
+  // Feed unificado de comentários (do projeto + de tarefas) lendo do cliente_historico.
+  // Filtramos por projeto_id (registros antigos com projeto_id=null mostram em todos
+  // os projetos do cliente — caso raro de cliente com múltiplos projetos).
+  const comentariosFeed = useMemo(
+    () => clienteHistorico
+      .filter((h) => h.tipo === 'comentario' || h.tipo === 'comentario_tarefa')
+      .filter((h) => h.projeto_id === id || h.projeto_id == null)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [clienteHistorico, id]
+  )
+
+  // Aba Atividade: removo eventos `comentou` do tarefa_historico pra evitar
+  // duplicação com `comentario_tarefa` que agora vem do cliente_historico.
+  const historicoSemComentarios = useMemo(
+    () => historico.filter((h) => h.tipo !== 'comentou'),
+    [historico]
+  )
 
   if (loading && !projeto) {
     return (
@@ -281,14 +285,14 @@ export function ProjetoMonitor() {
             onClick={() => setAba('comentarios')}
             icone={<MessageSquare className="w-4 h-4" />}
             label="Comentários"
-            contagem={comentarios.length}
+            contagem={comentariosFeed.length}
           />
         </div>
 
         <div className="p-4">
           {aba === 'atividade' && (
             <AtividadeFeed
-              eventos={historico}
+              eventos={historicoSemComentarios}
               eventosProjeto={clienteHistorico}
               onAbrirTarefa={(t, abaTarefa) =>
                 abrirTarefa(tarefas.find((x) => x.id === t.id) ?? null, abaTarefa)
@@ -297,10 +301,17 @@ export function ProjetoMonitor() {
           )}
           {aba === 'comentarios' && (
             <ComentariosFeed
-              comentarios={comentarios}
-              onAbrirTarefa={(t) =>
-                abrirTarefa(tarefas.find((x) => x.id === t.id) ?? null, 'comentarios')
-              }
+              eventos={comentariosFeed}
+              clienteId={projeto.cliente_id}
+              projetoId={projeto.id}
+              meuId={usuario?.id ?? null}
+              podeComentar={perm.can('cliente.editar')}
+              onAposComentar={() => { toast('Comentário adicionado ao projeto.'); load() }}
+              onAbrirTarefa={(tarefaId, codigo) => {
+                const t = tarefas.find((x) => x.id === tarefaId)
+                if (t) abrirTarefa(t, 'comentarios')
+                else toast(`Tarefa #${codigo} não encontrada neste projeto.`, 'error')
+              }}
             />
           )}
         </div>
@@ -734,50 +745,144 @@ function ProjetoEventoLinha({ evento }: { evento: ClienteHistoricoEvento }) {
 }
 
 function ComentariosFeed({
-  comentarios,
+  eventos,
+  clienteId,
+  projetoId,
+  meuId,
+  podeComentar,
+  onAposComentar,
   onAbrirTarefa,
 }: {
-  comentarios: ComentarioComTarefa[]
-  onAbrirTarefa: (t: { id: string }) => void
+  eventos: ClienteHistoricoEvento[]
+  clienteId: string
+  projetoId: string
+  meuId: string | null
+  podeComentar: boolean
+  onAposComentar: () => void
+  onAbrirTarefa: (tarefaId: string, codigo: number) => void
 }) {
-  if (comentarios.length === 0) {
-    return (
-      <EmptyState
-        icon={<MessageSquare className="w-8 h-8" />}
-        title="Nenhum comentário ainda"
-        description="Comentários nas tarefas deste projeto aparecem aqui."
-      />
-    )
+  const [novoTexto, setNovoTexto] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function comentar() {
+    const texto = novoTexto.trim()
+    if (!texto || !meuId) return
+    setSalvando(true)
+    setErro(null)
+    const { error } = await supabase.from('cliente_historico').insert({
+      cliente_id: clienteId,
+      projeto_id: projetoId,
+      ator_id: meuId,
+      tipo: 'comentario',
+      descricao: texto,
+      metadata: null,
+    })
+    setSalvando(false)
+    if (error) {
+      setErro(error.code === '42501' ? 'Você não tem permissão para comentar no projeto.' : error.message)
+      return
+    }
+    setNovoTexto('')
+    onAposComentar()
   }
+
   return (
-    <ul className="space-y-3">
-      {comentarios.map((c) => (
-        <li key={c.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <UserAvatar nome={c.autor?.nome ?? '?'} fotoUrl={c.autor?.foto_url} size="sm" />
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-gray-900">
-                {c.autor?.nome ?? 'Usuário'}
-              </div>
-              <div className="text-caption text-gray-500">
-                {new Date(c.created_at).toLocaleString('pt-BR')}
-              </div>
+    <div className="space-y-4">
+      {podeComentar && meuId && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          {erro && (
+            <div className="mb-2 p-2 bg-red-400/15 border border-red-400/40 text-red-300 text-xs rounded">
+              {erro}
             </div>
-            {c.tarefa && (
-              <button
-                type="button"
-                onClick={() => onAbrirTarefa(c.tarefa!)}
-                className="text-caption text-blue-600 hover:text-blue-700 font-medium shrink-0"
-              >
-                #{c.tarefa.codigo}
-              </button>
-            )}
+          )}
+          <textarea
+            value={novoTexto}
+            onChange={(e) => setNovoTexto(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                comentar()
+              }
+            }}
+            placeholder="Comente diretamente no projeto..."
+            rows={2}
+            className="w-full resize-none px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          />
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-caption text-gray-500">
+              Aparece também na aba <strong>Atividade</strong>. Ctrl/⌘+Enter para enviar.
+            </span>
+            <button
+              type="button"
+              onClick={comentar}
+              disabled={salvando || !novoTexto.trim()}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-[#ffffff] rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Send className="w-3 h-3" />
+              {salvando ? 'Enviando...' : 'Comentar'}
+            </button>
           </div>
-          <div className="text-sm text-gray-700 whitespace-pre-wrap break-words pl-9">
-            {c.texto}
-          </div>
-        </li>
-      ))}
-    </ul>
+        </div>
+      )}
+
+      {eventos.length === 0 ? (
+        <EmptyState
+          icon={<MessageSquare className="w-8 h-8" />}
+          title="Nenhum comentário ainda"
+          description="Comentários no projeto e nas tarefas deste projeto aparecem aqui."
+        />
+      ) : (
+        <ul className="space-y-3">
+          {eventos.map((ev) => {
+            const ehTarefa = ev.tipo === 'comentario_tarefa'
+            const meta = ev.metadata as Record<string, unknown> | null
+            const tarefaId = (meta?.tarefa_id as string | undefined) ?? null
+            const tarefaCodigo = (meta?.tarefa_codigo as number | undefined) ?? null
+            const tarefaTitulo = (meta?.tarefa_titulo as string | undefined) ?? null
+            return (
+              <li key={ev.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <UserAvatar nome={ev.ator?.nome ?? '?'} fotoUrl={ev.ator?.foto_url} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-gray-900">
+                      {ev.ator?.nome ?? 'Sistema'}
+                    </div>
+                    <div className="text-caption text-gray-500">
+                      {new Date(ev.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </div>
+                  {ehTarefa ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-400/15 border border-blue-400/40 text-blue-300 text-caption font-medium">
+                      <ListChecks className="w-3 h-3" />
+                      Tarefa
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-400/15 border border-indigo-400/40 text-indigo-300 text-caption font-medium">
+                      <FolderKanban className="w-3 h-3" />
+                      Projeto
+                    </span>
+                  )}
+                </div>
+                {ehTarefa && tarefaId && tarefaCodigo != null && (
+                  <button
+                    type="button"
+                    onClick={() => onAbrirTarefa(tarefaId, tarefaCodigo)}
+                    className="ml-9 mb-1 inline-flex items-center gap-1 text-caption text-blue-600 hover:text-blue-700 font-medium"
+                    title="Abrir tarefa"
+                  >
+                    #{tarefaCodigo}
+                    {tarefaTitulo && <span className="text-gray-600 font-normal truncate max-w-[280px]">— {tarefaTitulo}</span>}
+                  </button>
+                )}
+                <div className="text-sm text-gray-700 whitespace-pre-wrap break-words pl-9">
+                  {ev.descricao}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }
