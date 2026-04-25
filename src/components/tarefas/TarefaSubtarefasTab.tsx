@@ -22,7 +22,10 @@ export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const podeCriar = perm.podeColaborarTarefa(tarefa) && perm.can('tarefa.criar')
+  // Subtarefa não pode ter subtarefa (apenas 1 nível). Trigger SQL `validate_subtarefa`
+  // já bloqueia no banco; aqui escondemos a UI quando a tarefa atual já é uma subtarefa.
+  const ehSubtarefa = !!tarefa.tarefa_pai_id
+  const podeCriar = !ehSubtarefa && perm.podeColaborarTarefa(tarefa) && perm.can('tarefa.criar')
 
   async function load() {
     setLoading(true)
@@ -92,7 +95,9 @@ export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa
         ) : subtarefas.length === 0 ? (
           <div className="py-8 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
             <GitBranch className="w-8 h-8 text-gray-300" />
-            Nenhuma subtarefa.
+            {ehSubtarefa
+              ? 'Subtarefas não podem ter subtarefas.'
+              : 'Nenhuma subtarefa.'}
             {podeCriar && (
               <button
                 type="button"

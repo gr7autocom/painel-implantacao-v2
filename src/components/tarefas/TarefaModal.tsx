@@ -363,7 +363,12 @@ export function TarefaModal({
 
         {!aguardandoConfirmacao && (
         <div className="flex-1 flex min-h-0">
-          <AbasSidebar aba={aba} onAba={setAba} bloquearExtras={isCriando} />
+          <AbasSidebar
+            aba={aba}
+            onAba={setAba}
+            bloquearExtras={isCriando}
+            esconderSubtarefas={!!tarefa?.tarefa_pai_id}
+          />
 
           <div className="flex-1 min-w-0 flex flex-col">
             {aba !== 'principal' && tarefa && (
@@ -763,17 +768,21 @@ function AbasSidebar({
   aba,
   onAba,
   bloquearExtras,
+  esconderSubtarefas,
 }: {
   aba: Aba
   onAba: (a: Aba) => void
   bloquearExtras: boolean
+  /** Esconde a aba "Subtarefas" — usado quando a tarefa atual já é uma subtarefa
+   * (subtarefas não podem ter subtarefas). */
+  esconderSubtarefas?: boolean
 }) {
   const itens: { id: Aba; label: string; icon: typeof FileText; extra?: boolean }[] = [
     { id: 'principal', label: 'Principal', icon: FileText },
     { id: 'participantes', label: 'Participantes', icon: Users, extra: true },
     { id: 'comentarios', label: 'Comentários', icon: MessageSquare, extra: true },
     { id: 'checklist', label: 'Checklist', icon: CheckSquare, extra: true },
-    { id: 'subtarefas', label: 'Subtarefas', icon: GitBranch, extra: true },
+    ...(esconderSubtarefas ? [] : [{ id: 'subtarefas' as const, label: 'Subtarefas', icon: GitBranch, extra: true }]),
     { id: 'historico', label: 'Histórico', icon: History, extra: true },
   ]
   return (
