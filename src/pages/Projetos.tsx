@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderKanban, FolderPlus } from 'lucide-react'
+import { FolderKanban, FolderPlus, FolderCheck, FolderX } from 'lucide-react'
+
+type AbaAtiva = 'andamento' | 'concluidos' | 'cancelados'
+
+const ETAPAS_CONCLUIDO = ['Concluído', 'Inaugurado']
+const ETAPAS_CANCELADO = ['Cancelado']
 import { Modal } from '../components/Modal'
 import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
@@ -26,6 +31,7 @@ export function Projetos() {
   const [progresso, setProgresso] = useState<Record<string, Progresso>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('andamento')
   const [busca, setBusca] = useState('')
   const [etapaFiltro, setEtapaFiltro] = useState('')
   const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
@@ -83,6 +89,30 @@ export function Projetos() {
       return true
     })
   }, [items, busca, etapaFiltro])
+
+  const projetosAndamento = useMemo(
+    () => itensFiltrados.filter(
+      (p) => !ETAPAS_CONCLUIDO.includes(p.etapa_implantacao?.nome ?? '') &&
+             !ETAPAS_CANCELADO.includes(p.etapa_implantacao?.nome ?? '')
+    ),
+    [itensFiltrados]
+  )
+
+  const projetosConcluidos = useMemo(
+    () => itensFiltrados.filter((p) => ETAPAS_CONCLUIDO.includes(p.etapa_implantacao?.nome ?? '')),
+    [itensFiltrados]
+  )
+
+  const projetosCancelados = useMemo(
+    () => itensFiltrados.filter((p) => ETAPAS_CANCELADO.includes(p.etapa_implantacao?.nome ?? '')),
+    [itensFiltrados]
+  )
+
+  const projetosAtivos = abaAtiva === 'andamento'
+    ? projetosAndamento
+    : abaAtiva === 'concluidos'
+      ? projetosConcluidos
+      : projetosCancelados
 
   function abrirModalNomeProjeto(cliente: { id: string; nome_fantasia: string }) {
     setClienteParaProjeto({ id: cliente.id, nome: cliente.nome_fantasia })
@@ -146,6 +176,56 @@ export function Projetos() {
         description="Acompanhe o andamento de implantação de cada cliente."
       />
 
+      {/* Abas */}
+      <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+        <button
+          type="button"
+          onClick={() => setAbaAtiva('andamento')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
+            abaAtiva === 'andamento'
+              ? 'border-gray-200 border-b-white bg-white text-blue-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <FolderKanban className="w-4 h-4" />
+          Em andamento
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'andamento' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+            {projetosAndamento.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAbaAtiva('concluidos')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
+            abaAtiva === 'concluidos'
+              ? 'border-gray-200 border-b-white bg-white text-emerald-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <FolderCheck className="w-4 h-4" />
+          Concluídos
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'concluidos' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+            {projetosConcluidos.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAbaAtiva('cancelados')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
+            abaAtiva === 'cancelados'
+              ? 'border-gray-200 border-b-white bg-white text-red-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <FolderX className="w-4 h-4" />
+          Cancelados
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'cancelados' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+            {projetosCancelados.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <label htmlFor="projetos-etapa-filtro" className="sr-only">Filtrar por etapa</label>
         <select
@@ -169,7 +249,7 @@ export function Projetos() {
         />
       </div>
 
-      {perm.can('cliente.criar') && (
+      {perm.can('cliente.criar') && abaAtiva === 'andamento' && (
         <div className="mb-6 p-5 border border-dashed border-gray-300 rounded-xl bg-white">
           <p className="text-sm text-gray-500 mb-4 text-center">
             Selecione um projeto abaixo ou inicie um novo:
@@ -214,15 +294,23 @@ export function Projetos() {
             </div>
           ))}
         </div>
-      ) : itensFiltrados.length === 0 ? (
+      ) : projetosAtivos.length === 0 ? (
         <EmptyState
-          icon={<FolderKanban className="w-10 h-10" />}
-          title={items.length === 0 ? 'Nenhum projeto cadastrado ainda.' : 'Nenhum projeto encontrado.'}
-          description={items.length === 0 ? 'Crie um novo projeto clicando no botão acima.' : 'Tente ajustar a busca ou os filtros.'}
+          icon={abaAtiva === 'concluidos' ? <FolderCheck className="w-10 h-10" /> : abaAtiva === 'cancelados' ? <FolderX className="w-10 h-10" /> : <FolderKanban className="w-10 h-10" />}
+          title={
+            abaAtiva === 'concluidos' ? 'Nenhum projeto concluído.' :
+            abaAtiva === 'cancelados' ? 'Nenhum projeto cancelado.' :
+            items.length === 0 ? 'Nenhum projeto cadastrado ainda.' : 'Nenhum projeto encontrado.'
+          }
+          description={
+            abaAtiva === 'concluidos' ? 'Projetos com etapa Concluído ou Inaugurado aparecerão aqui.' :
+            abaAtiva === 'cancelados' ? 'Projetos com etapa Cancelado aparecerão aqui.' :
+            items.length === 0 ? 'Crie um novo projeto clicando no botão acima.' : 'Tente ajustar a busca ou os filtros.'
+          }
         />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-          {itensFiltrados.map((p, i) => (
+          {projetosAtivos.map((p, i) => (
             <div
               key={p.id}
               className="stagger-item"

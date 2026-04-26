@@ -4,6 +4,11 @@
 
 ## ✅ Concluído
 
+### Projetos — separação por abas e nova regra de criação
+
+- [x] 3 abas em `/projetos`: Em andamento / Concluídos (Concluído + Inaugurado) / Cancelados
+- [x] Liberar criação de novo projeto para clientes com projeto em Concluído/Inaugurado
+
 ### Setup Inicial
 
 - [x] Projeto React + TypeScript + Vite

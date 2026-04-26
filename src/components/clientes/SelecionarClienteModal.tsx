@@ -23,9 +23,9 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
     setBusca('')
     setError(null)
     setLoading(true)
-    // Carrega clientes ativos + ids de clientes que JÁ têm projeto ativo,
-    // pra remover esses da lista (1 projeto ativo por cliente — pra criar
-    // outro precisa cancelar/excluir o atual primeiro).
+    // Carrega clientes ativos + projetos ativos com etapa.
+    // Bloqueia apenas clientes com projeto em andamento (não Concluído/Inaugurado).
+    // Clientes com projeto já concluído/inaugurado podem receber um novo projeto.
     Promise.all([
       supabase
         .from('clientes')
@@ -34,14 +34,20 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
         .order('nome_fantasia'),
       supabase
         .from('projetos')
-        .select('cliente_id')
+        .select('cliente_id, etapa_implantacao:etapas_implantacao(nome)')
         .eq('ativo', true),
     ]).then(([clientesRes, projetosRes]) => {
       setLoading(false)
       if (clientesRes.error) { setError(clientesRes.error.message); return }
-      const comProjeto = new Set(((projetosRes.data ?? []) as { cliente_id: string }[]).map((p) => p.cliente_id))
-      const semProjeto = ((clientesRes.data ?? []) as ClienteResumo[]).filter((c) => !comProjeto.has(c.id))
-      setClientes(semProjeto)
+      type ProjetoEtapa = { cliente_id: string; etapa_implantacao: { nome: string } | null }
+      const ETAPAS_LIBERADAS = ['Concluído', 'Inaugurado']
+      const bloqueados = new Set(
+        ((projetosRes.data ?? []) as unknown as ProjetoEtapa[])
+          .filter((p) => !ETAPAS_LIBERADAS.includes(p.etapa_implantacao?.nome ?? ''))
+          .map((p) => p.cliente_id)
+      )
+      const disponiveis = ((clientesRes.data ?? []) as ClienteResumo[]).filter((c) => !bloqueados.has(c.id))
+      setClientes(disponiveis)
     })
     setTimeout(() => inputRef.current?.focus(), 80)
   }, [open])
@@ -110,7 +116,7 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
           ) : filtrados.length === 0 ? (
             <div className="py-10 text-center text-gray-500 text-sm px-6">
               {clientes.length === 0
-                ? 'Todos os clientes ativos já têm projeto. Cadastre um novo cliente em /clientes ou cancele/exclua um projeto existente para criar outro.'
+                ? 'Todos os clientes ativos já têm projeto em andamento. Conclua ou cancele um projeto existente para criar outro, ou cadastre um novo cliente.'
                 : 'Nenhum cliente encontrado para essa busca.'}
             </div>
           ) : (
