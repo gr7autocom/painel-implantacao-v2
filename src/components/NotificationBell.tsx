@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Bell, Check, CheckCheck, Clock, UserCheck } from 'lucide-react'
+import { Bell, BellOff, BellRing, Check, CheckCheck, Clock, UserCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useToast } from './Toast'
 import type { Notificacao } from '../lib/types'
+
+const SUPORTE_NOTIF = typeof window !== 'undefined' && 'Notification' in window
+
+function dispararNotificacaoNativa(n: Notificacao) {
+  if (!SUPORTE_NOTIF || Notification.permission !== 'granted') return
+  const notif = new Notification(n.titulo, {
+    body: n.mensagem ?? undefined,
+    icon: '/pwa-192.svg',
+    tag: `notificacao-${n.id}`,
+  })
+  notif.onclick = () => window.focus()
+}
 
 const TAG_TAREFA_TOAST = 'notificacao-tarefa'
 
@@ -27,7 +39,17 @@ export function NotificationBell() {
   const location = useLocation()
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([])
   const [aberto, setAberto] = useState(false)
+  const [permNotif, setPermNotif] = useState<NotificationPermission>(
+    SUPORTE_NOTIF ? Notification.permission : 'denied'
+  )
   const panelRef = useRef<HTMLDivElement>(null)
+
+  async function solicitarPermissao() {
+    if (!SUPORTE_NOTIF) return
+    const perm = await Notification.requestPermission()
+    setPermNotif(perm)
+    if (perm === 'granted') toast('Notificações nativas ativadas!', 'success')
+  }
 
   const naoLidas = notificacoes.filter((n) => !n.lida).length
 
@@ -79,11 +101,14 @@ export function NotificationBell() {
             const nova = payload.new as Notificacao
             setNotificacoes((prev) => [nova, ...prev])
 
-            // Dispara toast de tarefa com cor própria (roxo) se não estou em /tarefas
+            // Toast in-app (roxo) se não estou em /tarefas
             const ehTarefa = nova.tipo === 'tarefa_atribuida' || nova.tipo === 'prazo_vencendo'
             if (ehTarefa && !window.location.pathname.startsWith('/tarefas')) {
               toast(nova.mensagem || nova.titulo, 'task', { tag: TAG_TAREFA_TOAST })
             }
+
+            // Notificação nativa do SO (card do Windows)
+            dispararNotificacaoNativa(nova)
           }
         )
         .subscribe()
@@ -136,6 +161,34 @@ export function NotificationBell() {
               </button>
             )}
           </div>
+
+          {/* Permissão de notificação nativa */}
+          {SUPORTE_NOTIF && (
+            <div className="px-4 py-2 border-b border-gray-200">
+              {permNotif === 'default' && (
+                <button
+                  type="button"
+                  onClick={solicitarPermissao}
+                  className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 transition-colors w-full"
+                >
+                  <BellRing className="w-3.5 h-3.5 shrink-0" />
+                  Ativar notificações nativas do Windows
+                </button>
+              )}
+              {permNotif === 'granted' && (
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <CheckCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                  Notificações nativas ativadas
+                </div>
+              )}
+              {permNotif === 'denied' && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <BellOff className="w-3.5 h-3.5 shrink-0" />
+                  Notificações bloqueadas no navegador
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Lista */}
           <div className="overflow-y-auto max-h-96">

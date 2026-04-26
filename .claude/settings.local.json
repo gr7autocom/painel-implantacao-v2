@@ -27,7 +27,10 @@
       "Bash(grep -n \"</Modal>\\\\|</>$\\\\|^}$\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src/components/clientes/ClienteModal.tsx\")",
       "Bash(grep -n \"1 cliente = 1 projeto\\\\|Ao \\\\\\\\*\\\\\\\\*criar um cliente novo\\\\\\\\*\\\\\\\\*\\\\|gerar_tarefas_iniciais_cliente\\\\|Projetos = visão\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/CLAUDE.md\")",
       "Bash(npx vitest *)",
-      "Bash(npx playwright *)"
+      "Bash(npx playwright *)",
+      "Bash(copy \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-192x192.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\pwa-192.svg\")",
+      "Bash(copy \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-512x1512.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\pwa-512.svg\")",
+      "Bash(copy /Y \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-192x192.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\favicon.svg\")"
     ]
   }
 }

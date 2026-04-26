@@ -671,6 +671,15 @@ Cadastrar cliente NÃO cria mais projeto automaticamente. Vendedor cadastra o cl
 - [x] **`SelecionarClienteModal.tsx`** — query inicial agora carrega em paralelo `clientes` ativos + ids de `projetos` ativos; filtra clientes que já têm projeto. Empty state ajustado: "Todos os clientes ativos já têm projeto. Cadastre novo cliente em /clientes ou cancele/exclua um projeto"
 - [x] **`Clientes.tsx`** — toast pós-criação reescrito: `"Cliente cadastrado. Para criar um projeto, abra-o em editar e use 'Criar projeto'."`. Removido tratamento de `r.erroGeracao` no fluxo `criou` (não há mais geração automática); UPDATE continua igual
 
+### PWA + notificações nativas Windows ✅ Concluído (2026-04-26)
+
+- [x] `vite-plugin-pwa` instalado e configurado com `manifest.webmanifest` (nome, cor, modo `standalone`)
+- [x] Ícones GR7 192×192 e 512×512 em `public/pwa-192.svg` e `public/pwa-512.svg`; favicon substituído pelo logo GR7
+- [x] Service Worker gerado pelo Workbox (`generateSW`): Supabase e Cloudinary em `NetworkOnly`, Google Fonts em `CacheFirst`; SPA routing via `navigateFallback: /index.html`
+- [x] Meta tags PWA em `index.html`: `theme-color`, `apple-mobile-web-app-capable`, `apple-touch-icon`
+- [x] `NotificationBell` dispara `new Notification()` nativo do SO ao chegar notificação via Realtime; `onclick` foca a janela/PWA
+- [x] Botão "Ativar notificações nativas do Windows" no dropdown do sino (aparece só quando permissão ainda não foi solicitada); estados granted/denied com feedback visual
+
 ### Tabs Ativos/Inativos + Importar/Exportar CSV de clientes ✅ Concluído (2026-04-26)
 
 - [x] **Tabs Ativos/Inativos** em [Clientes.tsx](src/pages/Clientes.tsx) — toggle no topo (mesmo padrão de `/tarefas`) com **badge de contagem** por bucket. Filtro aplicado antes da busca/etapa. Empty state contextual (`emptyInfo` via `useMemo`): "Nenhum cliente cadastrado" / "Nenhum cliente ativo" / "Nenhum cliente inativo" / "Nenhum cliente encontrado"
@@ -738,6 +747,7 @@ Refactor entregue: Inter, stagger, autosave, rota dedicada `/tarefas/:codigo` + 
 
 - [ ] Refactor "Linear-style" de subtarefas (perde a tarefa pai do contexto ao navegar)
 - [ ] URL routing em Inicio e ProjetoMonitor (atualmente abrem TarefaModal sem URL — link compartilhável vive no `/tarefas/:codigo`)
+- [ ] **Tauri (app nativo Windows)** — alternativa ao PWA para quem precisar de: ícone na bandeja do sistema (system tray), botão fechar com opção "minimizar na bandeja", comportamento de app nativo completo. O frontend React/TypeScript existente não muda — Tauri adiciona apenas uma casca nativa por cima. Instalador ~5 MB (usa WebView do SO, não empacota Chrome). Pré-requisito: ter ícone oficial da GR7. Avaliar quando a equipe precisar de tray ou notificações com o app fechado
 
 ### O que NÃO vai mudar (decisão consciente)
 
