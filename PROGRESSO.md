@@ -710,6 +710,12 @@ Quando uma subtarefa envolve responsáveis diferentes do pai, o Talk troca mensa
   - Nova função `notificar_participante_subtarefa_talk` + trigger `trg_notificar_participante_subtarefa_talk` em `tarefa_participantes` AFTER INSERT: quando um participante é adicionado a uma subtarefa, recebe mensagem de quem o adicionou: "Você foi adicionado(a) como participante na subtarefa #X..."
   - Adições automáticas pela trigger `auto_participante_subtarefa` (que insere na PAI, não na subtarefa) são ignoradas via check `tarefa_pai_id IS NULL`
 
+### Link de navegação nas mensagens Talk automáticas ✅ Concluído (2026-04-26)
+
+- [x] Migration `20260426120000_subtarefa_talk_links.sql`: ambas as funções SECURITY DEFINER (`notificar_subtarefa_talk` e `notificar_participante_subtarefa_talk`) agora appendam `\n/tarefas/:codigo` ao final do `v_corpo` antes de chamar `inserir_mensagem_talk`
+- [x] `MensagemBubble.tsx`: helper `renderCorpo(corpo, ehMinha)` detecta linhas que batem com `/tarefas/\d+` ou `/projetos/.+/tarefas/\d+` e renderiza como `<Link>` do React Router com ícone `ExternalLink` e texto "Ver tarefa #NNNN" — estilizado em branco na bolha própria (azul) e azul na bolha do outro
+- [x] `whitespace-pre-wrap` no `<p>` preserva o `\n` antes do link, mantendo o texto da mensagem na primeira linha e o link na segunda
+
 ### Herança de cliente na subtarefa (frontend) ✅ Concluído (2026-04-26)
 
 - [x] Tipo `TarefaPaiFixa` extendido com `clienteId?: string | null` e `clienteNome?: string | null` em `useTarefaForm.ts`

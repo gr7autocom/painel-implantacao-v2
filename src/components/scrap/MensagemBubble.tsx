@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertCircle, Ban, Check, CheckCheck, Download, FileText, Loader2, MoreVertical, RotateCcw, Trash2 } from 'lucide-react'
+import { AlertCircle, Ban, Check, CheckCheck, Download, ExternalLink, FileText, Loader2, MoreVertical, RotateCcw, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { UserAvatar } from '../UserAvatar'
 import { horaMensagem } from '../../lib/scrap-utils'
 import { usePermissao } from '../../lib/permissoes'
@@ -38,6 +39,35 @@ function ehImagem(mime: string | null | undefined): boolean {
 
 function ehAudio(mime: string | null | undefined): boolean {
   return !!mime && mime.startsWith('audio/')
+}
+
+const ROTA_TAREFA_RE = /^(\/tarefas\/\d+|\/projetos\/[^/\s]+\/tarefas\/\d+)$/
+
+function renderCorpo(corpo: string, ehMinha: boolean): React.ReactNode[] {
+  const resultado: React.ReactNode[] = []
+  corpo.split('\n').forEach((linha, i) => {
+    if (i > 0) resultado.push('\n')
+    const match = linha.match(ROTA_TAREFA_RE)
+    if (match) {
+      const codigo = match[1].split('/').pop()
+      resultado.push(
+        <Link
+          key={i}
+          to={match[1]}
+          className={`inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2 ${
+            ehMinha ? 'text-blue-100 hover:text-[#ffffff]' : 'text-blue-500 hover:text-blue-600'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ExternalLink className="w-3 h-3" />
+          Ver tarefa #{codigo}
+        </Link>
+      )
+    } else {
+      resultado.push(<span key={i}>{linha}</span>)
+    }
+  })
+  return resultado
 }
 
 export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, onExcluir, statusEnvio, onRetry, onDescartar, meuId, nomeOutro, onToggleReacao }: Props) {
@@ -91,7 +121,9 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
             }`}
           >
             {mensagem.corpo && (
-              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{mensagem.corpo}</p>
+              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                {renderCorpo(mensagem.corpo, ehMinha)}
+              </p>
             )}
             {mensagem.anexos && mensagem.anexos.length > 0 && (
               <div className={`${mensagem.corpo ? 'mt-2' : ''} flex flex-col gap-1.5`}>
