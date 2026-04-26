@@ -73,7 +73,7 @@ src/
 ├── pages/
 │   ├── Inicio.tsx                # dashboard: cards + lista ordenada por urgência + calendário lateral
 │   ├── Clientes.tsx              # CRUD tabela + busca (usa ClienteModal)
-│   ├── Projetos.tsx              # grid de cards dos clientes ativos (1 cliente = 1 projeto; clique navega pra /projetos/:id)
+│   ├── Projetos.tsx              # grid de cards dos projetos ativos; botão "Novo projeto" lista clientes sem projeto (1 projeto ativo por cliente); clique navega pra /projetos/:id
 │   ├── ProjetoDetalhe.tsx        # tarefas filtradas por cliente_id; reusa TarefaModal com clienteFixo
 │   ├── ProjetoMonitor.tsx        # /projetos/:id/monitor — dashboard do projeto (KPIs, equipe, atividade, comentários)
 │   ├── Tarefas.tsx               # lista + filtros + Nova Tarefa
@@ -205,21 +205,39 @@ Tabela `cliente_historico` ([20260419135237](supabase/migrations/20260419135237_
 - Abas inferiores: "Atividade" (últimos 100 eventos de `tarefa_historico` agregados) e "Comentários" (últimos 50 de `tarefa_comentarios` agregados, com atalho para a tarefa)
 - Workload considera apenas responsáveis (não comentadores/marcadores de checklist — mais limpo para o gestor)
 
-### Projetos = visão por cliente
+### Projetos vinculados a clientes (criação opcional)
 
-- 1 cliente = 1 projeto (sem tabela própria); a "página de projeto" é a listagem de tarefas filtradas por `cliente_id`
-- Ao **criar um cliente novo**, o `ClienteModal` chama a RPC **`gerar_tarefas_iniciais_cliente(p_cliente_id)`** (SECURITY DEFINER) que cria:
-  - 1 tarefa "Instalação de Servidor (k/N)" para cada `servidores_qtd`
-  - 1 tarefa "Instalação de Retaguarda (k/N)" para cada `retaguarda_qtd`
-  - 1 tarefa "Instalação de Caixa/PDV (k/N)" para cada `pdv_qtd`
-  - 1 tarefa "Instalação módulo XXX" para cada item em `modulos`
-  - **1 tarefa "Importação de dados"** quando `importar_dados = TRUE` (classificação homônima)
-- Defaults: categoria=**Implantação**, classificação=**Instalação do sistema** (infra) / **Instalação de módulos** / **Importação de dados**, etapa=**Pendente**, prioridade=nível 2, responsável=NULL (em aberto), prazos=NULL
-- **Idempotente**: a RPC verifica se o cliente já tem tarefas; se sim, retorna 0 sem inserir. Safety-net contra duplicação acidental
-- Edições do cliente NÃO regeneram tarefas — quem precisar adiciona manualmente em `/projetos/:id`
-- RPC valida `can('cliente.criar')` da caller, então só quem pode criar cliente pode invocar
-- O `ClienteModal` propaga o resultado via `onSaved(SaveResult)` — Clientes/Projetos mostram aviso vermelho se a geração falhar
-- Scripts `scripts/diagnostico-projeto.mjs` e `scripts/gerar-tarefas-cliente.mjs` continuam servindo para recuperação manual via service role
+- **1 cliente = no máximo 1 projeto ATIVO** (regra atual; tabela `projetos` própria desde `20260420232301`)
+- **Cadastrar cliente NÃO cria projeto automaticamente** (mudou em 2026-04-25). Cliente nasce "puro" e quem decide criar o projeto é o usuário.
+
+**Dois caminhos para criar projeto** — ambos chegam ao mesmo banco mas com tarefas diferentes:
+
+1. **Botão "Criar projeto" dentro do `ClienteModal`** (footer, modo edição apenas, escondido se cliente já tem projeto ativo, requer `can('cliente.criar')`):
+   - Abre `NomeProjetoModal` com default `Implantação <nome_fantasia>`
+   - Chama RPC **`gerar_tarefas_iniciais_cliente(p_cliente_id, p_nome)`** ([20260426002844](supabase/migrations/20260426002844_gerar_tarefas_nome_opcional.sql))
+   - **Gera tarefas iniciais** baseadas no cadastro do cliente:
+     - 1 tarefa "Instalação de Servidor (k/N)" para cada `servidores_qtd`
+     - 1 tarefa "Instalação de Retaguarda (k/N)" para cada `retaguarda_qtd`
+     - 1 tarefa "Instalação de Caixa/PDV (k/N)" para cada `pdv_qtd`
+     - 1 tarefa "Instalação módulo XXX" para cada item em `modulos`
+     - 1 tarefa "Importação de dados" quando `importar_dados = TRUE`
+   - Defaults das tarefas: categoria=**Implantação**, classificação=**Instalação do sistema/módulos/Importação**, etapa=**Pendente**, prioridade=nível 2, responsável=NULL, prazos=NULL, `origem_cadastro=TRUE`
+   - **Idempotente**: se cliente já tem projeto ativo, retorna `(0, projeto_existente)` sem alterar
+   - RPC valida `can('cliente.criar')`; SECURITY DEFINER
+
+2. **Botão "Novo projeto" em `/projetos`** (`SelecionarClienteModal` → `NomeProjetoModal`):
+   - Lista só clientes ativos QUE NÃO têm projeto ativo (filtra no `SelecionarClienteModal`)
+   - Cria **projeto VAZIO** via `INSERT INTO projetos (cliente_id, nome)` direto — sem tarefas iniciais
+   - Útil quando o gestor quer estruturar o projeto manualmente, sem replicar o cadastro
+
+**Edições do cliente** (UPDATE) chamam `sincronizar_tarefas_cliente` (delta — cria novas tarefas em mudanças de quantidade, cancela removidas; só funciona se já existe projeto). UI mostra "Este cliente ainda não tem projeto ativo" se aplicável.
+
+**Componente compartilhado** [`NomeProjetoModal.tsx`](src/components/projetos/NomeProjetoModal.tsx) é usado nos dois fluxos (defaultNome, descricao contextual, callback `onConfirmar(nome)`).
+
+Scripts `scripts/diagnostico-projeto.mjs` e `scripts/gerar-tarefas-cliente.mjs` continuam servindo para recuperação manual via service role.
+
+### Catálogos auxiliares
+
 - `etapas` (id, nome UNIQUE, **ordem INT**, cor, ativo) — usado como status das tarefas
 - `prioridades` (id, nome UNIQUE, descricao, **nivel INT**, cor, ativo)
 - `etapas_implantacao` (id, nome UNIQUE, ordem INT, cor, ativo) — estágios do projeto. Seeds: A fazer, Contatado, Instalando, Importando, Treinamento, Cadastrando, Concluído, Inaugurado, Pausado, Cancelado. RLS por `can('configuracoes.catalogos')`. Não confundir com `etapas` (status de tarefas)

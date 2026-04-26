@@ -655,6 +655,17 @@ Comentário em tarefa de projeto agora aparece TAMBÉM no histórico do projeto,
 - [x] **Input pra comentar no projeto** — textarea + botão "Comentar" no topo da aba (só visível com `can('cliente.editar')`); INSERT direto em `cliente_historico` com `tipo='comentario'` + `projeto_id`. Atalho **Ctrl/⌘+Enter** envia
 - [x] **Filtro de duplicação na aba Atividade** — `historico` (vindo de `tarefa_historico`) tem `tipo='comentou'` removido no client (`historicoSemComentarios`). Como o mesmo comentário agora vem via `cliente_historico` como `comentario_tarefa`, evita duplicar. A aba "Histórico" individual da tarefa (no TarefaModal) continua mostrando o `comentou` normalmente
 
+### Cliente desacoplado de Projeto ✅ Concluído (2026-04-25)
+
+Cadastrar cliente NÃO cria mais projeto automaticamente. Vendedor cadastra o cliente puro e, quando quiser, gera projeto + tarefas iniciais via botão "Criar projeto" dentro do `ClienteModal` (modo edição). O fluxo `/projetos` → "Novo projeto" continua criando projeto vazio (sem tarefas iniciais), agora vinculando apenas a clientes já cadastrados que ainda não têm projeto ativo.
+
+- [x] **Migration [`20260426002844_gerar_tarefas_nome_opcional.sql`](supabase/migrations/20260426002844_gerar_tarefas_nome_opcional.sql)** — `gerar_tarefas_iniciais_cliente(p_cliente_id UUID, p_nome TEXT DEFAULT NULL)`. Quando `p_nome` é NULL ou vazio, mantém o default `'Implantação <nome_fantasia>'` (compat retro). **Idempotência preservada**: se cliente já tem projeto ativo, retorna `(0, projeto_id_existente)` — 1 projeto ativo por cliente
+- [x] **Componente novo [`NomeProjetoModal`](src/components/projetos/NomeProjetoModal.tsx)** — modal genérico extraído de Projetos.tsx; aceita `defaultNome`, `descricao` contextual, `labelConfirmar`, callback `onConfirmar(nome)`. Reusado nos 2 pontos: `Projetos.tsx` (criação vazia) e `ClienteModal.tsx` (com tarefas via RPC)
+- [x] **`ClienteModal.tsx`** — removeu chamada automática de `gerar_tarefas_iniciais_cliente` no INSERT; novo botão **"Criar projeto"** no footer (visível só em modo edição, escondido se cliente já tem projeto ativo, requer `can('cliente.criar')`); abre `NomeProjetoModal` com default `Implantação <nome_fantasia>` → chama RPC com `p_nome` → navega pra `/projetos/{id}`. `SaveResult` na criação agora vem com `tarefasGeradas=0, projetoId=null` (campos só úteis no UPDATE via `sincronizar_tarefas_cliente`)
+- [x] **`Projetos.tsx`** — removeu botão "Novo cliente" + import `ClienteModal`/`UserPlus`/`Building2`; renomeou "Cliente existente" → **"Novo projeto"** (ícone `FolderPlus`); helper text vira "Vincula a um cliente já cadastrado" + atalho secundário "Cadastrar novo cliente" que navega para `/clientes`. Substituiu o `<Modal>` inline de nome de projeto pelo `NomeProjetoModal` reutilizável. Comportamento do "Novo projeto" intacto: `INSERT INTO projetos` direto, projeto vazio sem tarefas iniciais
+- [x] **`SelecionarClienteModal.tsx`** — query inicial agora carrega em paralelo `clientes` ativos + ids de `projetos` ativos; filtra clientes que já têm projeto. Empty state ajustado: "Todos os clientes ativos já têm projeto. Cadastre novo cliente em /clientes ou cancele/exclua um projeto"
+- [x] **`Clientes.tsx`** — toast pós-criação reescrito: `"Cliente cadastrado. Para criar um projeto, abra-o em editar e use 'Criar projeto'."`. Removido tratamento de `r.erroGeracao` no fluxo `criou` (não há mais geração automática); UPDATE continua igual
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -725,4 +736,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-24 (Histórico unificado de comentários — comentário em tarefa de projeto vira registro no histórico do projeto via trigger; aba Comentários do Monitor mostra projeto + tarefas com contexto e link; input pra comentar direto no projeto)
+**Última atualização:** 2026-04-25 (Cliente desacoplado de Projeto — cadastro de cliente não cria mais projeto automático; botão "Criar projeto" no ClienteModal em modo edição dispara RPC com nome customizado; SelecionarClienteModal filtra clientes que já têm projeto ativo; Projetos.tsx remove "Novo cliente" e renomeia "Cliente existente" → "Novo projeto")

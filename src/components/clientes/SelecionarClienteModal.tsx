@@ -23,16 +23,26 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
     setBusca('')
     setError(null)
     setLoading(true)
-    supabase
-      .from('clientes')
-      .select('id, nome_fantasia, razao_social, cnpj')
-      .eq('ativo', true)
-      .order('nome_fantasia')
-      .then(({ data, error: err }) => {
-        setLoading(false)
-        if (err) setError(err.message)
-        else setClientes((data ?? []) as ClienteResumo[])
-      })
+    // Carrega clientes ativos + ids de clientes que JÁ têm projeto ativo,
+    // pra remover esses da lista (1 projeto ativo por cliente — pra criar
+    // outro precisa cancelar/excluir o atual primeiro).
+    Promise.all([
+      supabase
+        .from('clientes')
+        .select('id, nome_fantasia, razao_social, cnpj')
+        .eq('ativo', true)
+        .order('nome_fantasia'),
+      supabase
+        .from('projetos')
+        .select('cliente_id')
+        .eq('ativo', true),
+    ]).then(([clientesRes, projetosRes]) => {
+      setLoading(false)
+      if (clientesRes.error) { setError(clientesRes.error.message); return }
+      const comProjeto = new Set(((projetosRes.data ?? []) as { cliente_id: string }[]).map((p) => p.cliente_id))
+      const semProjeto = ((clientesRes.data ?? []) as ClienteResumo[]).filter((c) => !comProjeto.has(c.id))
+      setClientes(semProjeto)
+    })
     setTimeout(() => inputRef.current?.focus(), 80)
   }, [open])
 
@@ -98,9 +108,9 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
           {loading ? (
             <div className="py-10 text-center text-gray-500 text-sm">Carregando...</div>
           ) : filtrados.length === 0 ? (
-            <div className="py-10 text-center text-gray-500 text-sm">
+            <div className="py-10 text-center text-gray-500 text-sm px-6">
               {clientes.length === 0
-                ? 'Nenhum cliente cadastrado.'
+                ? 'Todos os clientes ativos já têm projeto. Cadastre um novo cliente em /clientes ou cancele/exclua um projeto existente para criar outro.'
                 : 'Nenhum cliente encontrado para essa busca.'}
             </div>
           ) : (

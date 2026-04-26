@@ -298,10 +298,7 @@ export function Clientes() {
         onSaved={(r) => {
           load()
           if (r?.criou) {
-            toast('Cliente criado.')
-            if (r.erroGeracao) {
-              setError(`Cliente criado, mas tarefas iniciais não foram geradas: ${r.erroGeracao}`)
-            }
+            toast('Cliente cadastrado. Para criar um projeto, abra-o em editar e use "Criar projeto".')
           } else if (r) {
             const partes: string[] = ['Cliente atualizado.']
             if (r.tarefasCriadas > 0) partes.push(`${r.tarefasCriadas} tarefa(s) criada(s).`)

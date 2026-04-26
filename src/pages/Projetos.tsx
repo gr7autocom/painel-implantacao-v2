@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, FolderKanban, UserPlus } from 'lucide-react'
+import { FolderKanban, FolderPlus } from 'lucide-react'
 import { Modal } from '../components/Modal'
 import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
 import { EmptyState } from '../components/EmptyState'
 import { usePermissao } from '../lib/permissoes'
 import type { EtapaImplantacao, ProjetoComRelacoes } from '../lib/types'
-import { ClienteModal } from '../components/clientes/ClienteModal'
 import { SelecionarClienteModal } from '../components/clientes/SelecionarClienteModal'
 import { CardProjeto } from '../components/projetos/CardProjeto'
+import { NomeProjetoModal } from '../components/projetos/NomeProjetoModal'
 import { type Progresso, PROGRESSO_VAZIO } from '../lib/projetos-utils'
 import { PageHeader } from '../components/PageHeader'
 import { SearchInput } from '../components/SearchInput'
@@ -29,18 +29,15 @@ export function Projetos() {
   const [busca, setBusca] = useState('')
   const [etapaFiltro, setEtapaFiltro] = useState('')
   const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
-  const [modalOpen, setModalOpen] = useState(false)
   const [selecionarOpen, setSelecionarOpen] = useState(false)
   const [criandoProjeto, setCriandoProjeto] = useState(false)
   const [nomeModalOpen, setNomeModalOpen] = useState(false)
-  const [clienteParaProjeto, setClienteParaProjeto] = useState<string | null>(null)
-  const [nomeProjeto, setNomeProjeto] = useState('')
+  const [clienteParaProjeto, setClienteParaProjeto] = useState<{ id: string; nome: string } | null>(null)
   const [renomearProjeto, setRenomearProjeto] = useState<ProjetoComRelacoes | null>(null)
   const [excluirProjeto, setExcluirProjeto] = useState<ProjetoComRelacoes | null>(null)
   const [excluindoProjeto, setExcluindoProjeto] = useState(false)
   const [novoNome, setNovoNome] = useState('')
   const [salvandoNome, setSalvandoNome] = useState(false)
-  const nomeInputRef = useRef<HTMLInputElement>(null)
   const renomearInputRef = useRef<HTMLInputElement>(null)
 
   async function load() {
@@ -87,21 +84,18 @@ export function Projetos() {
     })
   }, [items, busca, etapaFiltro])
 
-  function abrirModalNomeProjeto(clienteId: string) {
-    setClienteParaProjeto(clienteId)
-    setNomeProjeto('')
+  function abrirModalNomeProjeto(cliente: { id: string; nome_fantasia: string }) {
+    setClienteParaProjeto({ id: cliente.id, nome: cliente.nome_fantasia })
     setNomeModalOpen(true)
-    setTimeout(() => nomeInputRef.current?.focus(), 50)
   }
 
-  async function criarProjetoEmBranco() {
+  async function criarProjetoEmBranco(nome: string) {
     if (!clienteParaProjeto) return
-    const nome = nomeProjeto.trim() || 'Novo projeto'
     setCriandoProjeto(true)
     setError(null)
     const { data, error: err } = await supabase
       .from('projetos')
-      .insert({ cliente_id: clienteParaProjeto, nome })
+      .insert({ cliente_id: clienteParaProjeto.id, nome })
       .select('id')
       .single()
     setCriandoProjeto(false)
@@ -180,31 +174,26 @@ export function Projetos() {
           <p className="text-sm text-gray-500 mb-4 text-center">
             Selecione um projeto abaixo ou inicie um novo:
           </p>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center">
-            <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSelecionarOpen(true)}
+              disabled={criandoProjeto}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-[#ffffff] text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              <FolderPlus className="w-4 h-4" />
+              {criandoProjeto ? 'Criando...' : 'Novo projeto'}
+            </button>
+            <span className="text-xs text-gray-400">
+              Vincula a um cliente já cadastrado.{' '}
               <button
                 type="button"
-                onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-[#ffffff] text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => navigate('/clientes')}
+                className="text-blue-600 hover:underline"
               >
-                <UserPlus className="w-4 h-4" />
-                Novo cliente
+                Cadastrar novo cliente
               </button>
-              <span className="text-xs text-gray-400">Cadastra cliente e gera tarefas</span>
-            </div>
-            <div className="hidden sm:block w-px h-12 bg-gray-200" />
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setSelecionarOpen(true)}
-                disabled={criandoProjeto}
-                className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-              >
-                <Building2 className="w-4 h-4" />
-                {criandoProjeto ? 'Criando...' : 'Cliente existente'}
-              </button>
-              <span className="text-xs text-gray-400">Abre projeto em branco</span>
-            </div>
+            </span>
           </div>
         </div>
       )}
@@ -255,66 +244,21 @@ export function Projetos() {
         </div>
       )}
 
-      <ClienteModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSaved={(r) => {
-          load()
-          if (r?.criou && r.projetoId) navigate(`/projetos/${r.projetoId}`)
-          if (r?.criou && r.erroGeracao) setError(`Cliente criado, mas tarefas não geradas: ${r.erroGeracao}`)
-        }}
-        cliente={null}
-      />
-
       <SelecionarClienteModal
         open={selecionarOpen}
         onClose={() => setSelecionarOpen(false)}
-        onSelect={(c) => { setSelecionarOpen(false); abrirModalNomeProjeto(c.id) }}
+        onSelect={(c) => { setSelecionarOpen(false); abrirModalNomeProjeto(c) }}
       />
 
-      {/* Modal: nome do novo projeto */}
-      <Modal
+      <NomeProjetoModal
         open={nomeModalOpen}
         onClose={() => setNomeModalOpen(false)}
-        title="Nome do projeto"
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => setNomeModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={criarProjetoEmBranco}
-              disabled={criandoProjeto}
-              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {criandoProjeto ? 'Criando...' : 'Criar projeto'}
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <label htmlFor="nome-projeto-input" className="block text-sm text-gray-700">
-            Nome do projeto
-          </label>
-          <input
-            id="nome-projeto-input"
-            ref={nomeInputRef}
-            type="text"
-            value={nomeProjeto}
-            onChange={(e) => setNomeProjeto(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && criarProjetoEmBranco()}
-            placeholder="Ex: Implantação Loja Centro"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          />
-          <p className="text-xs text-gray-400">Deixe em branco para usar "Novo projeto".</p>
-        </div>
-      </Modal>
+        defaultNome={clienteParaProjeto ? `Implantação ${clienteParaProjeto.nome}` : ''}
+        descricao="Cria um projeto em branco vinculado ao cliente. As tarefas iniciais (servidor, módulos, importação) só são geradas quando você usa o botão 'Criar projeto' dentro do cadastro do cliente."
+        labelConfirmar="Criar projeto"
+        saving={criandoProjeto}
+        onConfirmar={criarProjetoEmBranco}
+      />
 
       {/* Modal: renomear projeto existente */}
       <Modal

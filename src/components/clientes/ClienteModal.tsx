@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, FolderPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { usePermissao } from '../../lib/permissoes'
 import type { Cliente, EtapaImplantacao } from '../../lib/types'
 import {
   cnpjValido,
@@ -9,6 +11,7 @@ import {
   MODULOS_CLIENTE,
 } from '../../lib/clientes-utils'
 import { Modal } from '../Modal'
+import { NomeProjetoModal } from '../projetos/NomeProjetoModal'
 
 export type SaveResult = {
   cliente: Cliente
@@ -74,6 +77,8 @@ function serializarForm(f: FormState): string {
 }
 
 export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
+  const perm = usePermissao()
+  const navigate = useNavigate()
   const [form, setForm] = useState<FormState>(emptyForm())
   const [formInicial, setFormInicial] = useState<FormState>(emptyForm())
   const [saving, setSaving] = useState(false)
@@ -82,6 +87,32 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   const [etapas, setEtapas] = useState<EtapaImplantacao[]>([])
   const [projetosDoCliente, setProjetosDoCliente] = useState<ProjetoDoCliente[]>([])
   const [confirmDescartarOpen, setConfirmDescartarOpen] = useState(false)
+  // "Criar projeto" — só ativo em modo edição e quando cliente não tem projeto ativo
+  const [nomeProjetoOpen, setNomeProjetoOpen] = useState(false)
+  const [criandoProjeto, setCriandoProjeto] = useState(false)
+  const [erroCriarProjeto, setErroCriarProjeto] = useState<string | null>(null)
+  const projetoAtivoExiste = projetosDoCliente.length > 0
+  const podeCriarProjeto = !!cliente && !projetoAtivoExiste && perm.can('cliente.criar')
+
+  async function criarProjeto(nome: string) {
+    if (!cliente) return
+    setCriandoProjeto(true)
+    setErroCriarProjeto(null)
+    const { data, error: err } = await supabase.rpc('gerar_tarefas_iniciais_cliente', {
+      p_cliente_id: cliente.id,
+      p_nome: nome,
+    })
+    setCriandoProjeto(false)
+    if (err) {
+      setErroCriarProjeto(err.code === '42501' ? 'Sem permissão para criar projeto.' : err.message)
+      return
+    }
+    const row = Array.isArray(data) ? data[0] : data
+    const projetoId = (row?.projeto_id as string) ?? null
+    setNomeProjetoOpen(false)
+    onClose()
+    if (projetoId) navigate(`/projetos/${projetoId}`)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -241,7 +272,8 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       return
     }
 
-    // Criação: insere e gera tarefas iniciais a partir das quantidades + módulos
+    // Criação: cliente é cadastrado SEM projeto. Quem quer criar projeto/tarefas
+    // iniciais clica em "Criar projeto" no modo edição (botão no footer).
     const { data: novo, error: insErr } = await supabase
       .from('clientes')
       .insert(payload)
@@ -254,27 +286,16 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       return
     }
 
-    // Geração das tarefas iniciais via RPC SECURITY DEFINER (idempotente).
-    // RPC retorna TABLE(tarefas_geradas INT, projeto_id UUID) — primeiro row.
-    let tarefasGeradas = 0
-    let erroGeracao: string | null = null
-    let projetoId: string | null = null
-    const { data: rpcData, error: rpcErr } = await supabase.rpc(
-      'gerar_tarefas_iniciais_cliente',
-      { p_cliente_id: (novo as Cliente).id }
-    )
-    if (rpcErr) {
-      // eslint-disable-next-line no-console
-      console.error('[gerar_tarefas_iniciais_cliente] erro:', rpcErr)
-      erroGeracao = rpcErr.message
-    } else {
-      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData
-      tarefasGeradas = Number(row?.tarefas_geradas ?? 0)
-      projetoId = (row?.projeto_id as string) ?? null
-    }
-
     setSaving(false)
-    onSaved({ cliente: novo as Cliente, criou: true, tarefasGeradas, tarefasCriadas: 0, tarefasCanceladas: 0, erroGeracao, projetoId })
+    onSaved({
+      cliente: novo as Cliente,
+      criou: true,
+      tarefasGeradas: 0,
+      tarefasCriadas: 0,
+      tarefasCanceladas: 0,
+      erroGeracao: null,
+      projetoId: null,
+    })
     onClose()
   }
 
@@ -300,6 +321,18 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
           >
             Cancelar
           </button>
+          {podeCriarProjeto && (
+            <button
+              type="button"
+              onClick={() => { setErroCriarProjeto(null); setNomeProjetoOpen(true) }}
+              disabled={saving || criandoProjeto}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-blue-700 border border-blue-300 bg-white rounded-lg hover:bg-blue-50 disabled:opacity-50"
+              title="Cria o projeto e gera as tarefas iniciais conforme o cadastro deste cliente"
+            >
+              <FolderPlus className="w-4 h-4" />
+              Criar projeto
+            </button>
+          )}
           <button
             type="submit"
             form="cliente-form"
@@ -577,6 +610,22 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         </p>
       </div>
     </Modal>
+
+    {/* Modal: nome do novo projeto (botão "Criar projeto" no footer) */}
+    <NomeProjetoModal
+      open={nomeProjetoOpen}
+      onClose={() => setNomeProjetoOpen(false)}
+      defaultNome={cliente ? `Implantação ${cliente.nome_fantasia}` : ''}
+      descricao="Cria o projeto e gera automaticamente as tarefas iniciais (servidor, retaguarda, PDV, módulos contratados e importação de dados, se aplicável) conforme o cadastro deste cliente."
+      labelConfirmar="Criar projeto"
+      saving={criandoProjeto}
+      onConfirmar={criarProjeto}
+    />
+    {erroCriarProjeto && (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 bg-red-600 text-[#ffffff] text-sm rounded-lg shadow-lg">
+        {erroCriarProjeto}
+      </div>
+    )}
     </>
   )
 }
