@@ -31,7 +31,8 @@
       "Bash(copy \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-192x192.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\pwa-192.svg\")",
       "Bash(copy \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-512x1512.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\pwa-512.svg\")",
       "Bash(copy /Y \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-192x192.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\favicon.svg\")",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(npm clean-install *)"
     ]
   }
 }
