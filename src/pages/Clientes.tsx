@@ -28,7 +28,9 @@ import { SkeletonRow } from '../components/SkeletonRow'
 import { PageHeader } from '../components/PageHeader'
 import { SearchInput } from '../components/SearchInput'
 import { useToast } from '../components/Toast'
-import { usePageTitle } from '../lib/utils'
+import { cn, usePageTitle } from '../lib/utils'
+
+type StatusView = 'ativos' | 'inativos'
 
 export function Clientes() {
   const perm = usePermissao()
@@ -43,6 +45,7 @@ export function Clientes() {
   const [busca, setBusca] = useState('')
   const [etapaFiltro, setEtapaFiltro] = useState('')
   const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
+  const [viewStatus, setViewStatus] = useState<StatusView>('ativos')
 
   async function load() {
     setLoading(true)
@@ -64,8 +67,41 @@ export function Clientes() {
     load()
   }, [])
 
+  // Contagens totais (independente da busca/etapa) — pra mostrar nas abas
+  const totalAtivos = useMemo(() => items.filter((c) => c.ativo).length, [items])
+  const totalInativos = useMemo(() => items.filter((c) => !c.ativo).length, [items])
+
+  // Texto do empty state varia por estado da aba e dos filtros
+  const emptyInfo = useMemo(() => {
+    const totalDoBucket = viewStatus === 'ativos' ? totalAtivos : totalInativos
+    if (items.length === 0) {
+      return {
+        title: 'Nenhum cliente cadastrado.',
+        description: 'Clique em "Novo Cliente" para adicionar o primeiro.',
+        sugerirCriar: true,
+      }
+    }
+    if (totalDoBucket === 0) {
+      return {
+        title: viewStatus === 'ativos' ? 'Nenhum cliente ativo.' : 'Nenhum cliente inativo.',
+        description: viewStatus === 'ativos'
+          ? 'Todos os clientes cadastrados estão inativos.'
+          : 'Você não desativou nenhum cliente ainda.',
+        sugerirCriar: false,
+      }
+    }
+    return {
+      title: 'Nenhum cliente encontrado.',
+      description: 'Tente ajustar a busca ou os filtros.',
+      sugerirCriar: false,
+    }
+  }, [items.length, totalAtivos, totalInativos, viewStatus])
+
   const itensFiltrados = useMemo(() => {
     return items.filter((c) => {
+      // Filtro de status (ativos / inativos) — sempre aplicado
+      if (viewStatus === 'ativos' && !c.ativo) return false
+      if (viewStatus === 'inativos' && c.ativo) return false
       if (busca.trim()) {
         const b = busca.toLowerCase()
         const match =
@@ -78,7 +114,7 @@ export function Clientes() {
       if (etapaFiltro && projetoPrincipal(c)?.etapa_implantacao_id !== etapaFiltro) return false
       return true
     })
-  }, [items, busca, etapaFiltro])
+  }, [items, viewStatus, busca, etapaFiltro])
 
   function openCreate() {
     setEditing(null)
@@ -120,6 +156,34 @@ export function Clientes() {
         }
       />
 
+      <div className="mb-4 flex items-center gap-1 border-b border-gray-200">
+        {([
+          { key: 'ativos' as const, label: 'Ativos', count: totalAtivos },
+          { key: 'inativos' as const, label: 'Inativos', count: totalInativos },
+        ]).map((v) => (
+          <button
+            key={v.key}
+            type="button"
+            onClick={() => setViewStatus(v.key)}
+            className={cn(
+              '-mb-px px-4 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center gap-2',
+              viewStatus === v.key
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+            )}
+            aria-pressed={viewStatus === v.key}
+          >
+            {v.label}
+            <span className={cn(
+              'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-semibold rounded-full',
+              viewStatus === v.key ? 'bg-blue-600 text-[#ffffff]' : 'bg-gray-200 text-gray-700'
+            )}>
+              {v.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <label htmlFor="clientes-etapa-filtro" className="sr-only">Filtrar por etapa</label>
         <select
@@ -156,9 +220,9 @@ export function Clientes() {
         ) : itensFiltrados.length === 0 ? (
           <EmptyState
             icon={<Users className="w-8 h-8" />}
-            title={items.length === 0 ? 'Nenhum cliente cadastrado.' : 'Nenhum cliente encontrado.'}
-            description={items.length === 0 ? 'Clique em "Novo Cliente" para adicionar o primeiro.' : 'Tente ajustar a busca ou os filtros.'}
-            action={items.length === 0 && perm.can('cliente.criar') ? (
+            title={emptyInfo.title}
+            description={emptyInfo.description}
+            action={emptyInfo.sugerirCriar && perm.can('cliente.criar') ? (
               <button type="button" onClick={openCreate}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-[#ffffff] text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
                 <Plus className="w-4 h-4" /> Novo Cliente
