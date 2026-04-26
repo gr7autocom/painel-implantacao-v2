@@ -693,6 +693,23 @@ Cadastrar cliente NÃO cria mais projeto automaticamente. Vendedor cadastra o cl
 - [x] **Botões Importar/Exportar** em [Clientes.tsx](src/pages/Clientes.tsx) (header, ao lado de "Novo Cliente"). **Exportar respeita filtros** atuais (aba/busca/etapa); nome do arquivo: `clientes-ativos-YYYY-MM-DD.csv` ou `clientes-inativos-YYYY-MM-DD.csv`. Permissão `cliente.criar` para Importar; Exportar disponível pra qualquer um
 - [x] **20 testes novos** em [clientes-csv.test.ts](src/lib/clientes-csv.test.ts) — parse/serialize/validação completa + round-trip + casos de erro (CNPJ duplicado, data inválida, módulo desconhecido, header faltando, BOM)
 
+### Notificações Talk automáticas para subtarefas ✅ Concluído (2026-04-26)
+
+Quando uma subtarefa envolve responsáveis diferentes do pai, o Talk troca mensagens automáticas entre eles.
+
+- [x] Migration `20260426100000_subtarefa_talk_notificacoes.sql`:
+  - Helper SECURITY DEFINER `inserir_mensagem_talk(remetente_id, destinatario_id, corpo)` — cria/abre conversa normalizando UUID order e insere mensagem bypassando RLS (trigger não tem `auth.uid()` disponível)
+  - Trigger function `notificar_subtarefa_talk` SECURITY DEFINER — dispara em INSERT e UPDATE OF responsavel_id, etapa_id
+    - **Atribuição** (INSERT ou UPDATE de responsável): `pai.responsavel → subtarefa.responsavel` com "Você foi atribuído(a) à subtarefa #X — Título | Projeto: Y"
+    - **Mudança de etapa** (exceto Concluído): `pai.responsavel → subtarefa.responsavel` com "A subtarefa #X — Título teve a etapa alterada para: Etapa | Projeto: Y"
+    - **Concluída** (etapa contém "conclu"): `subtarefa.responsavel → pai.responsavel` com "Conclui a subtarefa #X — Título ✅ | Projeto: Y"
+  - Todas as mensagens só disparam quando os responsáveis são **distintos** (mesmo responsável = sem mensagem)
+  - Sem mudanças no frontend — tudo no banco
+- [x] Migration `20260426110000_participantes_subtarefa_talk.sql`:
+  - `notificar_subtarefa_talk` atualizada: nos casos de etapa alterada e conclusão, além do responsável, cada participante da subtarefa também recebe a mensagem (loop em `tarefa_participantes` filtrando duplicatas com o remetente)
+  - Nova função `notificar_participante_subtarefa_talk` + trigger `trg_notificar_participante_subtarefa_talk` em `tarefa_participantes` AFTER INSERT: quando um participante é adicionado a uma subtarefa, recebe mensagem de quem o adicionou: "Você foi adicionado(a) como participante na subtarefa #X..."
+  - Adições automáticas pela trigger `auto_participante_subtarefa` (que insere na PAI, não na subtarefa) são ignoradas via check `tarefa_pai_id IS NULL`
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -764,4 +781,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-26 (Tela Clientes ganhou tabs Ativos/Inativos com contagem + botões Importar/Exportar CSV; util `clientes-csv.ts` com parser robusto, validação por linha, template baixável; modal de import com preview, relatório de erros e barra de progresso; 20 testes novos)
+**Última atualização:** 2026-04-26 (Notificações Talk para subtarefas estendidas para participantes: etapa alterada e conclusão notificam participantes via loop; adição manual de participante à subtarefa também gera mensagem no Talk)
