@@ -25,7 +25,9 @@
       "Bash(grep -n \"useUsuarioAtual\\\\|usePermissao\\\\|import.*from.*'\\\\\\\\.\\\\\\\\./lib/auth\\\\\\\\|useToast\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src/pages/ProjetoMonitor.tsx\")",
       "Bash(grep -n \"podeCriar\\\\|usePermissao\\\\|perm\\\\\\\\.\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src/components/tarefas/TarefaSubtarefasTab.tsx\")",
       "Bash(grep -n \"</Modal>\\\\|</>$\\\\|^}$\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src/components/clientes/ClienteModal.tsx\")",
-      "Bash(grep -n \"1 cliente = 1 projeto\\\\|Ao \\\\\\\\*\\\\\\\\*criar um cliente novo\\\\\\\\*\\\\\\\\*\\\\|gerar_tarefas_iniciais_cliente\\\\|Projetos = visão\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/CLAUDE.md\")"
+      "Bash(grep -n \"1 cliente = 1 projeto\\\\|Ao \\\\\\\\*\\\\\\\\*criar um cliente novo\\\\\\\\*\\\\\\\\*\\\\|gerar_tarefas_iniciais_cliente\\\\|Projetos = visão\" \"c:/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/CLAUDE.md\")",
+      "Bash(npx vitest *)",
+      "Bash(npx playwright *)"
     ]
   }
 }

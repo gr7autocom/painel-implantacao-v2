@@ -35,3 +35,10 @@ node_modules/
 squads/*/state.json
 squads/*/state.json.tmp
 squads/*/output/
+
+# Playwright (relatórios, traces, storage state com sessão real)
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+/e2e/.auth/
