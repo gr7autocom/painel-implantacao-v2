@@ -94,6 +94,8 @@ export type ProjetoFixo = {
 export type TarefaPaiFixa = {
   id: string
   responsavelId: string | null
+  clienteId?: string | null
+  clienteNome?: string | null
 }
 
 type Params = {
@@ -136,7 +138,7 @@ export function useTarefaForm({
   const [rascunhoPendente, setRascunhoPendente] = useState<RascunhoSalvo | null>(null)
   const rascunhoKeyRef = useRef<string | null>(null)
 
-  const defaultClienteId = projetoFixo?.clienteId ?? clienteFixo?.id ?? ''
+  const defaultClienteId = projetoFixo?.clienteId ?? clienteFixo?.id ?? tarefaPaiFixa?.clienteId ?? ''
 
   // Chave do rascunho calculada por contexto: tarefa existente, subtarefa nova,
   // tarefa nova de projeto/cliente fixo ou avulsa.

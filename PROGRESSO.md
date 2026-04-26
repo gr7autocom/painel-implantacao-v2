@@ -710,6 +710,14 @@ Quando uma subtarefa envolve responsáveis diferentes do pai, o Talk troca mensa
   - Nova função `notificar_participante_subtarefa_talk` + trigger `trg_notificar_participante_subtarefa_talk` em `tarefa_participantes` AFTER INSERT: quando um participante é adicionado a uma subtarefa, recebe mensagem de quem o adicionou: "Você foi adicionado(a) como participante na subtarefa #X..."
   - Adições automáticas pela trigger `auto_participante_subtarefa` (que insere na PAI, não na subtarefa) são ignoradas via check `tarefa_pai_id IS NULL`
 
+### Herança de cliente na subtarefa (frontend) ✅ Concluído (2026-04-26)
+
+- [x] Tipo `TarefaPaiFixa` extendido com `clienteId?: string | null` e `clienteNome?: string | null` em `useTarefaForm.ts`
+- [x] `defaultClienteId` em `useTarefaForm.ts` inclui `?? tarefaPaiFixa?.clienteId ?? ''` — campo já nasce preenchido com o cliente da pai
+- [x] `clienteFixoDisplay` em `TarefaModal.tsx` usa `tarefaPaiFixa.clienteId/clienteNome` como fallback — campo fica travado (mesmo visual de "Projeto vinculado") quando a pai tem cliente
+- [x] Prop `tarefaPaiFixa` no modal aninhado de criação de subtarefa passa `clienteId: tarefa.cliente_id ?? null` e `clienteNome: tarefa.cliente?.nome_fantasia ?? null`
+- [x] DB já estava correto (trigger `validate_subtarefa` força `cliente_id` herdado); essa mudança apenas espelha o estado no frontend antes do save
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._

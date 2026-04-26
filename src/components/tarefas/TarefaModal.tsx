@@ -74,10 +74,13 @@ export function TarefaModal({
   tarefaPaiFixa,
   abaInicial,
 }: Props) {
-  // Deriva clienteFixo para o campo de display quando projetoFixo é fornecido
+  // Deriva clienteFixo para o campo de display: projeto > cliente direto > pai da subtarefa
   const clienteFixoDisplay = projetoFixo
     ? { id: projetoFixo.clienteId, nome_fantasia: projetoFixo.nome }
-    : (clienteFixo ?? null)
+    : clienteFixo
+    ?? (tarefaPaiFixa?.clienteId && tarefaPaiFixa.clienteNome
+        ? { id: tarefaPaiFixa.clienteId, nome_fantasia: tarefaPaiFixa.clienteNome }
+        : null)
   const usuarioAtual = useUsuarioAtual()
   const perm = usePermissao()
   const { listas: { prioridades, categorias, classificacoes, etapas, usuarios, clientes } } = useTarefaListas()
@@ -660,7 +663,7 @@ export function TarefaModal({
           onSaved={() => { setSubtarefaCriarOpen(false); notificarMudanca(); onSaved() }}
           onTarefaUpdated={notificarMudanca}
           tarefa={null}
-          tarefaPaiFixa={{ id: tarefa.id, responsavelId: tarefa.responsavel_id }}
+          tarefaPaiFixa={{ id: tarefa.id, responsavelId: tarefa.responsavel_id, clienteId: tarefa.cliente_id ?? null, clienteNome: tarefa.cliente?.nome_fantasia ?? null }}
         />
       )}
 
