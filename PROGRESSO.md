@@ -666,6 +666,19 @@ Cadastrar cliente NÃO cria mais projeto automaticamente. Vendedor cadastra o cl
 - [x] **`SelecionarClienteModal.tsx`** — query inicial agora carrega em paralelo `clientes` ativos + ids de `projetos` ativos; filtra clientes que já têm projeto. Empty state ajustado: "Todos os clientes ativos já têm projeto. Cadastre novo cliente em /clientes ou cancele/exclua um projeto"
 - [x] **`Clientes.tsx`** — toast pós-criação reescrito: `"Cliente cadastrado. Para criar um projeto, abra-o em editar e use 'Criar projeto'."`. Removido tratamento de `r.erroGeracao` no fluxo `criou` (não há mais geração automática); UPDATE continua igual
 
+### Tabs Ativos/Inativos + Importar/Exportar CSV de clientes ✅ Concluído (2026-04-26)
+
+- [x] **Tabs Ativos/Inativos** em [Clientes.tsx](src/pages/Clientes.tsx) — toggle no topo (mesmo padrão de `/tarefas`) com **badge de contagem** por bucket. Filtro aplicado antes da busca/etapa. Empty state contextual (`emptyInfo` via `useMemo`): "Nenhum cliente cadastrado" / "Nenhum cliente ativo" / "Nenhum cliente inativo" / "Nenhum cliente encontrado"
+- [x] **Util novo [`clientes-csv.ts`](src/lib/clientes-csv.ts)** — `gerarCsvClientes`, `gerarTemplateCsv`, `parseCsvClientes`, `baixarArquivo`. Formato CSV com `;` (Excel pt-BR) + UTF-8 + BOM (`﻿`); parser aceita também `,`. Aspas duplas pra escapar campos com separador. **Validação rigorosa por linha** (não aborta tudo): CNPJ válido (14 dígitos) + único no arquivo + único no banco; importar_dados=sim exige sistema_atual; data em ISO ou DD/MM/YYYY; módulos por id ou label dos `MODULOS_CLIENTE`; servidor/retaguarda/PDV inteiros não-negativos
+- [x] **Componente [`ImportarClientesModal.tsx`](src/components/clientes/ImportarClientesModal.tsx)** — fluxo em 4 etapas (`upload → preview → importando → concluido`):
+  - **Upload**: dropzone com instruções + botão "Baixar modelo" (CSV com cabeçalho + 1 linha de exemplo)
+  - **Preview**: cards verde/vermelho com totais válidos/erros, tabela de prévia (10 primeiros) + lista detalhada de erros por linha
+  - **Importando**: barra de progresso por lote (BATCH=50), insert via PostgREST direto
+  - **Concluído**: resumo (importados / falhas no banco / linhas puladas)
+  - Limites: 5 MB, 5000 linhas. Bloqueia close enquanto importa
+- [x] **Botões Importar/Exportar** em [Clientes.tsx](src/pages/Clientes.tsx) (header, ao lado de "Novo Cliente"). **Exportar respeita filtros** atuais (aba/busca/etapa); nome do arquivo: `clientes-ativos-YYYY-MM-DD.csv` ou `clientes-inativos-YYYY-MM-DD.csv`. Permissão `cliente.criar` para Importar; Exportar disponível pra qualquer um
+- [x] **20 testes novos** em [clientes-csv.test.ts](src/lib/clientes-csv.test.ts) — parse/serialize/validação completa + round-trip + casos de erro (CNPJ duplicado, data inválida, módulo desconhecido, header faltando, BOM)
+
 ## 🔄 Em Andamento
 
 _Nada em andamento no momento._
@@ -736,4 +749,4 @@ Avaliação confirmou que estes pontos estão sólidos e não precisam de refact
 
 ---
 
-**Última atualização:** 2026-04-25 (Cliente desacoplado de Projeto — cadastro de cliente não cria mais projeto automático; botão "Criar projeto" no ClienteModal em modo edição dispara RPC com nome customizado; SelecionarClienteModal filtra clientes que já têm projeto ativo; Projetos.tsx remove "Novo cliente" e renomeia "Cliente existente" → "Novo projeto")
+**Última atualização:** 2026-04-26 (Tela Clientes ganhou tabs Ativos/Inativos com contagem + botões Importar/Exportar CSV; util `clientes-csv.ts` com parser robusto, validação por linha, template baixável; modal de import com preview, relatório de erros e barra de progresso; 20 testes novos)

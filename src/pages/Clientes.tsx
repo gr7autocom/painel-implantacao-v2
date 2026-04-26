@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2, Users } from 'lucide-react'
+import { Download, Pencil, Plus, Trash2, Upload, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
 import { Button } from '../components/Button'
 import { usePermissao } from '../lib/permissoes'
 import type { Cliente, EtapaImplantacao } from '../lib/types'
+import { baixarArquivo, gerarCsvClientes } from '../lib/clientes-csv'
+import { ImportarClientesModal } from '../components/clientes/ImportarClientesModal'
 
 // Cliente carregado com os projetos ativos. A etapa exibida e editada na grid
 // é a do primeiro projeto ativo (a coluna `clientes.etapa_implantacao_id` só
@@ -46,6 +48,7 @@ export function Clientes() {
   const [etapaFiltro, setEtapaFiltro] = useState('')
   const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
   const [viewStatus, setViewStatus] = useState<StatusView>('ativos')
+  const [importarOpen, setImportarOpen] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -121,6 +124,19 @@ export function Clientes() {
     setModalOpen(true)
   }
 
+  /** Exporta o que está VISÍVEL na tela (respeita aba/busca/etapa). */
+  function exportar() {
+    if (itensFiltrados.length === 0) {
+      toast('Nada pra exportar com os filtros atuais.', 'info')
+      return
+    }
+    const csv = gerarCsvClientes(itensFiltrados as Cliente[])
+    const dataStamp = new Date().toISOString().slice(0, 10)
+    const sufixo = viewStatus === 'inativos' ? 'inativos' : 'ativos'
+    baixarArquivo(csv, `clientes-${sufixo}-${dataStamp}.csv`)
+    toast(`${itensFiltrados.length} cliente${itensFiltrados.length === 1 ? '' : 's'} exportado${itensFiltrados.length === 1 ? '' : 's'}.`)
+  }
+
   function openEdit(item: ClienteComProjetos) {
     setEditing(item)
     setModalOpen(true)
@@ -147,12 +163,34 @@ export function Clientes() {
         title="Clientes"
         description="Cadastro de clientes em implantação."
         action={
-          perm.can('cliente.criar') ? (
-            <Button type="button" onClick={openCreate}>
-              <Plus className="w-4 h-4" />
-              Novo Cliente
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={exportar}
+              title={`Exporta os clientes visíveis (${itensFiltrados.length}) em CSV`}
+            >
+              <Download className="w-4 h-4" />
+              Exportar
             </Button>
-          ) : undefined
+            {perm.can('cliente.criar') && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setImportarOpen(true)}
+                title="Importar clientes em massa de um arquivo CSV"
+              >
+                <Upload className="w-4 h-4" />
+                Importar
+              </Button>
+            )}
+            {perm.can('cliente.criar') && (
+              <Button type="button" onClick={openCreate}>
+                <Plus className="w-4 h-4" />
+                Novo Cliente
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -404,6 +442,15 @@ export function Clientes() {
           Excluir o cliente <strong>{confirmDelete?.nome_fantasia}</strong>? As tarefas vinculadas ficarão sem cliente (não serão apagadas).
         </p>
       </Modal>
+
+      <ImportarClientesModal
+        open={importarOpen}
+        onClose={() => setImportarOpen(false)}
+        onImportado={(n) => {
+          toast(`${n} cliente${n === 1 ? '' : 's'} importado${n === 1 ? '' : 's'} com sucesso.`)
+          load()
+        }}
+      />
     </div>
   )
 }
