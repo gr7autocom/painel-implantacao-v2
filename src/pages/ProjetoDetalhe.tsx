@@ -348,7 +348,7 @@ export function ProjetoDetalhe() {
             return (
               <div
                 key={t.id}
-                className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 transition-colors group"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors group"
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-[#ffffff] font-semibold text-xs shrink-0"
@@ -356,11 +356,6 @@ export function ProjetoDetalhe() {
                   title={t.prioridade?.nome ?? 'Sem prioridade'}
                 >
                   {t.prioridade?.nome?.[0] ?? '?'}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0 w-44">
-                  <Pin className="w-3.5 h-3.5" />
-                  <span className="font-medium text-gray-700">Tarefa</span>
-                  <span>{formatarDataHora(t.created_at)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <button
@@ -371,10 +366,13 @@ export function ProjetoDetalhe() {
                     {t.titulo}
                   </button>
                   <div className="text-caption text-gray-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 shrink-0">
+                      <Pin className="w-3 h-3" />{formatarDataHora(t.created_at)}
+                    </span>
                     {t.responsavel ? (
-                      <span>Responsável: {t.responsavel.nome}</span>
+                      <span>· {t.responsavel.nome}</span>
                     ) : (
-                      <span className="text-orange-600 font-medium">Em aberto</span>
+                      <span className="text-orange-600 font-medium">· Em aberto</span>
                     )}
                     {(t.checklist?.length ?? 0) > 0 && (
                       <ChecklistMiniBar checklist={t.checklist!} />

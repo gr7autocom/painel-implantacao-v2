@@ -27,7 +27,7 @@ export function Layout() {
 
       <div
         className={cn(
-          'fixed inset-y-0 left-0 z-30 w-64 transition-transform duration-200 md:sticky md:top-0 md:h-dvh md:translate-x-0 md:flex md:flex-col md:shrink-0',
+          'fixed inset-y-0 left-0 z-30 w-56 lg:w-64 transition-transform duration-200 md:sticky md:top-0 md:h-dvh md:translate-x-0 md:flex md:flex-col md:shrink-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         )}
       >
@@ -55,7 +55,7 @@ export function Layout() {
         <div className="hidden md:block fixed top-3 right-4 z-20">
           <NotificationBell />
         </div>
-        <main id="main-content" className="flex-1 p-6 md:p-8">
+        <main id="main-content" className="flex-1 p-4 sm:p-6 xl:p-8">
           <div className="max-w-screen-2xl mx-auto">
             <Outlet />
           </div>

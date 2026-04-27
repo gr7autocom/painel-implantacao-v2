@@ -32,7 +32,11 @@
       "Bash(copy \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-512x1512.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\pwa-512.svg\")",
       "Bash(copy /Y \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\src\\\\assets\\\\LOGO-GR7-192x192.svg\" \"c:\\\\Users\\\\PABLLO\\\\Desktop\\\\projeto\\\\painel-implantacao-v2\\\\public\\\\favicon.svg\")",
       "Bash(git stash *)",
-      "Bash(npm clean-install *)"
+      "Bash(npm clean-install *)",
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"internal business SaaS dashboard task management dark mode\" --design-system -p \"GR7 Painel de Implantacao\" -f markdown)",
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"internal business SaaS dashboard task management dark mode\" --design-system -p \"GR7 Painel de Implantacao\" -f markdown)",
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"responsive dashboard task list layout mobile\" --domain ux -n 15)",
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"sidebar navigation adaptive layout desktop compact\" --domain ux -n 10)"
     ]
   }
 }
