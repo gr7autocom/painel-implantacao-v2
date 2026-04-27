@@ -36,7 +36,9 @@
       "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"internal business SaaS dashboard task management dark mode\" --design-system -p \"GR7 Painel de Implantacao\" -f markdown)",
       "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"internal business SaaS dashboard task management dark mode\" --design-system -p \"GR7 Painel de Implantacao\" -f markdown)",
       "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"responsive dashboard task list layout mobile\" --domain ux -n 15)",
-      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"sidebar navigation adaptive layout desktop compact\" --domain ux -n 10)"
+      "Bash(python \"C:\\\\Users\\\\PABLLO\\\\.claude\\\\plugins\\\\cache\\\\ui-ux-pro-max-skill\\\\ui-ux-pro-max\\\\2.5.0\\\\src\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"sidebar navigation adaptive layout desktop compact\" --domain ux -n 10)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
