@@ -24,6 +24,7 @@ function projetoPrincipal(c: ClienteComProjetos): ProjetoMin | null {
 }
 import { Modal } from '../components/Modal'
 import { ClienteModal } from '../components/clientes/ClienteModal'
+import { ClienteViewModal } from '../components/clientes/ClienteViewModal'
 import { EtapaImplantacaoBadge } from '../components/projetos/EtapaImplantacaoBadge'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonRow } from '../components/SkeletonRow'
@@ -43,6 +44,7 @@ export function Clientes() {
   const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<ClienteComProjetos | null>(null)
+  const [viewing, setViewing] = useState<ClienteComProjetos | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
   const [busca, setBusca] = useState('')
   const [etapaFiltro, setEtapaFiltro] = useState('')
@@ -271,10 +273,14 @@ export function Clientes() {
           itensFiltrados.map((c) => (
             <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{c.nome_fantasia}</p>
+                <button
+                  type="button"
+                  onClick={() => setViewing(c)}
+                  className="text-left min-w-0"
+                >
+                  <p className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">{c.nome_fantasia}</p>
                   <p className="text-xs text-gray-500">{c.razao_social}</p>
-                </div>
+                </button>
                 <EtapaImplantacaoBadge
                   etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
                   compacto
@@ -353,7 +359,15 @@ export function Clientes() {
               itensFiltrados.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{c.razao_social}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.nome_fantasia}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(c)}
+                      className="text-gray-600 hover:text-blue-600 transition-colors text-left"
+                    >
+                      {c.nome_fantasia}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">
                     <EtapaImplantacaoBadge
                   etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
@@ -393,6 +407,17 @@ export function Clientes() {
           </tbody>
         </table>
       </div>
+
+      <ClienteViewModal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        onEditar={() => {
+          setEditing(viewing)
+          setViewing(null)
+          setModalOpen(true)
+        }}
+        cliente={viewing}
+      />
 
       <ClienteModal
         open={modalOpen}
