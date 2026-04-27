@@ -337,9 +337,9 @@ function LinhaTarefa({
       className={`px-4 py-2.5 hover:bg-gray-50 transition-colors${staggerIndex !== undefined ? ' stagger-item' : ''}`}
       style={staggerIndex !== undefined ? { animationDelay: `${Math.min(staggerIndex, 12) * 35}ms` } : undefined}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[#ffffff] font-semibold text-xs shrink-0 mt-0.5"
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[#ffffff] font-semibold text-xs shrink-0"
           style={{ backgroundColor: prioridadeCor }}
           title={t.prioridade?.nome ?? 'Sem prioridade'}
         >
@@ -354,45 +354,43 @@ function LinhaTarefa({
           <div className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate">
             {t.titulo}
           </div>
-
-          <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-1">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="inline-flex items-center gap-1 text-caption text-gray-400 shrink-0">
               <Pin className="w-3 h-3" />
               {formatarDataHora(t.created_at)}
             </span>
-
             {t.tarefa_pai_id && t.tarefa_pai ? (
-              <span className="text-caption text-blue-600 min-w-0 truncate">
+              <span className="text-caption text-blue-600 truncate">
                 ↳ <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
                 {t.tarefa_pai.projeto && <> · {t.tarefa_pai.projeto.nome}</>}
               </span>
             ) : t.de_projeto && t.projeto ? (
               <Link
                 to={`/projetos/${t.projeto.id}`}
-                className="inline-flex items-center gap-1 text-caption text-blue-600 hover:text-blue-700 font-medium min-w-0 truncate"
+                className="inline-flex items-center gap-1 text-caption text-blue-600 hover:text-blue-700 font-medium truncate"
                 onClick={(e) => e.stopPropagation()}
               >
                 <FolderKanban className="w-3 h-3 shrink-0" />
                 {t.projeto.nome}
               </Link>
             ) : t.cliente ? (
-              <span className="text-caption text-gray-500 min-w-0 truncate">
+              <span className="text-caption text-gray-500 truncate">
                 {t.cliente.nome_fantasia}
               </span>
             ) : null}
-
-            <div className="flex items-center gap-1.5 ml-auto shrink-0">
-              <EtapaBadge etapa={t.etapa} compact />
-              {prazo && (
-                <span
-                  className={`px-2 py-0.5 text-xs font-medium rounded border ${BADGE_TONE_CLASSES[prazo.tone]}`}
-                >
-                  {prazo.label}
-                </span>
-              )}
-            </div>
           </div>
         </button>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <EtapaBadge etapa={t.etapa} compact />
+          {prazo && (
+            <span
+              className={`px-2 py-0.5 text-xs font-medium rounded border ${BADGE_TONE_CLASSES[prazo.tone]}`}
+            >
+              {prazo.label}
+            </span>
+          )}
+        </div>
       </div>
     </li>
   )
