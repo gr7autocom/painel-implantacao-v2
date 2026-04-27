@@ -19,6 +19,7 @@ import {
   isFinalizada,
   prazoBadge,
   SELECT_TAREFA_COM_RELACOES,
+  enriquecerComPai,
 } from '../lib/tarefa-utils'
 import { TarefaModal } from '../components/tarefas/TarefaModal'
 import { ChecklistMiniBar } from '../components/tarefas/ChecklistMiniBar'
@@ -139,7 +140,10 @@ export function Tarefas() {
       supabase.from('usuarios').select('*').eq('ativo', true).order('nome'),
     ])
     if (tar.error) setError(tar.error.message)
-    else setTarefas((tar.data ?? []) as unknown as TarefaComRelacoes[])
+    else {
+      const base = (tar.data ?? []) as unknown as TarefaComRelacoes[]
+      enriquecerComPai(base, supabase).then(setTarefas)
+    }
     setPrioridades((pr.data ?? []) as Prioridade[])
     setEtapas((et.data ?? []) as Etapa[])
     setCategorias((ca.data ?? []) as Categoria[])

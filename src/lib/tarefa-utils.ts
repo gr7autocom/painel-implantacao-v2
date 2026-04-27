@@ -1,4 +1,4 @@
-import type { TarefaComRelacoes } from './types'
+import type { TarefaComRelacoes, Tarefa } from './types'
 
 export type PrazoBadge = {
   label: string
@@ -95,7 +95,37 @@ export const SELECT_TAREFA_COM_RELACOES = `
   criado_por:usuarios!tarefas_criado_por_id_fkey(id, nome),
   cliente:clientes(id, nome_fantasia),
   projeto:projetos(id, nome),
-  tarefa_pai:tarefas!tarefa_pai_id(id, titulo, codigo, projeto_id, projeto:projetos(id, nome)),
   checklist:tarefa_checklist(id, concluido),
   participantes:tarefa_participantes(id, usuario_id)
 `
+
+type TarefaPaiMin = Pick<Tarefa, 'id' | 'titulo' | 'codigo' | 'projeto_id'> & {
+  projeto?: { id: string; nome: string } | null
+}
+
+// PostgREST não navega FK self-referencial de forma confiável.
+// Usar esta função após carregar tarefas para enriquecer tarefa_pai via query separada.
+export async function enriquecerComPai(
+  tarefas: TarefaComRelacoes[],
+  supabaseClient: { from: (table: string) => unknown }
+): Promise<TarefaComRelacoes[]> {
+  const paiIds = [
+    ...new Set(
+      tarefas.filter((t) => t.tarefa_pai_id).map((t) => t.tarefa_pai_id!)
+    ),
+  ]
+  if (paiIds.length === 0) return tarefas
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabaseClient.from('tarefas') as any)
+    .select('id, titulo, codigo, projeto_id, projeto:projetos(id, nome)')
+    .in('id', paiIds)
+
+  const paiMap = new Map<string, TarefaPaiMin>(
+    (data ?? []).map((p: TarefaPaiMin) => [p.id, p])
+  )
+  return tarefas.map((t) => ({
+    ...t,
+    tarefa_pai: t.tarefa_pai_id ? (paiMap.get(t.tarefa_pai_id) ?? null) : null,
+  }))
+}

@@ -21,6 +21,7 @@ import {
   isFinalizada,
   prazoBadge,
   SELECT_TAREFA_COM_RELACOES,
+  enriquecerComPai,
 } from '../lib/tarefa-utils'
 import { cn, usePageTitle } from '../lib/utils'
 import { TarefaModal } from '../components/tarefas/TarefaModal'
@@ -90,7 +91,8 @@ export function Inicio() {
         .is('responsavel_id', null)
         .eq('de_projeto', false),
     ])
-    setMinhasTarefas((minhasRes.data ?? []) as unknown as TarefaComRelacoes[])
+    const base = (minhasRes.data ?? []) as unknown as TarefaComRelacoes[]
+    enriquecerComPai(base, supabase).then(setMinhasTarefas)
     setCountAbertasGlobal(countRes.count ?? 0)
     setLoading(false)
   }
