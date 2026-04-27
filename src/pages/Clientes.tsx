@@ -358,7 +358,15 @@ export function Clientes() {
             ) : (
               itensFiltrados.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{c.razao_social}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    <button
+                      type="button"
+                      onClick={() => setViewing(c)}
+                      className="text-gray-900 hover:text-blue-600 transition-colors text-left font-medium"
+                    >
+                      {c.razao_social}
+                    </button>
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"
