@@ -10,6 +10,11 @@ import { ExpirationPlugin } from 'workbox-expiration'
 
 declare const self: ServiceWorkerGlobalScope
 
+// Assume controle imediato de todas as abas abertas ao ativar
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
 cleanupOutdatedCaches()
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 precacheAndRoute((self as any).__WB_MANIFEST)
