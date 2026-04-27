@@ -3,6 +3,7 @@ import { usePermissao } from '../../lib/permissoes'
 import type { Cliente, EtapaImplantacao } from '../../lib/types'
 import { MODULOS_CLIENTE } from '../../lib/clientes-utils'
 import { Modal } from '../Modal'
+import { estiloBadge } from '../../lib/utils'
 
 type ProjetoMin = {
   id: string
@@ -160,11 +161,7 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
                   {p.etapa_implantacao ? (
                     <span
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border"
-                      style={{
-                        backgroundColor: `${p.etapa_implantacao.cor}15`,
-                        color: p.etapa_implantacao.cor,
-                        borderColor: `${p.etapa_implantacao.cor}40`,
-                      }}
+                      style={estiloBadge(p.etapa_implantacao.cor)}
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full"

@@ -21,6 +21,23 @@ export function usePageTitle(title: string) {
   }, [title])
 }
 
+/**
+ * Retorna inline styles para badges com cor dinâmica (vinda do banco) no tema escuro.
+ * Background: 25% opacidade. Texto: cor original ou branco para cores muito escuras.
+ * Border: 50% opacidade.
+ */
+export function estiloBadge(cor: string): { backgroundColor: string; color: string; borderColor: string } {
+  const r = parseInt(cor.slice(1, 3), 16)
+  const g = parseInt(cor.slice(3, 5), 16)
+  const b = parseInt(cor.slice(5, 7), 16)
+  const lum = isNaN(r) ? 1 : (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return {
+    backgroundColor: `${cor}40`,
+    color: lum < 0.25 ? '#ffffff' : cor,
+    borderColor: `${cor}80`,
+  }
+}
+
 export function readLocalStorage<T extends Record<string, string>>(
   key: string,
   fallback: T

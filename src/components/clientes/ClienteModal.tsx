@@ -10,6 +10,7 @@ import {
   formatarTelefone,
   MODULOS_CLIENTE,
 } from '../../lib/clientes-utils'
+import { estiloBadge } from '../../lib/utils'
 import { Modal } from '../Modal'
 import { NomeProjetoModal } from '../projetos/NomeProjetoModal'
 
@@ -539,11 +540,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                     {et ? (
                       <span
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border"
-                        style={{
-                          backgroundColor: `${et.cor}15`,
-                          color: et.cor,
-                          borderColor: `${et.cor}40`,
-                        }}
+                        style={estiloBadge(et.cor)}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full"

@@ -6,9 +6,9 @@ export type PrazoBadge = {
 }
 
 export const BADGE_TONE_CLASSES: Record<PrazoBadge['tone'], string> = {
-  green: 'bg-green-400/20 text-green-300 border-green-400/50',
-  yellow: 'bg-amber-400/20 text-amber-300 border-amber-400/50',
-  red: 'bg-red-400/20 text-red-300 border-red-400/50',
+  green: 'bg-green-400/25 text-green-300 border-green-400/60',
+  yellow: 'bg-amber-400/25 text-amber-300 border-amber-400/60',
+  red: 'bg-red-400/25 text-red-300 border-red-400/60',
 }
 
 export function diasAteData(iso: string): number {

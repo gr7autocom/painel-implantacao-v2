@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
 import { Modal } from '../Modal'
 import type { EtapaImplantacao } from '../../lib/types'
+import { estiloBadge } from '../../lib/utils'
 
 type Props = {
   /** Obrigatório quando editavel=true */
@@ -112,11 +113,7 @@ export function EtapaImplantacaoBadge({
   const badge = (
     <span
       className={`inline-flex items-center gap-1 ${padding} font-semibold rounded-full border`}
-      style={{
-        backgroundColor: `${cor}35`,
-        color: cor,
-        borderColor: `${cor}90`,
-      }}
+      style={estiloBadge(cor)}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cor }} />
       {nome}
@@ -127,11 +124,7 @@ export function EtapaImplantacaoBadge({
   const badgePending = pendingEtapa && (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded-full border"
-      style={{
-        backgroundColor: `${pendingCor}35`,
-        color: pendingCor,
-        borderColor: `${pendingCor}90`,
-      }}
+      style={estiloBadge(pendingCor)}
     >
       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: pendingCor }} />
       {pendingEtapa.nome}

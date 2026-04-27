@@ -5,6 +5,7 @@ import type { EtapaImplantacao } from '../../lib/types'
 import { Modal } from '../Modal'
 import { AlertBanner } from '../AlertBanner'
 import { Button } from '../Button'
+import { estiloBadge } from '../../lib/utils'
 
 type FormState = {
   nome: string
@@ -173,7 +174,7 @@ export function ImplantacaoTab() {
                   <td className="px-4 py-3">
                     <span
                       className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded"
-                      style={{ backgroundColor: `${e.cor}20`, color: e.cor }}
+                      style={estiloBadge(e.cor)}
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full"

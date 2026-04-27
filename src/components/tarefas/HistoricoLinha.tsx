@@ -37,36 +37,36 @@ function abaDoEvento(tipo: string): AbaTarefa {
 }
 
 const ICONE_POR_TIPO: Record<string, { icon: typeof History; classes: string }> = {
-  criada: { icon: Sparkles, classes: 'text-green-300 bg-green-400/20' },
-  titulo_alterado: { icon: PenSquare, classes: 'text-gray-300 bg-gray-400/20' },
-  etapa_alterada: { icon: Flag, classes: 'text-indigo-300 bg-indigo-400/20' },
+  criada: { icon: Sparkles, classes: 'text-green-300 bg-green-400/25' },
+  titulo_alterado: { icon: PenSquare, classes: 'text-gray-300 bg-gray-400/25' },
+  etapa_alterada: { icon: Flag, classes: 'text-indigo-300 bg-indigo-400/25' },
   responsavel_alterado: {
     icon: UserRound,
-    classes: 'text-purple-300 bg-purple-400/20',
+    classes: 'text-purple-300 bg-purple-400/25',
   },
-  prioridade_alterada: { icon: Flag, classes: 'text-amber-300 bg-amber-400/20' },
-  prazo_alterado: { icon: Calendar, classes: 'text-rose-300 bg-rose-400/20' },
-  comentou: { icon: MessageSquare, classes: 'text-blue-300 bg-blue-400/20' },
-  checklist_item_criado: { icon: Plus, classes: 'text-teal-300 bg-teal-400/20' },
+  prioridade_alterada: { icon: Flag, classes: 'text-amber-300 bg-amber-400/25' },
+  prazo_alterado: { icon: Calendar, classes: 'text-rose-300 bg-rose-400/25' },
+  comentou: { icon: MessageSquare, classes: 'text-blue-300 bg-blue-400/25' },
+  checklist_item_criado: { icon: Plus, classes: 'text-teal-300 bg-teal-400/25' },
   checklist_item_concluido: {
     icon: CheckCircle2,
-    classes: 'text-green-300 bg-green-400/20',
+    classes: 'text-green-300 bg-green-400/25',
   },
   checklist_item_desmarcado: {
     icon: Circle,
-    classes: 'text-gray-400 bg-gray-400/15',
+    classes: 'text-gray-300 bg-gray-400/20',
   },
   participante_adicionado: {
     icon: UserPlus,
-    classes: 'text-purple-300 bg-purple-400/20',
+    classes: 'text-purple-300 bg-purple-400/25',
   },
   participante_removido: {
     icon: UserMinus,
-    classes: 'text-gray-400 bg-gray-400/15',
+    classes: 'text-gray-300 bg-gray-400/20',
   },
 }
 
-const FALLBACK = { icon: ListChecks, classes: 'text-gray-400 bg-gray-400/15' }
+const FALLBACK = { icon: ListChecks, classes: 'text-gray-300 bg-gray-400/20' }
 
 export function HistoricoLinha({ evento, tarefa, onAbrirTarefa }: Props) {
   const cfg = ICONE_POR_TIPO[evento.tipo] ?? FALLBACK

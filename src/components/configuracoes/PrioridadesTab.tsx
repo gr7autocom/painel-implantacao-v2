@@ -5,6 +5,7 @@ import type { Prioridade } from '../../lib/types'
 import { Modal } from '../Modal'
 import { AlertBanner } from '../AlertBanner'
 import { Button } from '../Button'
+import { estiloBadge } from '../../lib/utils'
 
 type FormState = {
   nome: string
@@ -169,7 +170,7 @@ export function PrioridadesTab() {
                   <td className="px-4 py-3">
                     <span
                       className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded"
-                      style={{ backgroundColor: `${p.cor}20`, color: p.cor }}
+                      style={estiloBadge(p.cor)}
                     >
                       <span
                         className="w-1.5 h-1.5 rounded-full"

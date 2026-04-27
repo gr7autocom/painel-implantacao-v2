@@ -7,6 +7,7 @@ import { AlertBanner } from '../AlertBanner'
 import { Button } from '../Button'
 import { TrocarSenhaModal } from '../TrocarSenhaModal'
 import { useToast } from '../Toast'
+import { estiloBadge } from '../../lib/utils'
 
 type FormState = {
   nome: string
@@ -240,7 +241,7 @@ export function UsuariosTab() {
                     {u.permissao ? (
                       <span
                         className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full"
-                        style={{ backgroundColor: `${u.permissao.cor}20`, color: u.permissao.cor }}
+                        style={estiloBadge(u.permissao.cor)}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full"

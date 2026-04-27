@@ -5,6 +5,7 @@ import type { Categoria, ClassificacaoComCategoria } from '../../lib/types'
 import { Modal } from '../Modal'
 import { AlertBanner } from '../AlertBanner'
 import { Button } from '../Button'
+import { estiloBadge } from '../../lib/utils'
 
 type FormState = {
   nome: string
@@ -187,10 +188,7 @@ export function ClassificacoesTab() {
                     {c.categoria ? (
                       <span
                         className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full"
-                        style={{
-                          backgroundColor: `${c.categoria.cor}20`,
-                          color: c.categoria.cor,
-                        }}
+                        style={estiloBadge(c.categoria.cor)}
                       >
                         <span
                           className="w-1.5 h-1.5 rounded-full"
