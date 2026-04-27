@@ -381,14 +381,16 @@ function LinhaTarefa({
               </span>
             ) : null}
 
-            <EtapaBadge etapa={t.etapa} compact />
-            {prazo && (
-              <span
-                className={`px-2 py-0.5 text-xs font-medium rounded border shrink-0 ${BADGE_TONE_CLASSES[prazo.tone]}`}
-              >
-                {prazo.label}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 ml-auto shrink-0">
+              <EtapaBadge etapa={t.etapa} compact />
+              {prazo && (
+                <span
+                  className={`px-2 py-0.5 text-xs font-medium rounded border ${BADGE_TONE_CLASSES[prazo.tone]}`}
+                >
+                  {prazo.label}
+                </span>
+              )}
+            </div>
           </div>
         </button>
       </div>
