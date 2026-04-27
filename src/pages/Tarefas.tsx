@@ -30,7 +30,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Modal } from '../components/Modal'
 import { Button } from '../components/Button'
 import { useToast } from '../components/Toast'
-import { cn, usePageTitle, readLocalStorage } from '../lib/utils'
+import { cn, usePageTitle, readLocalStorage, estiloBadge } from '../lib/utils'
 import { SearchInput } from '../components/SearchInput'
 
 type View = 'minhas' | 'aberto' | 'todas' | 'concluidas'
@@ -42,6 +42,7 @@ type Filtros = {
   prioridade: string
   etapa: string
   responsavel: string
+  categoria: string
 }
 
 const filtrosVazios: Filtros = {
@@ -51,6 +52,7 @@ const filtrosVazios: Filtros = {
   prioridade: '',
   etapa: '',
   responsavel: '',
+  categoria: '',
 }
 
 const LS_FILTROS_KEY = 'tarefas_filtros'
@@ -68,7 +70,7 @@ export function Tarefas() {
   const [tarefas, setTarefas] = useState<TarefaComRelacoes[]>([])
   const [prioridades, setPrioridades] = useState<Prioridade[]>([])
   const [etapas, setEtapas] = useState<Etapa[]>([])
-  const [, setCategorias] = useState<Categoria[]>([])
+  const [categorias, setCategorias] = useState<Categoria[]>([])
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -182,6 +184,7 @@ export function Tarefas() {
         fim.setHours(23, 59, 59, 999)
         if (!t.prazo_entrega || new Date(t.prazo_entrega) > fim) return false
       }
+      if (filtros.categoria && t.categoria?.id !== filtros.categoria) return false
       return true
     })
   }, [tarefas, filtros, view])
@@ -358,6 +361,22 @@ export function Tarefas() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             />
           </div>
+          <div className="col-span-12 md:col-span-3">
+            <label htmlFor="filtro-categoria" className="block text-xs font-medium text-gray-600 mb-1">Categoria</label>
+            <select
+              id="filtro-categoria"
+              value={filtros.categoria}
+              onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -468,6 +487,14 @@ export function Tarefas() {
                     {!t.de_projeto && t.cliente && (
                       <span className="text-gray-500">
                         Cliente: <span className="font-medium">{t.cliente.nome_fantasia}</span>
+                      </span>
+                    )}
+                    {t.categoria && (
+                      <span
+                        className="inline-flex items-center px-1.5 py-0.5 text-caption font-medium rounded border"
+                        style={estiloBadge(t.categoria.cor)}
+                      >
+                        {t.categoria.nome}
                       </span>
                     )}
                   </div>
