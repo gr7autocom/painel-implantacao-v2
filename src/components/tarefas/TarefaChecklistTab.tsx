@@ -338,7 +338,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                     <div className="flex items-center gap-1.5 shrink-0">
                       {item.concluido && item.concluido_por && (
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium rounded-md bg-green-400/15 text-green-700 border border-green-400/40"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium rounded-md bg-green-400/25 text-green-300 border border-green-400/60"
                           title={
                             item.concluido_em
                               ? `Concluído por ${item.concluido_por.nome} em ${new Date(item.concluido_em).toLocaleString('pt-BR')}`
@@ -367,9 +367,9 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                         disabled={!podeEditarItens && !temObs}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-caption font-medium rounded-md border transition-colors ${
                           obsEstaAberto
-                            ? 'border-amber-400 bg-amber-400/15 text-amber-700'
+                            ? 'border-amber-400 bg-amber-400/25 text-amber-300'
                             : temObs
-                              ? 'border-amber-400/40 bg-amber-400/10 text-amber-700 hover:bg-amber-400/20'
+                              ? 'border-amber-400/40 bg-amber-400/15 text-amber-300 hover:bg-amber-400/25'
                               : 'border-gray-300 bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed'
                         }`}
                         title={

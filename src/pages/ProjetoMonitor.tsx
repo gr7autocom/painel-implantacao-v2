@@ -426,7 +426,7 @@ function HeaderMonitor({
               onChanged={onEtapaChanged}
             />
             <StatusAtividadeBadge status={progresso.status_atividade} />
-            <span className="px-2 py-0.5 text-caption font-semibold uppercase tracking-wider bg-blue-100 text-blue-700 rounded">
+            <span className="px-2 py-0.5 text-caption font-semibold uppercase tracking-wider bg-blue-400/25 text-blue-300 border border-blue-400/60 rounded">
               Monitor
             </span>
           </div>
@@ -648,7 +648,7 @@ function AbaButton({
       <span
         className={cn(
           'px-1.5 py-0.5 text-caption font-semibold rounded-full',
-          ativo ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+          ativo ? 'bg-blue-400/25 text-blue-300' : 'bg-gray-400/20 text-gray-400'
         )}
       >
         {contagem}

@@ -327,7 +327,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
               type="button"
               onClick={() => { setErroCriarProjeto(null); setNomeProjetoOpen(true) }}
               disabled={saving || criandoProjeto}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-blue-700 border border-blue-300 bg-white rounded-lg hover:bg-blue-50 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-blue-300 border border-blue-400/60 bg-blue-400/10 rounded-lg hover:bg-blue-400/20 disabled:opacity-50"
               title="Cria o projeto e gera as tarefas iniciais conforme o cadastro deste cliente"
             >
               <FolderPlus className="w-4 h-4" />

@@ -181,7 +181,7 @@ export function ImportarClientesModal({ open, onClose, onImportado }: Props) {
             <button
               type="button"
               onClick={baixarTemplate}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-300 rounded hover:bg-blue-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-300 bg-blue-400/10 border border-blue-400/60 rounded hover:bg-blue-400/20"
             >
               <Download className="w-3.5 h-3.5" />
               Baixar modelo (modelo-clientes.csv)

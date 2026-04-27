@@ -113,8 +113,8 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                   cliente.importar_dados
-                    ? 'bg-blue-400/15 text-blue-700 border border-blue-400/40'
-                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                    ? 'bg-blue-400/25 text-blue-300 border border-blue-400/60'
+                    : 'bg-gray-400/20 text-gray-300 border border-gray-400/40'
                 }`}
               >
                 {cliente.importar_dados ? 'Sim' : 'Não'}
@@ -142,7 +142,7 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
               {modulosContratados.map((m) => (
                 <span
                   key={m.id}
-                  className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border border-blue-400/60 bg-blue-400/20 text-blue-700"
+                  className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border border-blue-400/60 bg-blue-400/25 text-blue-300"
                 >
                   {m.label}
                 </span>
@@ -182,8 +182,8 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
           <span
             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
               cliente.ativo
-                ? 'bg-green-400/15 text-green-700 border-green-400/40'
-                : 'bg-gray-100 text-gray-500 border-gray-200'
+                ? 'bg-green-400/25 text-green-300 border-green-400/60'
+                : 'bg-gray-400/20 text-gray-300 border-gray-400/40'
             }`}
           >
             {cliente.ativo ? 'Ativo' : 'Inativo'}

@@ -170,12 +170,12 @@ function formatarPrazo(iso: string): string {
 }
 
 export const CHIP_CLASSES: Record<ChipTone, string> = {
-  blue: 'bg-blue-50 text-blue-700 border-blue-200',
-  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  purple: 'bg-purple-50 text-purple-700 border-purple-200',
-  rose: 'bg-rose-50 text-rose-700 border-rose-200',
-  green: 'bg-green-50 text-green-700 border-green-200',
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  gray: 'bg-gray-50 text-gray-700 border-gray-200',
+  blue: 'bg-blue-400/25 text-blue-300 border-blue-400/60',
+  indigo: 'bg-indigo-400/25 text-indigo-300 border-indigo-400/60',
+  amber: 'bg-amber-400/25 text-amber-300 border-amber-400/60',
+  purple: 'bg-purple-400/25 text-purple-300 border-purple-400/60',
+  rose: 'bg-rose-400/25 text-rose-300 border-rose-400/60',
+  green: 'bg-green-400/25 text-green-300 border-green-400/60',
+  emerald: 'bg-emerald-400/25 text-emerald-300 border-emerald-400/60',
+  gray: 'bg-gray-400/25 text-gray-300 border-gray-400/60',
 }

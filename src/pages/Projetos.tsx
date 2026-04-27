@@ -189,7 +189,7 @@ export function Projetos() {
         >
           <FolderKanban className="w-4 h-4" />
           Em andamento
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'andamento' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'andamento' ? 'bg-blue-400/25 text-blue-300' : 'bg-gray-400/20 text-gray-400'}`}>
             {projetosAndamento.length}
           </span>
         </button>
@@ -204,7 +204,7 @@ export function Projetos() {
         >
           <FolderCheck className="w-4 h-4" />
           Concluídos
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'concluidos' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'concluidos' ? 'bg-emerald-400/25 text-emerald-300' : 'bg-gray-400/20 text-gray-400'}`}>
             {projetosConcluidos.length}
           </span>
         </button>
@@ -219,7 +219,7 @@ export function Projetos() {
         >
           <FolderX className="w-4 h-4" />
           Cancelados
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'cancelados' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'cancelados' ? 'bg-red-400/25 text-red-300' : 'bg-gray-400/20 text-gray-400'}`}>
             {projetosCancelados.length}
           </span>
         </button>
@@ -422,9 +422,9 @@ export function Projetos() {
             Excluir o projeto <strong>{excluirProjeto?.nome}</strong>
             {excluirProjeto?.cliente?.nome_fantasia && <> (cliente: <strong>{excluirProjeto.cliente.nome_fantasia}</strong>)</>}?
           </p>
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 font-medium mb-1">Atenção: ação irreversível.</p>
-            <p className="text-red-700 text-xs">
+          <div className="p-3 bg-red-400/15 border border-red-400/40 rounded-lg">
+            <p className="text-red-300 font-medium mb-1">Atenção: ação irreversível.</p>
+            <p className="text-red-400 text-xs">
               Serão apagados permanentemente: todas as tarefas do projeto, comentários,
               itens de checklist, histórico e anexos (incluindo arquivos no Cloudinary).
               O cliente é mantido.

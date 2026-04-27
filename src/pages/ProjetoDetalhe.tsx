@@ -541,9 +541,9 @@ export function ProjetoDetalhe() {
             <p>
               Excluir a tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong>?
             </p>
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 font-medium mb-1">Atenção: ação irreversível.</p>
-              <p className="text-red-700 text-xs">
+            <div className="p-3 bg-red-400/15 border border-red-400/40 rounded-lg">
+              <p className="text-red-300 font-medium mb-1">Atenção: ação irreversível.</p>
+              <p className="text-red-400 text-xs">
                 Serão apagados permanentemente: subtarefas (e tudo dentro delas), comentários,
                 itens de checklist, histórico, anexos (incluindo arquivos no Cloudinary) e
                 participantes vinculados.
@@ -584,9 +584,9 @@ export function ProjetoDetalhe() {
             Excluir o projeto <strong>{projeto.nome}</strong>
             {projeto.cliente?.nome_fantasia && <> (cliente: <strong>{projeto.cliente.nome_fantasia}</strong>)</>}?
           </p>
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 font-medium mb-1">Atenção: ação irreversível.</p>
-            <p className="text-red-700 text-xs">
+          <div className="p-3 bg-red-400/15 border border-red-400/40 rounded-lg">
+            <p className="text-red-300 font-medium mb-1">Atenção: ação irreversível.</p>
+            <p className="text-red-400 text-xs">
               Serão apagados permanentemente: todas as tarefas do projeto, comentários,
               itens de checklist, histórico e anexos (incluindo arquivos no Cloudinary).
               O cliente é mantido.
