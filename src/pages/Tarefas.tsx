@@ -430,7 +430,7 @@ export function Tarefas() {
                         Participante
                       </span>
                     )}
-                    {t.tarefa_pai_id && t.tarefa_pai && (
+                    {t.tarefa_pai_id && t.tarefa_pai && !Array.isArray(t.tarefa_pai) && (
                       <span className="inline-flex items-center gap-1 text-caption text-blue-700">
                         <GitBranch className="w-3 h-3" />
                         Subtarefa de <strong className="font-medium">{t.tarefa_pai.titulo}</strong>
