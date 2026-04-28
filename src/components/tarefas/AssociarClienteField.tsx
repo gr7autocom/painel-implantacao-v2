@@ -3,6 +3,7 @@ import type { Cliente } from '../../lib/types'
 
 type Props = {
   clienteId: string
+  clienteNome?: string
   clienteFixo: Pick<Cliente, 'id' | 'nome_fantasia'> | null
   clientesConhecidos: Pick<Cliente, 'id' | 'nome_fantasia'>[]
   readonly: boolean
@@ -12,6 +13,7 @@ type Props = {
 
 export function AssociarClienteField({
   clienteId,
+  clienteNome,
   clienteFixo,
   clientesConhecidos,
   readonly,
@@ -37,7 +39,9 @@ export function AssociarClienteField({
 
   if (clienteId) {
     const nome =
-      clientesConhecidos.find((c) => c.id === clienteId)?.nome_fantasia ?? 'Cliente selecionado'
+      clienteNome ??
+      clientesConhecidos.find((c) => c.id === clienteId)?.nome_fantasia ??
+      'Cliente selecionado'
     return (
       <div className="flex items-center gap-3 px-3 py-2.5 bg-blue-400/10 border border-blue-400/30 rounded-lg">
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[#ffffff] shrink-0">

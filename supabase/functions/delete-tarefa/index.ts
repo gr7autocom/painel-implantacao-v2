@@ -126,11 +126,21 @@ Deno.serve(async (req) => {
   // Confirma que a tarefa existe
   const { data: tarefa, error: tarErr } = await admin
     .from('tarefas')
-    .select('id, titulo, origem_cadastro')
+    .select('id, titulo, origem_cadastro, etapa:etapas(nome)')
     .eq('id', tarefaId)
     .maybeSingle()
   if (tarErr) return json({ error: tarErr.message }, 500)
   if (!tarefa) return json({ error: 'Tarefa não encontrada.' }, 404)
+
+  // Tarefas de cadastro só podem ser excluídas quando já canceladas pelo sincronizar_tarefas_cliente
+  if (tarefa.origem_cadastro) {
+    const etapaNome = ((tarefa.etapa as { nome: string } | null)?.nome ?? '').toLowerCase()
+    if (!etapaNome.includes('cancel')) {
+      return json({
+        error: 'Esta tarefa foi gerada do cadastro do cliente e ainda está ativa. Remova o item no cadastro do cliente para cancelá-la antes de excluir.',
+      }, 403)
+    }
+  }
 
   // Tarefas afetadas: a própria + subtarefas (1 nível só)
   const { data: subs, error: subsErr } = await admin

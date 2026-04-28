@@ -82,17 +82,28 @@ export function Inicio() {
       minhasQuery = minhasQuery.eq('responsavel_id', usuario.id)
     }
 
-    const [minhasRes, countRes] = await Promise.all([
+    const [minhasRes, abertas, etapasRes] = await Promise.all([
       minhasQuery,
       supabase
         .from('tarefas')
-        .select('id', { count: 'exact', head: true })
+        .select('id, etapa_id')
         .is('responsavel_id', null)
         .eq('de_projeto', false),
+      supabase.from('etapas').select('id, nome'),
     ])
+    const etapasFinalizadas = new Set(
+      (etapasRes.data ?? [])
+        .filter((e) => {
+          const nome = (e.nome as string).toLowerCase()
+          return nome.includes('conclu') || nome.includes('cancel')
+        })
+        .map((e) => e.id as string)
+    )
     const base = (minhasRes.data ?? []) as unknown as TarefaComRelacoes[]
     enriquecerComPai(base, supabase).then(setMinhasTarefas)
-    setCountAbertasGlobal(countRes.count ?? 0)
+    setCountAbertasGlobal(
+      (abertas.data ?? []).filter((t) => !etapasFinalizadas.has(t.etapa_id as string)).length
+    )
     setLoading(false)
   }
 

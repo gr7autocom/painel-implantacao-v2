@@ -91,6 +91,7 @@ export function TarefaModal({
   const usuarioAtual = useUsuarioAtual()
   const perm = usePermissao()
   const { listas: { prioridades, categorias, classificacoes, etapas, usuarios, clientes } } = useTarefaListas()
+  const [clienteNomeSelecionado, setClienteNomeSelecionado] = useState<string | null>(null)
   const [selecionarClienteOpen, setSelecionarClienteOpen] = useState(false)
   const [pendingAnexos, setPendingAnexos] = useState<PendingAnexo[]>([])
   const [confirmConcluirOpen, setConfirmConcluirOpen] = useState(false)
@@ -244,6 +245,11 @@ export function TarefaModal({
     first?.focus()
     return () => { previousFocusRef.current?.focus() }
   }, [open])
+
+  useEffect(() => {
+    const clienteJoin = tarefa?.cliente as { nome_fantasia: string } | null | undefined
+    setClienteNomeSelecionado(clienteJoin?.nome_fantasia ?? null)
+  }, [open, tarefa?.cliente_id])
 
   useEffect(() => {
     if (!open) { setPendingAnexos([]); return }
@@ -481,11 +487,12 @@ export function TarefaModal({
             <div className="col-span-12">
               <AssociarClienteField
                 clienteId={form.cliente_id}
+                clienteNome={clienteNomeSelecionado ?? undefined}
                 clienteFixo={clienteFixoDisplay}
                 clientesConhecidos={clientes}
                 readonly={readonly}
                 onAbrirSelecionar={() => setSelecionarClienteOpen(true)}
-                onRemover={() => setForm({ ...form, cliente_id: '' })}
+                onRemover={() => { setForm({ ...form, cliente_id: '' }); setClienteNomeSelecionado(null) }}
               />
             </div>
 
@@ -670,7 +677,7 @@ export function TarefaModal({
       <SelecionarClienteModal
         open={selecionarClienteOpen}
         onClose={() => setSelecionarClienteOpen(false)}
-        onSelect={(c) => setForm((f) => ({ ...f, cliente_id: c.id }))}
+        onSelect={(c) => { setForm((f) => ({ ...f, cliente_id: c.id })); setClienteNomeSelecionado(c.nome_fantasia) }}
       />
 
       {/* Modal aninhado: criar nova subtarefa da tarefa atual */}

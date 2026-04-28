@@ -597,68 +597,83 @@ export function Tarefas() {
         tarefa={tarefaUrl}
       />
 
-      <Modal
-        open={!!confirmDelete}
-        onClose={() => setConfirmDelete(null)}
-        title={confirmDelete?.origem_cadastro ? 'Tarefa protegida' : 'Confirmar exclusão'}
-        size="sm"
-        footer={
-          confirmDelete?.origem_cadastro ? (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(null)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Fechar
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={excluir}
-                className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
-              >
-                Excluir
-              </button>
-            </>
-          )
-        }
-      >
-        {confirmDelete?.origem_cadastro ? (
-          <div className="text-sm text-gray-600 space-y-2">
-            <p>
-              A tarefa <strong>{confirmDelete.titulo}</strong> foi gerada automaticamente a partir
-              do cadastro do cliente e não pode ser excluída diretamente.
-            </p>
-            <p>
-              Para removê-la, acesse o cadastro do cliente, desmarque o módulo ou reduza
-              a quantidade de equipamentos correspondente e salve. A tarefa será cancelada
-              automaticamente.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3 text-sm text-gray-600">
-            <p>
-              Excluir a tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong>?
-            </p>
-            <div className="p-3 bg-red-400/15 border border-red-400/40 rounded-lg">
-              <p className="text-red-300 font-medium mb-1">Atenção: ação irreversível.</p>
-              <p className="text-red-400 text-xs">
-                Serão apagados permanentemente: subtarefas (e tudo dentro delas), comentários,
-                itens de checklist, histórico, anexos (incluindo arquivos no Cloudinary) e
-                participantes vinculados.
-              </p>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {(() => {
+        const origenAtiva = !!confirmDelete?.origem_cadastro && !isFinalizada(confirmDelete as TarefaComRelacoes)
+        return (
+          <Modal
+            open={!!confirmDelete}
+            onClose={() => setConfirmDelete(null)}
+            title={origenAtiva ? 'Tarefa protegida' : 'Confirmar exclusão'}
+            size="sm"
+            footer={
+              origenAtiva ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Fechar
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(null)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={excluir}
+                    className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700"
+                  >
+                    Excluir permanentemente
+                  </button>
+                </>
+              )
+            }
+          >
+            {origenAtiva ? (
+              <div className="text-sm text-gray-600 space-y-2">
+                <p>
+                  A tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong> não pode
+                  ser excluída pois o item correspondente ainda está ativo no cadastro do cliente.
+                </p>
+                <div className="p-3 bg-amber-400/15 border border-amber-400/40 rounded-lg">
+                  <p className="text-amber-600 text-xs">
+                    Para excluí-la, acesse o cadastro do cliente, desmarque o módulo ou reduza
+                    a quantidade de equipamentos correspondente e salve. A tarefa será cancelada
+                    automaticamente e poderá ser excluída em seguida.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-sm text-gray-600">
+                <p>
+                  Excluir a tarefa <strong>#{confirmDelete?.codigo} — {confirmDelete?.titulo}</strong>?
+                </p>
+                {confirmDelete?.origem_cadastro && (
+                  <div className="p-3 bg-amber-400/15 border border-amber-400/40 rounded-lg">
+                    <p className="text-amber-600 font-medium mb-1">Tarefa gerada do cadastro do cliente.</p>
+                    <p className="text-amber-700 text-xs">
+                      Esta tarefa foi cancelada porque o item foi removido do cadastro do cliente.
+                    </p>
+                  </div>
+                )}
+                <div className="p-3 bg-red-400/15 border border-red-400/40 rounded-lg">
+                  <p className="text-red-300 font-medium mb-1">Atenção: ação irreversível.</p>
+                  <p className="text-red-400 text-xs">
+                    Serão apagados permanentemente: subtarefas (e tudo dentro delas), comentários,
+                    itens de checklist, histórico, anexos (incluindo arquivos no Cloudinary) e
+                    participantes vinculados.
+                  </p>
+                </div>
+              </div>
+            )}
+          </Modal>
+        )
+      })()}
 
       {/* Sub-rota :codigo (sem render próprio) — necessário para useParams matchar */}
       <Outlet />
