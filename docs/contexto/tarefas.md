@@ -128,6 +128,10 @@ Após o feature de subtarefas e anexos no Cloudinary, exclusão de tarefa não p
 
 **Toggle de views** (tabs): `Minhas` (default) · `Em aberto` · `Todas`.
 
+**Filtros disponíveis:** Título (busca textual), Responsável, Prioridade, Etapa, Prazo de/até, **Categoria** (select carregado de `categorias` — incluindo "Contratação posterior"). O filtro de categoria é aplicado client-side sobre as tarefas já carregadas. Cada card da lista exibe um **badge colorido** com o nome da categoria quando a tarefa tem `categoria` preenchida (cor dinâmica via `estiloBadge`).
+
+**Categoria "Contratação posterior":** categoria padrão (`#F59E0B`) usada pelas tarefas avulsas geradas automaticamente ao editar o cadastro de um cliente cujo projeto já está em etapa "Concluído" ou "Inaugurado". Permite filtrar rapidamente todos os add-ons pós-implantação na fila de tarefas.
+
 - `Minhas`: `responsavel_id = usuarioAtual.id` (filtro no server) — inclui também tarefas onde sou participante
 - `Em aberto`: `responsavel_id IS NULL AND de_projeto = false` (só avulsas)
 - `Todas`: `de_projeto = false`

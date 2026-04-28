@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -63,6 +64,12 @@ function formatarRascunhoIdade(ts: number): string {
   return `${d} dia${d > 1 ? 's' : ''} atrás`
 }
 
+function urlTarefaPai(pai: { codigo: number; projeto_id: string | null }): string {
+  return pai.projeto_id
+    ? `/projetos/${pai.projeto_id}/tarefas/${pai.codigo}`
+    : `/tarefas/${pai.codigo}`
+}
+
 export function TarefaModal({
   open,
   onClose,
@@ -100,6 +107,7 @@ export function TarefaModal({
     onTarefaUpdated?.()
   }
 
+  const navigate = useNavigate()
   const isCriando = !tarefa
   const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefa!)
   const podeReatribuir = isCriando ? true : perm.podeReatribuirTarefa(tarefa!)
@@ -302,6 +310,16 @@ export function TarefaModal({
               Criada por <strong>{criadoPorNome}</strong>
               {tarefa && ` em ${new Date(tarefa.created_at).toLocaleString('pt-BR')}`}
             </p>
+            {tarefa?.tarefa_pai_id && tarefa.tarefa_pai && !Array.isArray(tarefa.tarefa_pai) && (
+              <button
+                type="button"
+                onClick={() => navigate(urlTarefaPai(tarefa.tarefa_pai as { codigo: number; projeto_id: string | null }))}
+                className="mt-1 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+              >
+                <GitBranch className="w-3 h-3" />
+                Subtarefa de <strong>#{(tarefa.tarefa_pai as { codigo: number }).codigo} — {(tarefa.tarefa_pai as { titulo: string }).titulo}</strong>
+              </button>
+            )}
           </div>
           <button
             type="button"

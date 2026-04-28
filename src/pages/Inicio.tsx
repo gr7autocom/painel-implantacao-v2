@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   CheckSquare,
@@ -24,7 +24,6 @@ import {
   enriquecerComPai,
 } from '../lib/tarefa-utils'
 import { cn, usePageTitle } from '../lib/utils'
-import { TarefaModal } from '../components/tarefas/TarefaModal'
 import { EtapaBadge } from '../components/tarefas/EtapaBadge'
 import { EmptyState } from '../components/EmptyState'
 
@@ -57,12 +56,12 @@ function tarefaCaiEmDia(t: TarefaComRelacoes, dia: Date): boolean {
 export function Inicio() {
   usePageTitle('Início')
   const usuario = useUsuarioAtual()
+  const navigate = useNavigate()
   const [minhasTarefas, setMinhasTarefas] = useState<TarefaComRelacoes[]>([])
   const [countAbertasGlobal, setCountAbertasGlobal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [mesVisivel, setMesVisivel] = useState(() => startOfMonth(new Date()))
   const [diaSelecionado, setDiaSelecionado] = useState<Date>(() => new Date())
-  const [tarefaAberta, setTarefaAberta] = useState<TarefaComRelacoes | null>(null)
 
   async function load() {
     if (!usuario) return
@@ -182,7 +181,7 @@ export function Inicio() {
                   <LinhaTarefa
                     key={t.id}
                     tarefa={t}
-                    onAbrir={() => setTarefaAberta(t)}
+                    onAbrir={() => navigate(`/tarefas/${t.codigo}`)}
                     staggerIndex={i}
                   />
                 ))}
@@ -212,23 +211,11 @@ export function Inicio() {
           <AtividadesDoDia
             data={diaSelecionado}
             tarefas={tarefasDoDia}
-            onAbrir={setTarefaAberta}
+            onAbrir={(t) => navigate(`/tarefas/${t.codigo}`)}
           />
         </aside>
       </div>
 
-      <TarefaModal
-        open={!!tarefaAberta}
-        onClose={() => setTarefaAberta(null)}
-        onSaved={load}
-        onTarefaUpdated={load}
-        tarefa={tarefaAberta}
-        clienteFixo={
-          tarefaAberta?.de_projeto && tarefaAberta.cliente
-            ? { id: tarefaAberta.cliente.id, nome_fantasia: tarefaAberta.cliente.nome_fantasia }
-            : null
-        }
-      />
     </div>
   )
 }

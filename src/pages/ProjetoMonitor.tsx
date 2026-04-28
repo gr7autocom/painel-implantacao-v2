@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useTarefaPorCodigo } from '../lib/useTarefaPorCodigo'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -63,7 +64,7 @@ type HistoricoComTarefa = TarefaHistoricoEventoComAtor & {
 }
 
 export function ProjetoMonitor() {
-  const { id } = useParams<{ id: string }>()
+  const { id, codigo } = useParams<{ id: string; codigo: string }>()
   const perm = usePermissao()
   const usuario = useUsuarioAtual()
   const { toast } = useToast()
@@ -76,12 +77,18 @@ export function ProjetoMonitor() {
   const [aba, setAba] = useState<Aba>('atividade')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [tarefaAberta, setTarefaAberta] = useState<TarefaComRelacoes | null>(null)
   const [abaAberta, setAbaAberta] = useState<AbaTarefa>('principal')
 
+  const { tarefa: tarefaAberta, naoEncontrada, abrirTarefa: abrirTarefaUrl, fechar: fecharTarefaUrl, recarregar: recarregarTarefaUrl } =
+    useTarefaPorCodigo(
+      { fechar: `/projetos/${id}/monitor`, abrir: (cod) => `/projetos/${id}/monitor/tarefas/${cod}` },
+      codigo
+    )
+
   function abrirTarefa(t: TarefaComRelacoes | null, aba: AbaTarefa = 'principal') {
-    setTarefaAberta(t)
     setAbaAberta(aba)
+    if (t) abrirTarefaUrl(t.codigo)
+    else fecharTarefaUrl()
   }
 
   async function load() {
@@ -134,6 +141,13 @@ export function ProjetoMonitor() {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  useEffect(() => {
+    if (naoEncontrada && codigo) {
+      toast(`Tarefa #${codigo} não encontrada.`, 'error')
+      fecharTarefaUrl()
+    }
+  }, [naoEncontrada, codigo, toast, fecharTarefaUrl])
 
   const stats = useMemo(() => calcularStats(tarefas), [tarefas])
 
@@ -319,8 +333,8 @@ export function ProjetoMonitor() {
 
       <TarefaModal
         open={!!tarefaAberta}
-        onClose={() => setTarefaAberta(null)}
-        onSaved={load}
+        onClose={fecharTarefaUrl}
+        onSaved={() => { load(); recarregarTarefaUrl() }}
         onTarefaUpdated={load}
         tarefa={tarefaAberta}
         abaInicial={abaAberta}

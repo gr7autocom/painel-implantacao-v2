@@ -39,7 +39,9 @@ function App() {
               <Route path="projetos/:id" element={<ErrorBoundary><ProjetoDetalhe /></ErrorBoundary>}>
                 <Route path="tarefas/:codigo" element={null} />
               </Route>
-              <Route path="projetos/:id/monitor" element={<ErrorBoundary><ProjetoMonitor /></ErrorBoundary>} />
+              <Route path="projetos/:id/monitor" element={<ErrorBoundary><ProjetoMonitor /></ErrorBoundary>}>
+                <Route path="tarefas/:codigo" element={null} />
+              </Route>
               <Route path="tarefas" element={<ErrorBoundary><Tarefas /></ErrorBoundary>}>
                 <Route path=":codigo" element={null} />
               </Route>

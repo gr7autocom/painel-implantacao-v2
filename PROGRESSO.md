@@ -774,6 +774,14 @@ Decisão tomada: **Opção B (sempre dark)** — manter o remap Tailwind documen
 
 Refactor entregue: Inter, stagger, autosave, rota dedicada `/tarefas/:codigo` + slide-over, swipe-to-dismiss mobile. Light mode permanece descartado (Opção B). Detalhes na seção concluída acima.
 
+### Contratação posterior — tarefas avulsas pós-implantação (2026-04-27)
+
+- [x] Categoria "Contratação posterior" (cor âmbar `#F59E0B`) adicionada via seed (`20260427180000_seed_categoria_contratacao_posterior.sql`)
+- [x] `sincronizar_tarefas_cliente` atualizada: ao editar cadastro de cliente, detecta a etapa de implantação do projeto ativo (`projetos.etapa_implantacao_id`). Se for "Concluído" ou "Inaugurado", novas tarefas nascem como avulsas (`de_projeto=FALSE`, `projeto_id=NULL`, `categoria="Contratação posterior"`) em vez de entrar no projeto e quebrar o progresso 100% (`20260427190000` + fix classificação `20260427200000`)
+- [x] Cancelamentos de itens removidos do cadastro continuam operando normalmente em ambos os buckets (projeto e avulsas)
+- [x] Filtro "Categoria" adicionado ao painel de filtros de `/tarefas`
+- [x] Badge de categoria exibido inline nos cards da lista de tarefas (cor dinâmica via `estiloBadge`)
+
 ### Itens fora de escopo / sprints futuras
 
 - [ ] Refactor "Linear-style" de subtarefas (perde a tarefa pai do contexto ao navegar)

@@ -31,7 +31,11 @@ supabase/
     ├── 20260418300000_projetos_progresso_view.sql
     ├── 20260418400000_etapas_implantacao.sql
     ├── 20260418500000_clientes_etapa_implantacao.sql
-    └── 20260418600000_projetos_progresso_status.sql
+    ├── 20260418600000_projetos_progresso_status.sql
+    ├── ...
+    ├── 20260427180000_seed_categoria_contratacao_posterior.sql  # categoria "Contratação posterior" (#F59E0B)
+    ├── 20260427190000_sinc_tarefas_projeto_concluido.sql        # sincronizar_tarefas_cliente: avulsa se projeto Concluído/Inaugurado
+    └── 20260427200000_sinc_tarefas_fix_classif_avulsa.sql      # fix: avulsas sem classificacao_id (evita erro de validação do trigger)
 ```
 
 ## Tabelas de Configuração (`20260417160025_config_tables.sql` + migrations de limpeza)

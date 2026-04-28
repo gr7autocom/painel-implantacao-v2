@@ -97,6 +97,8 @@ Tabela `cliente_historico` ([20260419135237](../../supabase/migrations/202604191
 
 (UPDATE) chamam `sincronizar_tarefas_cliente` (delta — cria novas tarefas em mudanças de quantidade, cancela removidas; só funciona se já existe projeto). UI mostra "Este cliente ainda não tem projeto ativo" se aplicável.
 
+**Comportamento quando projeto está concluído:** `sincronizar_tarefas_cliente` verifica `projetos.etapa_implantacao_id` → `etapas_implantacao.nome`. Se a etapa for `"Concluído"` ou `"Inaugurado"`, as novas tarefas geradas nascem como **avulsas** (`de_projeto = FALSE`, `projeto_id = NULL`, `categoria = "Contratação posterior"`, `classificacao_id = NULL`) em vez de entrar no projeto. Isso preserva o progresso 100% do projeto. Os cancelamentos (itens removidos do cadastro) continuam operando em ambos os buckets — buscam tanto tarefas do projeto quanto avulsas do cliente com `origem_cadastro = TRUE`. Migrations: `20260427180000` (seed da categoria), `20260427190000` + `20260427200000` (lógica na RPC).
+
 ### Componente compartilhado
 
 [`NomeProjetoModal.tsx`](../../src/components/projetos/NomeProjetoModal.tsx) é usado nos dois fluxos (defaultNome, descricao contextual, callback `onConfirmar(nome)`).
