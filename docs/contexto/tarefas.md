@@ -120,9 +120,12 @@ Integração em [TarefaChecklistTab.tsx](../../src/components/tarefas/TarefaChec
 
 Após o feature de subtarefas e anexos no Cloudinary, exclusão de tarefa não pode mais ser DELETE direto via PostgREST.
 
-- **Edge Function [`delete-tarefa`](../../supabase/functions/delete-tarefa/index.ts):** valida JWT + `can('tarefa.excluir')`, busca subtarefas, coleta `tarefa_anexos` da tarefa + subtarefas, apaga em batch no Cloudinary (admin API agrupada por resource_type, mesma lógica do `delete-projeto`); depois `DELETE FROM tarefas` (CASCADE remove subtarefas, comentários, checklist, anexos-DB, histórico, participantes em cadeia). Retorna `{ ok, tarefa_id, subtarefas_removidas, anexos_cloudinary: { deletados, falharam } }`
+- **Edge Function [`delete-tarefa`](../../supabase/functions/delete-tarefa/index.ts):** valida JWT + `can('tarefa.excluir')`, busca subtarefas, coleta `tarefa_anexos` da tarefa + subtarefas, apaga em batch no Cloudinary **se os secrets estiverem configurados** (admin API agrupada por resource_type); depois `DELETE FROM tarefas` (CASCADE remove subtarefas, comentários, checklist, anexos-DB, histórico, participantes em cadeia). Retorna `{ ok, tarefa_id, subtarefas_removidas, anexos_cloudinary: { deletados, falharam } }`
+- **Cloudinary é opcional:** se `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` ou `CLOUDINARY_API_SECRET` não estiverem configurados como secrets do Supabase, a função pula a limpeza do Cloudinary mas ainda apaga do banco. Os arquivos ficariam órfãos no Cloudinary.
+- **Secrets Cloudinary (Supabase):** as variáveis do `.env` **não chegam** às Edge Functions — elas rodam no servidor do Supabase e leem de `Deno.env`, que usa secrets configurados via CLI: `npx supabase secrets set CLOUDINARY_CLOUD_NAME=... CLOUDINARY_API_KEY=... CLOUDINARY_API_SECRET=...`
+- **FK explícita obrigatória:** a tabela `tarefas` tem múltiplos relacionamentos com tabelas de etapas. Sempre usar o nome da FK na query: `etapa:etapas!tarefas_etapa_id_fkey(nome)` — sem o hint, PostgREST retorna 500 "more than one relationship was found"
 - **Deploy:** `npx supabase functions deploy delete-tarefa --no-verify-jwt`
-- **Frontend:** `Tarefas.tsx` e `ProjetoDetalhe.tsx` chamam `supabase.functions.invoke('delete-tarefa', { body: { tarefa_id } })` em vez de DELETE direto. Modal de confirmação ganha banner vermelho destacando "ação irreversível" + lista do que será apagado (subtarefas + tudo dentro delas, comentários, checklist, histórico, anexos Cloudinary, participantes). Tarefas com `origem_cadastro=true` continuam protegidas (modal informa pra editar o cadastro do cliente)
+- **Frontend:** `Tarefas.tsx` e `ProjetoDetalhe.tsx` chamam `supabase.functions.invoke('delete-tarefa', { body: { tarefa_id } })`. A extração do erro lê o body do `FunctionsHttpError.context` para mostrar a mensagem real da função (não o genérico "Edge Function returned a non-2xx status code"). Modal de confirmação ganha banner vermelho destacando "ação irreversível" + lista do que será apagado. Tarefas com `origem_cadastro=true` continuam protegidas (modal informa pra editar o cadastro do cliente)
 
 ## Tela de Tarefas (`/tarefas`)
 
@@ -166,6 +169,18 @@ Carrega a tarefa via `SELECT_TAREFA_COM_RELACOES`. `abrirTarefa(codigo)` → nav
   - Quem **pode reatribuir/editar_todas** (Admin/Suporte) → responsável pré-preenchido com o próprio usuário
   - Quem **não pode** (Vendas) → responsável em branco, tarefa nasce "Em aberto"
 - Ao criar uma tarefa: `criado_por_id = usuarioAtual.id` (automático, sem campo no form)
+
+#### Auto-save ao clicar nas abas durante criação
+
+Ao clicar em Participantes, Comentários, Checklist, Subtarefas ou Histórico **antes de salvar**, o modal auto-salva a tarefa no banco e transita para modo edição antes de abrir a aba. Se o título estiver vazio, exibe erro e dá foco ao campo.
+
+Padrão implementado em [TarefaModal.tsx](../../src/components/tarefas/TarefaModal.tsx):
+
+- `tarefaEfetiva = tarefaAutoSalva ?? tarefa` — derivado usado em todo o modal; funciona tanto para tarefa via prop externa quanto para tarefa recém auto-salva
+- `isCriando = !tarefaEfetiva` — determina se está em modo criação
+- `pendingAbaRef` (useRef, não useState) — armazena a aba destino após o auto-save. Usar ref evita conflito de timing: o effect do `useTarefaForm` reseta `aba → 'principal'` quando `tarefa?.id` muda; o `useEffect([tarefaAutoSalva])` roda depois e sobrescreve com a aba pendente (último `setAba` vence no batch do React)
+- `salvarSemFechar()` em `useTarefaForm` — insere a tarefa no banco sem chamar `onClose()`/`onSaved()`, retorna `{ ok, tarefaId, erro }`
+- Após o save, busca a tarefa com `SELECT_TAREFA_COM_RELACOES`, seta `tarefaAutoSalva` e notifica via `onTarefaUpdated?.()` (não `onSaved()` — este pode fechar o modal em alguns consumers)
 
 ### Comportamento de edição
 

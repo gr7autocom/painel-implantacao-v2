@@ -57,7 +57,8 @@ Visual slide-over ([src/components/tarefas/TarefaModal.tsx](../../src/components
 - [src/components/RichTextEditor.tsx](../../src/components/RichTextEditor.tsx) encapsula Tiptap v3 com toolbar (fonte, heading, bold/italic/underline/strike/code, cor do texto, cor de fundo, listas, link)
 - Content é armazenado como **HTML em coluna TEXT** (`tarefas.descricao`). Tiptap já filtra scripts — ao renderizar em read-only com `dangerouslySetInnerHTML`, é seguro desde que a fonte seja o próprio editor
 - CSS do conteúdo vive em `src/index.css` sob seletor `.rich-text-content .tiptap` (headings, listas, code, blockquote, placeholder)
-- Extensions carregadas: StarterKit (sem Link nativo) + Underline + TextStyle + Color + Highlight (multicolor) + Link + FontFamily + Placeholder
+- Extensions carregadas: StarterKit (sem Link nativo, com `underline: false`) + Underline + TextStyle + Color + Highlight (multicolor) + Link + FontFamily + Placeholder
+- **`underline: false` no StarterKit é obrigatório:** Tiptap v3 inclui Underline no StarterKit por padrão. Sem o flag, o Underline adicionado explicitamente gera aviso "Duplicate extension names found: ['underline']" e pode causar comportamento inconsistente
 - Modo `disabled` desliga a toolbar e a edição; conteúdo continua renderizado (para tarefa em modo somente leitura no TarefaModal)
 
 ## Sistema de Toasts ([src/components/Toast.tsx](../../src/components/Toast.tsx))
