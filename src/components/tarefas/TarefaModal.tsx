@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { SELECT_TAREFA_COM_RELACOES } from '../../lib/tarefa-utils'
 import { useUsuarioAtual } from '../../lib/auth'
 import { usePermissao } from '../../lib/permissoes'
 import { useTarefaListas } from '../../lib/tarefa-listas-context'
@@ -102,6 +103,11 @@ export function TarefaModal({
   const [subtarefaAberta, setSubtarefaAberta] = useState<TarefaComRelacoes | null>(null)
   /** Incrementa quando uma aba muda dados — força refresh em quem observa esse contador. */
   const [versaoMudancas, setVersaoMudancas] = useState(0)
+  /** Tarefa criada via auto-save ao clicar aba extra em modo criação */
+  const [tarefaAutoSalva, setTarefaAutoSalva] = useState<TarefaComRelacoes | null>(null)
+  /** Ref para aba a abrir após auto-save (ref evita conflito de timing com useTarefaForm) */
+  const pendingAbaRef = useRef<Aba | null>(null)
+  const tituloRef = useRef<HTMLInputElement>(null)
 
   function notificarMudanca() {
     setVersaoMudancas((v) => v + 1)
@@ -109,9 +115,10 @@ export function TarefaModal({
   }
 
   const navigate = useNavigate()
-  const isCriando = !tarefa
-  const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefa!)
-  const podeReatribuir = isCriando ? true : perm.podeReatribuirTarefa(tarefa!)
+  const tarefaEfetiva = tarefaAutoSalva ?? tarefa
+  const isCriando = !tarefaEfetiva
+  const podeEditar = isCriando ? perm.can('tarefa.criar') : perm.podeEditarTarefa(tarefaEfetiva!)
+  const podeReatribuir = isCriando ? true : perm.podeReatribuirTarefa(tarefaEfetiva!)
   const readonly = !podeEditar
   const responsavelReadonly = readonly || !podeReatribuir
   const podeAtribuirNaCriacao = perm.can('tarefa.reatribuir') || perm.can('tarefa.editar_todas')
@@ -120,18 +127,19 @@ export function TarefaModal({
     form, setForm,
     formInicial,
     saving,
-    error,
+    error, setError,
     aba, setAba,
     aguardandoConfirmacao, setAguardandoConfirmacao,
     reabrindo,
     save,
+    salvarSemFechar,
     reabrirTarefa,
     rascunhoPendente,
     restaurarRascunho,
     descartarRascunho,
     limparRascunhoAtual,
   } = useTarefaForm({
-    open, tarefa, clienteFixo, projetoFixo, tarefaPaiFixa, abaInicial, etapas,
+    open, tarefa: tarefaEfetiva, clienteFixo, projetoFixo, tarefaPaiFixa, abaInicial, etapas,
     podeAtribuirNaCriacao, usuarioAtual, pendingAnexos, onSaved, onClose,
   })
 
@@ -151,11 +159,11 @@ export function TarefaModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     // Só verifica quando é edição de tarefa existente
-    if (!tarefa) { save(e); return }
+    if (!tarefaEfetiva) { save(e); return }
 
     const etapaNova = etapas.find((et) => et.id === form.etapa_id)
     const estaConcluindo = !!etapaNova?.nome.toLowerCase().includes('conclu')
-    const etapaAntiga = etapas.find((et) => et.id === tarefa.etapa_id)
+    const etapaAntiga = etapas.find((et) => et.id === tarefaEfetiva.etapa_id)
     const estavaConcluido = !!etapaAntiga?.nome.toLowerCase().includes('conclu')
 
     // Só alerta ao TRANSICIONAR para Concluído
@@ -164,10 +172,10 @@ export function TarefaModal({
     setVerificandoChecklist(true)
     // Verifica items de checklist pendentes e subtarefas não-finalizadas em paralelo
     const [checklistRes, subtarefasRes] = await Promise.all([
-      supabase.from('tarefa_checklist').select('id, concluido').eq('tarefa_id', tarefa.id),
+      supabase.from('tarefa_checklist').select('id, concluido').eq('tarefa_id', tarefaEfetiva.id),
       supabase.from('tarefas')
         .select('id, etapa:etapas!tarefas_etapa_id_fkey(nome)')
-        .eq('tarefa_pai_id', tarefa.id),
+        .eq('tarefa_pai_id', tarefaEfetiva.id),
     ])
     setVerificandoChecklist(false)
 
@@ -192,6 +200,41 @@ export function TarefaModal({
     setConfirmConcluirOpen(false)
     const fakeEvent = { preventDefault: () => {} } as React.FormEvent
     await save(fakeEvent)
+  }
+
+  async function handleAbaExtraNaCriacao(abaDestino: Aba) {
+    if (!form.titulo.trim()) {
+      setError('Preencha o título antes de acessar outras abas.')
+      tituloRef.current?.focus()
+      return
+    }
+    const { ok, tarefaId, erro } = await salvarSemFechar()
+    if (!ok || !tarefaId) {
+      if (erro) setError(erro)
+      return
+    }
+    const { data } = await supabase
+      .from('tarefas')
+      .select(SELECT_TAREFA_COM_RELACOES)
+      .eq('id', tarefaId)
+      .maybeSingle()
+    if (!data) {
+      setError('Tarefa salva, mas não foi possível carregá-la.')
+      return
+    }
+    pendingAbaRef.current = abaDestino
+    setTarefaAutoSalva(data as TarefaComRelacoes)
+    setPendingAnexos([])
+    onTarefaUpdated?.()
+  }
+
+  function handleAbaClick(a: Aba) {
+    const extras: Aba[] = ['participantes', 'comentarios', 'checklist', 'subtarefas', 'historico']
+    if (isCriando && extras.includes(a)) {
+      handleAbaExtraNaCriacao(a)
+    } else {
+      setAba(a)
+    }
   }
 
   const classificacoesDaCategoria = useMemo(
@@ -251,8 +294,18 @@ export function TarefaModal({
     setClienteNomeSelecionado(clienteJoin?.nome_fantasia ?? null)
   }, [open, tarefa?.cliente_id])
 
+  // Quando o auto-save completa, abre a aba pendente. Roda depois do effect
+  // do useTarefaForm (que reseta aba → 'principal'), então o último setAba vence.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!open) { setPendingAnexos([]); return }
+    if (tarefaAutoSalva && pendingAbaRef.current) {
+      setAba(pendingAbaRef.current)
+      pendingAbaRef.current = null
+    }
+  }, [tarefaAutoSalva])
+
+  useEffect(() => {
+    if (!open) { setPendingAnexos([]); setTarefaAutoSalva(null); return }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { tentarFechar(); return }
       if (e.key !== 'Tab' || !dialogRef.current) return
@@ -272,7 +325,7 @@ export function TarefaModal({
 
   if (!open) return null
 
-  const criadoPorNome = tarefa?.criado_por?.nome ?? usuarioAtual?.nome ?? '—'
+  const criadoPorNome = tarefaEfetiva?.criado_por?.nome ?? usuarioAtual?.nome ?? '—'
   const inputBase = 'w-full px-3 py-2 border rounded-lg text-sm outline-none focus-visible:ring-2'
   const inputEnabled = 'border-gray-300 focus-visible:ring-blue-500'
   const inputDisabled = 'border-gray-200 bg-gray-50 text-gray-600 focus-visible:ring-transparent'
@@ -304,7 +357,7 @@ export function TarefaModal({
         <div className="flex items-start justify-between px-4 sm:px-6 py-3 sm:py-4">
           <div>
             <h2 id={titleId} className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              {tarefa ? `Tarefa #${tarefa.codigo}` : form.titulo || 'Nova Tarefa'}
+              {tarefaEfetiva ? `Tarefa #${tarefaEfetiva.codigo}` : form.titulo || 'Nova Tarefa'}
               {readonly && (
                 <span className="inline-flex items-center gap-1 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                   <Lock className="w-3 h-3" />
@@ -314,16 +367,16 @@ export function TarefaModal({
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Criada por <strong>{criadoPorNome}</strong>
-              {tarefa && ` em ${new Date(tarefa.created_at).toLocaleString('pt-BR')}`}
+              {tarefaEfetiva && ` em ${new Date(tarefaEfetiva.created_at).toLocaleString('pt-BR')}`}
             </p>
-            {tarefa?.tarefa_pai_id && tarefa.tarefa_pai && !Array.isArray(tarefa.tarefa_pai) && (
+            {tarefaEfetiva?.tarefa_pai_id && tarefaEfetiva.tarefa_pai && !Array.isArray(tarefaEfetiva.tarefa_pai) && (
               <button
                 type="button"
-                onClick={() => navigate(urlTarefaPai(tarefa.tarefa_pai as { codigo: number; projeto_id: string | null }))}
+                onClick={() => navigate(urlTarefaPai(tarefaEfetiva.tarefa_pai as { codigo: number; projeto_id: string | null }))}
                 className="mt-1 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
               >
                 <GitBranch className="w-3 h-3" />
-                Subtarefa de <strong>#{(tarefa.tarefa_pai as { codigo: number }).codigo} — {(tarefa.tarefa_pai as { titulo: string }).titulo}</strong>
+                Subtarefa de <strong>#{(tarefaEfetiva.tarefa_pai as { codigo: number }).codigo} — {(tarefaEfetiva.tarefa_pai as { titulo: string }).titulo}</strong>
               </button>
             )}
           </div>
@@ -392,27 +445,27 @@ export function TarefaModal({
         <div className="flex-1 flex min-h-0">
           <AbasSidebar
             aba={aba}
-            onAba={setAba}
-            bloquearExtras={isCriando}
-            esconderSubtarefas={!!tarefa?.tarefa_pai_id}
+            onAba={handleAbaClick}
+            bloquearExtras={false}
+            esconderSubtarefas={!!tarefaEfetiva?.tarefa_pai_id}
           />
 
           <div className="flex-1 min-w-0 flex flex-col">
-            {aba !== 'principal' && tarefa && (
+            {aba !== 'principal' && tarefaEfetiva && (
               <div className="px-6 py-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-                {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefa} onChange={notificarMudanca} />}
-                {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefa} onChange={notificarMudanca} />}
-                {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefa} onChange={notificarMudanca} />}
+                {aba === 'participantes' && <TarefaParticipantesTab tarefa={tarefaEfetiva} onChange={notificarMudanca} />}
+                {aba === 'comentarios' && <TarefaComentariosTab tarefa={tarefaEfetiva} onChange={notificarMudanca} />}
+                {aba === 'checklist' && <TarefaChecklistTab tarefa={tarefaEfetiva} onChange={notificarMudanca} />}
                 {aba === 'subtarefas' && (
                   <TarefaSubtarefasTab
-                    tarefa={tarefa}
+                    tarefa={tarefaEfetiva}
                     versao={versaoMudancas}
                     onChange={notificarMudanca}
                     onCriarSubtarefa={() => setSubtarefaCriarOpen(true)}
                     onAbrirSubtarefa={(s) => setSubtarefaAberta(s)}
                   />
                 )}
-                {aba === 'historico' && <TarefaHistoricoTab tarefa={tarefa} />}
+                {aba === 'historico' && <TarefaHistoricoTab tarefa={tarefaEfetiva} />}
               </div>
             )}
 
@@ -467,7 +520,7 @@ export function TarefaModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">ID</label>
               <input
                 type="text"
-                value={tarefa?.codigo ?? '—'}
+                value={tarefaEfetiva?.codigo ?? '—'}
                 readOnly
                 className={`${inputBase} ${inputDisabled}`}
               />
@@ -475,6 +528,7 @@ export function TarefaModal({
             <div className="col-span-10">
               <label className="block text-sm font-medium text-gray-700 mb-1">Título <span className="text-red-500">*</span></label>
               <input
+                ref={tituloRef}
                 type="text"
                 required
                 disabled={readonly}
@@ -681,14 +735,14 @@ export function TarefaModal({
       />
 
       {/* Modal aninhado: criar nova subtarefa da tarefa atual */}
-      {tarefa && (
+      {tarefaEfetiva && (
         <TarefaModal
           open={subtarefaCriarOpen}
           onClose={() => setSubtarefaCriarOpen(false)}
           onSaved={() => { setSubtarefaCriarOpen(false); notificarMudanca(); onSaved() }}
           onTarefaUpdated={notificarMudanca}
           tarefa={null}
-          tarefaPaiFixa={{ id: tarefa.id, responsavelId: tarefa.responsavel_id, clienteId: tarefa.cliente_id ?? null, clienteNome: tarefa.cliente?.nome_fantasia ?? null }}
+          tarefaPaiFixa={{ id: tarefaEfetiva.id, responsavelId: tarefaEfetiva.responsavel_id, clienteId: tarefaEfetiva.cliente_id ?? null, clienteNome: tarefaEfetiva.cliente?.nome_fantasia ?? null }}
         />
       )}
 

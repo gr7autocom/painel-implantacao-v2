@@ -40,7 +40,9 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(grep -rn \"\\\\${.*cor\" /c/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src --include=\"*.tsx\" --include=\"*.ts\")",
-      "Bash(grep -rn \"backgroundColor.*\\\\${\" /c/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src --include=\"*.tsx\")"
+      "Bash(grep -rn \"backgroundColor.*\\\\${\" /c/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src --include=\"*.tsx\")",
+      "Bash(ls .env*)",
+      "Bash(cat .env.test)"
     ]
   }
 }

@@ -339,6 +339,62 @@ export function useTarefaForm({
     onClose()
   }
 
+  async function salvarSemFechar(): Promise<{ ok: boolean; tarefaId: string | null; erro: string | null }> {
+    if (!usuarioAtual) return { ok: false, tarefaId: null, erro: 'Usuário não autenticado.' }
+    setSaving(true)
+    setError(null)
+    const basePayload = {
+      titulo: form.titulo.trim(),
+      descricao: form.descricao.trim() || null,
+      inicio_previsto: toIso(form.inicio_data, form.inicio_hora),
+      prazo_entrega: toIso(form.prazo_data, form.prazo_hora),
+      prioridade_id: form.prioridade_id || null,
+      categoria_id: form.categoria_id || null,
+      classificacao_id: form.classificacao_id || null,
+      etapa_id: form.etapa_id || null,
+      responsavel_id: form.responsavel_id || null,
+      cliente_id: form.cliente_id || null,
+      updated_at: new Date().toISOString(),
+    }
+    const result = await supabase
+      .from('tarefas')
+      .insert({
+        ...basePayload,
+        criado_por_id: usuarioAtual.id,
+        de_projeto: !!(projetoFixo || clienteFixo),
+        projeto_id: projetoFixo?.id ?? null,
+        tarefa_pai_id: tarefaPaiFixa?.id ?? null,
+      })
+      .select('id')
+      .single()
+    setSaving(false)
+    if (result.error) {
+      const msg = result.error.code === '42501' ? 'Você não tem permissão para esta operação.' : result.error.message
+      setError(msg)
+      return { ok: false, tarefaId: null, erro: msg }
+    }
+    const tarefaId = result.data.id as string
+    if (pendingAnexos.length > 0) {
+      await supabase.from('tarefa_anexos').insert(
+        pendingAnexos.map((a) => ({
+          tarefa_id: tarefaId,
+          nome_arquivo: a.nome_arquivo,
+          public_id: a.public_id,
+          url: a.url,
+          tipo_mime: a.tipo_mime,
+          tamanho_bytes: a.tamanho_bytes,
+          criado_por_id: usuarioAtual.id,
+        }))
+      )
+    }
+    const novoResponsavel = basePayload.responsavel_id
+    if (novoResponsavel && novoResponsavel !== usuarioAtual.id) {
+      notificarAtribuicao(tarefaId, novoResponsavel)
+    }
+    limparRascunhoAtual()
+    return { ok: true, tarefaId, erro: null }
+  }
+
   return {
     form, setForm,
     formInicial,
@@ -348,6 +404,7 @@ export function useTarefaForm({
     aguardandoConfirmacao, setAguardandoConfirmacao,
     reabrindo,
     save,
+    salvarSemFechar,
     reabrirTarefa,
     rascunhoPendente,
     restaurarRascunho,
