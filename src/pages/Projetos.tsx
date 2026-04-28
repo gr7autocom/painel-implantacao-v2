@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FolderKanban, FolderPlus, FolderCheck, FolderX } from 'lucide-react'
+import { FolderKanban, FolderPlus, FolderCheck, FolderX, FolderClock } from 'lucide-react'
 
-type AbaAtiva = 'andamento' | 'concluidos' | 'cancelados'
+type AbaAtiva = 'andamento' | 'pendentes' | 'concluidos' | 'cancelados'
 
 const ETAPAS_CONCLUIDO = ['Concluído', 'Inaugurado']
 const ETAPAS_CANCELADO = ['Cancelado']
@@ -98,9 +98,22 @@ export function Projetos() {
     [itensFiltrados]
   )
 
+  const projetosPendentes = useMemo(
+    () => itensFiltrados.filter((p) => {
+      if (!ETAPAS_CONCLUIDO.includes(p.etapa_implantacao?.nome ?? '')) return false
+      const prog = progresso[p.id]
+      return prog && prog.total > 0 && prog.pct < 100
+    }),
+    [itensFiltrados, progresso]
+  )
+
   const projetosConcluidos = useMemo(
-    () => itensFiltrados.filter((p) => ETAPAS_CONCLUIDO.includes(p.etapa_implantacao?.nome ?? '')),
-    [itensFiltrados]
+    () => itensFiltrados.filter((p) => {
+      if (!ETAPAS_CONCLUIDO.includes(p.etapa_implantacao?.nome ?? '')) return false
+      const prog = progresso[p.id]
+      return !prog || prog.total === 0 || prog.pct >= 100
+    }),
+    [itensFiltrados, progresso]
   )
 
   const projetosCancelados = useMemo(
@@ -110,9 +123,11 @@ export function Projetos() {
 
   const projetosAtivos = abaAtiva === 'andamento'
     ? projetosAndamento
-    : abaAtiva === 'concluidos'
-      ? projetosConcluidos
-      : projetosCancelados
+    : abaAtiva === 'pendentes'
+      ? projetosPendentes
+      : abaAtiva === 'concluidos'
+        ? projetosConcluidos
+        : projetosCancelados
 
   function abrirModalNomeProjeto(cliente: { id: string; nome_fantasia: string }) {
     setClienteParaProjeto({ id: cliente.id, nome: cliente.nome_fantasia })
@@ -192,6 +207,23 @@ export function Projetos() {
           <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'andamento' ? 'bg-blue-400/25 text-blue-300' : 'bg-gray-400/20 text-gray-400'}`}>
             {projetosAndamento.length}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAbaAtiva('pendentes')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
+            abaAtiva === 'pendentes'
+              ? 'border-gray-200 border-b-white bg-white text-amber-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          <FolderClock className="w-4 h-4" />
+          Pendentes
+          {projetosPendentes.length > 0 && (
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'pendentes' ? 'bg-amber-400/25 text-amber-300' : 'bg-amber-400/20 text-amber-400'}`}>
+              {projetosPendentes.length}
+            </span>
+          )}
         </button>
         <button
           type="button"
@@ -296,14 +328,21 @@ export function Projetos() {
         </div>
       ) : projetosAtivos.length === 0 ? (
         <EmptyState
-          icon={abaAtiva === 'concluidos' ? <FolderCheck className="w-10 h-10" /> : abaAtiva === 'cancelados' ? <FolderX className="w-10 h-10" /> : <FolderKanban className="w-10 h-10" />}
+          icon={
+            abaAtiva === 'pendentes' ? <FolderClock className="w-10 h-10" /> :
+            abaAtiva === 'concluidos' ? <FolderCheck className="w-10 h-10" /> :
+            abaAtiva === 'cancelados' ? <FolderX className="w-10 h-10" /> :
+            <FolderKanban className="w-10 h-10" />
+          }
           title={
+            abaAtiva === 'pendentes' ? 'Nenhum projeto com pendências.' :
             abaAtiva === 'concluidos' ? 'Nenhum projeto concluído.' :
             abaAtiva === 'cancelados' ? 'Nenhum projeto cancelado.' :
             items.length === 0 ? 'Nenhum projeto cadastrado ainda.' : 'Nenhum projeto encontrado.'
           }
           description={
-            abaAtiva === 'concluidos' ? 'Projetos com etapa Concluído ou Inaugurado aparecerão aqui.' :
+            abaAtiva === 'pendentes' ? 'Projetos marcados como Concluído ou Inaugurado que ainda têm tarefas abertas aparecerão aqui.' :
+            abaAtiva === 'concluidos' ? 'Projetos com todas as tarefas finalizadas aparecerão aqui.' :
             abaAtiva === 'cancelados' ? 'Projetos com etapa Cancelado aparecerão aqui.' :
             items.length === 0 ? 'Crie um novo projeto clicando no botão acima.' : 'Tente ajustar a busca ou os filtros.'
           }
