@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
   // Confirma que a tarefa existe
   const { data: tarefa, error: tarErr } = await admin
     .from('tarefas')
-    .select('id, titulo, origem_cadastro, etapa:etapas(nome)')
+    .select('id, titulo, origem_cadastro, etapa:etapas!tarefas_etapa_id_fkey(nome)')
     .eq('id', tarefaId)
     .maybeSingle()
   if (tarErr) return json({ error: tarErr.message }, 500)
