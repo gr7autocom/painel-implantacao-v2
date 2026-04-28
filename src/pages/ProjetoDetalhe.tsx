@@ -175,9 +175,13 @@ export function ProjetoDetalhe() {
     const { data, error: delErr } = await supabase.functions.invoke('delete-tarefa', {
       body: { tarefa_id: confirmDelete.id },
     })
-    if (delErr || (data && (data as { error?: string }).error)) {
-      const msg = (data as { error?: string } | null)?.error ?? delErr?.message ?? 'Erro ao excluir tarefa.'
-      setError(msg)
+    const dataErr = (data as { error?: string } | null)?.error
+    const fnErr = delErr
+      ? ((await (delErr as { context?: Response }).context?.json().catch(() => null)) as { error?: string } | null)?.error ?? delErr.message
+      : null
+    const errMsg = dataErr ?? fnErr
+    if (errMsg) {
+      setError(errMsg)
       return
     }
     setConfirmDelete(null)

@@ -79,11 +79,11 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
-  const apiKey = Deno.env.get('CLOUDINARY_API_KEY')
-  const apiSecret = Deno.env.get('CLOUDINARY_API_SECRET')
+  const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME') ?? null
+  const apiKey = Deno.env.get('CLOUDINARY_API_KEY') ?? null
+  const apiSecret = Deno.env.get('CLOUDINARY_API_SECRET') ?? null
 
-  if (!supabaseUrl || !serviceKey || !cloudName || !apiKey || !apiSecret) {
+  if (!supabaseUrl || !serviceKey) {
     return json({ error: 'Variáveis de ambiente ausentes.' }, 500)
   }
 
@@ -158,12 +158,9 @@ Deno.serve(async (req) => {
     .in('tarefa_id', idsAfetadas)
   if (anxErr) return json({ error: anxErr.message }, 500)
 
-  const cloudinaryResult = await deletarAnexosCloudinary(
-    (anx ?? []) as AnexoRow[],
-    cloudName,
-    apiKey,
-    apiSecret,
-  )
+  const cloudinaryResult = (cloudName && apiKey && apiSecret)
+    ? await deletarAnexosCloudinary((anx ?? []) as AnexoRow[], cloudName, apiKey, apiSecret)
+    : { deletados: 0, falharam: 0 }
 
   // DELETE — CASCADE remove subtarefas, comentários, checklist, anexos-DB, participantes, histórico
   const { error: delErr } = await admin.from('tarefas').delete().eq('id', tarefaId)

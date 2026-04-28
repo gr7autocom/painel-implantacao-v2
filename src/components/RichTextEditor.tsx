@@ -52,6 +52,7 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: Props
     extensions: [
       StarterKit.configure({
         link: false,
+        underline: false,
       }),
       Underline,
       TextStyle,
