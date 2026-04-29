@@ -100,7 +100,7 @@ export function Inicio() {
         .map((e) => e.id as string)
     )
     const base = (minhasRes.data ?? []) as unknown as TarefaComRelacoes[]
-    enriquecerComPai(base, supabase).then(setMinhasTarefas)
+    enriquecerComPai(base.filter((t) => !isFinalizada(t)), supabase).then(setMinhasTarefas)
     setCountAbertasGlobal(
       (abertas.data ?? []).filter((t) => !etapasFinalizadas.has(t.etapa_id as string)).length
     )
