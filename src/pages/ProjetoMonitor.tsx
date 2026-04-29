@@ -236,7 +236,7 @@ export function ProjetoMonitor() {
         progresso={progresso}
         diasDesdeVenda={diasDesdeVenda}
         responsavelComercial={cli?.responsavel_comercial ?? null}
-        podeMudarEtapa={perm.can('cliente.editar')}
+        podeMudarEtapa={perm.can('projeto.editar')}
         onEtapaChanged={load}
       />
 

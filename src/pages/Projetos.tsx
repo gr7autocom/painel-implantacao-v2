@@ -281,7 +281,7 @@ export function Projetos() {
         />
       </div>
 
-      {perm.can('cliente.criar') && abaAtiva === 'andamento' && (
+      {perm.can('projeto.criar') && abaAtiva === 'andamento' && (
         <div className="mb-6 p-5 border border-dashed border-gray-300 rounded-xl bg-white">
           <p className="text-sm text-gray-500 mb-4 text-center">
             Selecione um projeto abaixo ou inicie um novo:

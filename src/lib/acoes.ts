@@ -10,6 +10,9 @@ export type AcaoId =
   | 'tarefa.reatribuir'
   | 'tarefa.assumir'
   | 'tarefa.excluir'
+  | 'tarefa.anexar'
+  | 'projeto.criar'
+  | 'projeto.editar'
   | 'projeto.excluir'
   | 'checklist.modelos_gerenciar'
   | 'checklist.editar_qualquer_tarefa'
@@ -46,6 +49,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     titulo: 'Tarefas',
     acoes: [
       { id: 'tarefa.criar', label: 'Criar tarefa' },
+      { id: 'tarefa.anexar', label: 'Gerenciar anexos de tarefas', descricao: 'Enviar e remover arquivos anexados às tarefas' },
       {
         id: 'tarefa.editar_todas',
         label: 'Editar qualquer tarefa',
@@ -67,6 +71,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
   {
     titulo: 'Projetos',
     acoes: [
+      { id: 'projeto.criar', label: 'Criar projeto', descricao: 'Iniciar um novo projeto de implantação para um cliente' },
+      { id: 'projeto.editar', label: 'Editar projeto / mudar fase', descricao: 'Alterar nome, etapa de implantação e demais dados do projeto' },
       {
         id: 'projeto.excluir',
         label: 'Excluir projeto',

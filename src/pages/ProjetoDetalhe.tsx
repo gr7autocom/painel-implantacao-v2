@@ -247,6 +247,7 @@ export function ProjetoDetalhe() {
         projeto={projeto}
         progresso={progresso}
         podeEditar={perm.can('cliente.editar')}
+        podeEditarProjeto={perm.can('projeto.editar')}
         podeCriarTarefa={perm.can('tarefa.criar')}
         podeExcluirProjeto={perm.can('projeto.excluir')}
         onEditar={() => setClienteModalOpen(true)}
@@ -609,6 +610,7 @@ function HeaderProjeto({
   projeto,
   progresso,
   podeEditar,
+  podeEditarProjeto,
   podeCriarTarefa,
   podeExcluirProjeto,
   onEditar,
@@ -619,6 +621,7 @@ function HeaderProjeto({
   projeto: ProjetoComRelacoes
   progresso: Progresso
   podeEditar: boolean
+  podeEditarProjeto: boolean
   podeCriarTarefa: boolean
   podeExcluirProjeto: boolean
   onEditar: () => void
@@ -641,7 +644,7 @@ function HeaderProjeto({
                 projetoId={projeto.id}
                 clienteId={projeto.cliente_id}
                 etapa={projeto.etapa_implantacao ?? null}
-                editavel={podeEditar}
+                editavel={podeEditarProjeto}
                 onChanged={onEtapaChanged}
               />
               <StatusAtividadeBadge status={progresso.status_atividade} />

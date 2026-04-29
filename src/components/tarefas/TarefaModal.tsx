@@ -694,7 +694,7 @@ export function TarefaModal({
 
             <TarefaAnexosSection
               tarefaId={tarefa?.id ?? null}
-              readonly={readonly}
+              readonly={readonly || !perm.can('tarefa.anexar')}
               onPendingChange={setPendingAnexos}
             />
           </div>
