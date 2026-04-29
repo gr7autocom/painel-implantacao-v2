@@ -10,7 +10,10 @@ import { ExpirationPlugin } from 'workbox-expiration'
 
 declare const self: ServiceWorkerGlobalScope
 
-// Assume controle imediato de todas as abas abertas ao ativar
+self.addEventListener('install', (event) => {
+  event.waitUntil(self.skipWaiting())
+})
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
