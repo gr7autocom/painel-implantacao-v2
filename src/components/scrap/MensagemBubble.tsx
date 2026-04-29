@@ -41,6 +41,10 @@ function ehAudio(mime: string | null | undefined): boolean {
   return !!mime && mime.startsWith('audio/')
 }
 
+function urlDownload(cloudinaryUrl: string, nome: string): string {
+  return cloudinaryUrl.replace('/upload/', `/upload/fl_attachment:${encodeURIComponent(nome)}/`)
+}
+
 const ROTA_TAREFA_RE = /^(\/tarefas\/\d+|\/projetos\/[^/\s]+\/tarefas\/\d+)$/
 
 function renderCorpo(corpo: string, ehMinha: boolean): React.ReactNode[] {
@@ -141,8 +145,8 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
                   ) : (
                     <a
                       key={a.id}
-                      href={a.url}
-                      target="_blank"
+                      href={urlDownload(a.url, a.nome_arquivo ?? 'arquivo')}
+                      download={a.nome_arquivo ?? 'arquivo'}
                       rel="noopener noreferrer"
                       className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs ${
                         ehMinha ? 'bg-blue-700' : 'bg-gray-200 text-gray-900'
