@@ -17,7 +17,12 @@ export async function uploadImagemCloudinary(
         const data = JSON.parse(xhr.responseText) as { secure_url: string; public_id: string }
         resolve({ url: data.secure_url, public_id: data.public_id })
       } else {
-        reject(new Error(`Upload falhou: ${xhr.status}`))
+        try {
+          const err = JSON.parse(xhr.responseText) as { error?: { message?: string } }
+          reject(new Error(err?.error?.message ?? `Upload falhou: ${xhr.status}`))
+        } catch {
+          reject(new Error(`Upload falhou: ${xhr.status}`))
+        }
       }
     })
     xhr.addEventListener('error', () => reject(new Error('Erro de rede no upload')))

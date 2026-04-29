@@ -94,8 +94,8 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
         tamanho_bytes: file.size,
       }])
     } catch (err) {
-      console.error('Upload falhou', err)
-      toast(`Falha ao enviar "${file.name}". Tente de novo.`, 'error')
+      const motivo = err instanceof Error ? err.message : 'Erro desconhecido'
+      toast(`Falha ao enviar "${file.name}": ${motivo}`, 'error')
     } finally {
       setUploadingCount((c) => c - 1)
     }
