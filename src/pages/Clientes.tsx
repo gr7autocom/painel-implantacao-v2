@@ -285,7 +285,7 @@ export function Clientes() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium w-24">Código</th>
+              <th className="px-4 py-3 font-medium">Código</th>
               <th className="px-4 py-3 font-medium">Razão Social</th>
               <th className="px-4 py-3 font-medium">Nome Fantasia</th>
               <th className="px-4 py-3 font-medium">CNPJ</th>

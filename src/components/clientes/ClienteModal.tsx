@@ -447,7 +447,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
               <select
                 value={form.regime_cliente_id}
                 onChange={(e) => setForm({ ...form, regime_cliente_id: e.target.value })}
-                className={`${inputClass} bg-white`}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <option value="">— Selecione —</option>
                 {regimes.map((r) => (
