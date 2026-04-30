@@ -81,7 +81,7 @@ export function Scrap() {
         description="Mensagens diretas entre colegas de equipe."
       />
 
-      <div className="flex-1 border border-gray-200 rounded-xl overflow-hidden bg-white flex min-h-0">
+      <div className="flex-1 border border-gray-300 rounded-xl overflow-hidden bg-white flex min-h-0">
         {/* Lista (esquerda) */}
         <div className={`w-full md:w-80 border-r border-gray-200 flex-shrink-0 ${conversaAtivaId ? 'hidden md:flex' : 'flex'} flex-col`}>
           <ConversasList

@@ -213,8 +213,8 @@ export function ProjetoDetalhe() {
         <Link to="/projetos" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 mb-4">
           <ArrowLeft className="w-4 h-4" /> Voltar para Projetos
         </Link>
-        <div className="bg-white border border-gray-200 rounded-xl p-5 h-40 skeleton-pulse" />
-        <div className="bg-white border border-gray-200 rounded-lg mt-6 divide-y divide-gray-100">
+        <div className="bg-white border border-gray-300 rounded-xl p-5 h-40 skeleton-pulse" />
+        <div className="bg-white border border-gray-300 rounded-lg mt-6 divide-y divide-gray-100">
           {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} />)}
         </div>
       </div>
@@ -256,7 +256,7 @@ export function ProjetoDetalhe() {
         onEtapaChanged={load}
       />
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mt-6 mb-4">
+      <div className="bg-white border border-gray-300 rounded-lg p-4 mt-6 mb-4">
         <div className="grid grid-cols-12 gap-3">
           <div className="col-span-12 md:col-span-4">
             <label htmlFor="detalhe-filtro-titulo" className="block text-xs font-medium text-gray-600 mb-1">Título</label>
@@ -321,7 +321,7 @@ export function ProjetoDetalhe() {
         </AlertBanner>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+      <div className="bg-white border border-gray-300 rounded-lg divide-y divide-gray-200">
         {loading ? (
           <>
             {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} className="border-b border-gray-100 last:border-0" />)}
@@ -631,7 +631,7 @@ function HeaderProjeto({
 }) {
   const cli = projeto.cliente as (ProjetoComRelacoes['cliente'] & { cnpj?: string; telefone?: string; responsavel_comercial?: string; data_venda?: string; servidores_qtd?: number; retaguarda_qtd?: number; pdv_qtd?: number; modulos?: string[] }) | null | undefined
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="bg-white border border-gray-300 rounded-xl p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4 min-w-0">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[#ffffff] shrink-0">

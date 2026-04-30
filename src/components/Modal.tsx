@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 type ModalProps = {
   open: boolean
@@ -18,9 +18,8 @@ const sizeClasses = {
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-const titleId = 'modal-title'
-
 export function Modal({ open, onClose, title, children, footer, size = 'md' }: ModalProps) {
+  const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
 

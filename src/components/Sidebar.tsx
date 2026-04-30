@@ -29,8 +29,8 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const items = menuItems.filter((item) => !item.requiresAcao || can(item.requiresAcao))
 
   return (
-    <aside className="w-56 lg:w-64 bg-white border-r border-gray-200 h-full flex flex-col overflow-y-auto">
-      <div className="p-6 border-b border-gray-200">
+    <aside className="w-56 lg:w-64 bg-white border-r border-gray-300 h-full flex flex-col overflow-y-auto">
+      <div className="p-6 border-b border-gray-300">
         <h1 className="text-xl font-bold text-gray-900">GR7 Automação</h1>
         <p className="text-sm text-gray-500">Implantação Clientes</p>
       </div>
@@ -63,7 +63,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           ))}
         </ul>
       </nav>
-      <div className="border-t border-gray-200">
+      <div className="border-t border-gray-300">
         <PerfilSidebar />
       </div>
     </aside>

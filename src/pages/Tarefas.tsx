@@ -284,7 +284,7 @@ export function Tarefas() {
           ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+      <div className="bg-white border border-gray-300 rounded-lg p-4 mb-4">
         <div className="grid grid-cols-12 gap-3">
           <div className="col-span-12 md:col-span-4">
             <label htmlFor="filtro-titulo" className="block text-xs font-medium text-gray-600 mb-1">Título</label>
@@ -390,7 +390,7 @@ export function Tarefas() {
         </AlertBanner>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+      <div className="bg-white border border-gray-300 rounded-lg divide-y divide-gray-200">
         {loading ? (
           <>
             {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} className="border-b border-gray-100 last:border-0" />)}

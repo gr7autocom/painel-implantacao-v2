@@ -63,7 +63,7 @@ export function DefinirSenha() {
 
         <form
           onSubmit={onSubmit}
-          className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4"
+          className="bg-white border border-gray-300 rounded-xl shadow-sm p-6 space-y-4"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nova senha</label>

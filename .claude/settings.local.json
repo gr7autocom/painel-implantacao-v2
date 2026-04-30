@@ -42,7 +42,12 @@
       "Bash(grep -rn \"\\\\${.*cor\" /c/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(grep -rn \"backgroundColor.*\\\\${\" /c/Users/PABLLO/Desktop/projeto/painel-implantacao-v2/src --include=\"*.tsx\")",
       "Bash(ls .env*)",
-      "Bash(cat .env.test)"
+      "Bash(cat .env.test)",
+      "mcp__claude_ai_Context7__query-docs",
+      "Bash(python scripts/search.py \"internal SaaS admin dashboard dark mode implementation panel\" --design-system -f markdown -p \"GR7 Painel Implantação\")",
+      "Bash(python scripts/search.py \"internal SaaS admin panel dark mode productivity\" --design-system -f markdown -p \"GR7 Painel Implantacao\")",
+      "Bash(python scripts/search.py \"dark mode admin dashboard table accessibility contrast\" --domain ux -n 8)",
+      "Bash(python scripts/search.py \"form validation loading state empty state feedback\" --domain ux -n 6)"
     ]
   }
 }

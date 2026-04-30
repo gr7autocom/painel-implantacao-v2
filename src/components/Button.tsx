@@ -37,7 +37,7 @@ export function Button({
     <button
       {...props}
       className={cn(
-        'inline-flex items-center gap-2 font-medium rounded-lg transition-colors disabled:opacity-50',
+        'inline-flex items-center gap-2 font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
         variantClasses[variant],
         sizeClasses[size],
         className

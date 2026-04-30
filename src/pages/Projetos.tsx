@@ -315,7 +315,7 @@ export function Projetos() {
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center animate-pulse">
+            <div key={i} className="bg-white border border-gray-300 rounded-xl p-4 flex flex-col items-center animate-pulse">
               <div className="w-20 h-20 rounded-full bg-gray-200 mb-3" />
               <div className="h-3 bg-gray-200 rounded w-3/4 mb-2" />
               <div className="h-2.5 bg-gray-200 rounded w-1/2 mb-4" />

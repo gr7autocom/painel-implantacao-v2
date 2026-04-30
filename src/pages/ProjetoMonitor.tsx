@@ -182,7 +182,7 @@ export function ProjetoMonitor() {
         <Link to="/projetos" className="inline-flex items-center gap-1 text-sm text-blue-600 mb-4">
           <ArrowLeft className="w-4 h-4" /> Voltar para Projetos
         </Link>
-        <div className="bg-white border border-gray-200 rounded-xl p-5 h-40 skeleton-pulse" />
+        <div className="bg-white border border-gray-300 rounded-xl p-5 h-40 skeleton-pulse" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </div>
@@ -285,7 +285,7 @@ export function ProjetoMonitor() {
         />
       </div>
 
-      <section className="mt-4 bg-white border border-gray-200 rounded-xl">
+      <section className="mt-4 bg-white border border-gray-300 rounded-xl">
         <div className="flex items-center gap-1 border-b border-gray-200 px-2">
           <AbaButton
             ativo={aba === 'atividade'}
@@ -424,7 +424,7 @@ function HeaderMonitor({
             ? 'bg-amber-500'
             : 'bg-gray-300'
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="bg-white border border-gray-300 rounded-xl p-5">
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[#ffffff] shrink-0">
           <FolderKanban className="w-6 h-6" />
@@ -506,7 +506,7 @@ function KpiCard({
 }) {
   const c = ACCENT[accent]
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-white border border-gray-300 rounded-lg p-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-gray-500 font-medium">{titulo}</p>
@@ -521,7 +521,7 @@ function KpiCard({
 
 function EquipeCard({ equipe }: { equipe: EquipeItem[] }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-xl">
+    <section className="bg-white border border-gray-300 rounded-xl">
       <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
         <Users className="w-4 h-4 text-gray-500" />
         <h2 className="text-sm font-semibold text-gray-900">Equipe no projeto</h2>
@@ -569,7 +569,7 @@ function ProximosPrazosCard({
   onAbrir: (t: TarefaComRelacoes) => void
 }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-xl">
+    <section className="bg-white border border-gray-300 rounded-xl">
       <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
         <Clock className="w-4 h-4 text-gray-500" />
         <h2 className="text-sm font-semibold text-gray-900">Próximos prazos</h2>
@@ -804,7 +804,7 @@ function ComentariosFeed({
   return (
     <div className="space-y-4">
       {podeComentar && meuId && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className="bg-gray-50 border border-gray-300 rounded-lg p-3">
           {erro && (
             <div className="mb-2 p-2 bg-red-400/15 border border-red-400/40 text-red-300 text-xs rounded">
               {erro}
@@ -855,7 +855,7 @@ function ComentariosFeed({
             const tarefaCodigo = (meta?.tarefa_codigo as number | undefined) ?? null
             const tarefaTitulo = (meta?.tarefa_titulo as string | undefined) ?? null
             return (
-              <li key={ev.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <li key={ev.id} className="bg-gray-50 border border-gray-300 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <UserAvatar nome={ev.ator?.nome ?? '?'} fotoUrl={ev.ator?.foto_url} size="sm" />
                   <div className="flex-1 min-w-0">

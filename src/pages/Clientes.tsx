@@ -221,7 +221,7 @@ export function Clientes() {
       {/* Cards — mobile */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          [1, 2, 3].map((i) => <SkeletonRow key={i} className="bg-white border border-gray-200 rounded-lg" />)
+          [1, 2, 3].map((i) => <SkeletonRow key={i} className="bg-white border border-gray-300 rounded-lg" />)
         ) : itensFiltrados.length === 0 ? (
           <EmptyState
             icon={<Users className="w-8 h-8" />}
@@ -236,7 +236,7 @@ export function Clientes() {
           />
         ) : (
           itensFiltrados.map((c) => (
-            <div key={c.id} className="bg-white border border-gray-200 rounded-lg p-4">
+            <div key={c.id} className="bg-white border border-gray-300 rounded-lg p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <button
                   type="button"
@@ -281,7 +281,7 @@ export function Clientes() {
       </div>
 
       {/* Tabela — desktop */}
-      <div className="hidden md:block bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="hidden md:block bg-white border border-gray-300 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>

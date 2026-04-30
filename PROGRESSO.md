@@ -4,6 +4,13 @@
 
 ## ✅ Concluído
 
+### Auditoria UI/UX — Etapa 1 (Correções estruturais)
+
+- [x] `Button.tsx` — `cursor-pointer` + `disabled:cursor-not-allowed`
+- [x] `Modal.tsx` — ID do título com `useId()` (único por instância, corrige acessibilidade)
+- [x] `index.css` — `line-height: 1.5` global no body
+- [x] Bordas de cards/páginas — `border border-gray-200` → `border border-gray-300` em todas as páginas e componentes estruturais (Layout, Sidebar)
+
 ### Projetos — separação por abas e nova regra de criação
 
 - [x] 3 abas em `/projetos`: Em andamento / Concluídos (Concluído + Inaugurado) / Cancelados

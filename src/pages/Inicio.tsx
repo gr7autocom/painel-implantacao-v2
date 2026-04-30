@@ -156,7 +156,7 @@ export function Inicio() {
             abertasGlobal={countAbertasGlobal}
           />
 
-          <section className="bg-white border border-gray-200 rounded-lg">
+          <section className="bg-white border border-gray-300 rounded-lg">
             <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <h2 className="text-sm font-semibold text-gray-900">Suas atividades</h2>
               <Link
@@ -307,7 +307,7 @@ function CardTotal({
 }) {
   const c = ACCENT[accent]
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-white border border-gray-300 rounded-lg p-4">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs text-gray-500 font-medium">{titulo}</p>
@@ -458,7 +458,7 @@ function Calendario({
 
   return (
     <section
-      className="bg-white border border-gray-200 rounded-lg p-4"
+      className="bg-white border border-gray-300 rounded-lg p-4"
       aria-label={`Calendário — ${mesLabel}`}
     >
       <header className="flex items-center justify-between mb-3">
@@ -556,7 +556,7 @@ function AtividadesDoDia({
   })
 
   return (
-    <section className="bg-white border border-gray-200 rounded-lg">
+    <section className="bg-white border border-gray-300 rounded-lg">
       <header className="px-4 py-3 border-b border-gray-200">
         <h2 className="text-sm font-semibold text-gray-900">
           Atividades em <span className="font-normal text-gray-600">{label}</span>
