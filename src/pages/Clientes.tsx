@@ -4,28 +4,12 @@ import { supabase } from '../lib/supabase'
 import { AlertBanner } from '../components/AlertBanner'
 import { Button } from '../components/Button'
 import { usePermissao } from '../lib/permissoes'
-import type { Cliente, EtapaImplantacao } from '../lib/types'
+import type { Cliente } from '../lib/types'
 import { baixarArquivo, gerarCsvClientes } from '../lib/clientes-csv'
 import { ImportarClientesModal } from '../components/clientes/ImportarClientesModal'
-
-// Cliente carregado com os projetos ativos. A etapa exibida e editada na grid
-// é a do primeiro projeto ativo (a coluna `clientes.etapa_implantacao_id` só
-// serve como default na criação dos projetos).
-type ProjetoMin = {
-  id: string
-  ativo: boolean
-  etapa_implantacao_id: string | null
-  etapa_implantacao?: Pick<EtapaImplantacao, 'id' | 'nome' | 'cor' | 'ordem'> | null
-}
-type ClienteComProjetos = Cliente & { projetos?: ProjetoMin[] | null }
-
-function projetoPrincipal(c: ClienteComProjetos): ProjetoMin | null {
-  return (c.projetos ?? []).find((p) => p.ativo) ?? null
-}
 import { Modal } from '../components/Modal'
 import { ClienteModal } from '../components/clientes/ClienteModal'
 import { ClienteViewModal } from '../components/clientes/ClienteViewModal'
-import { EtapaImplantacaoBadge } from '../components/projetos/EtapaImplantacaoBadge'
 import { EmptyState } from '../components/EmptyState'
 import { SkeletonRow } from '../components/SkeletonRow'
 import { PageHeader } from '../components/PageHeader'
@@ -39,32 +23,26 @@ export function Clientes() {
   const perm = usePermissao()
   const { toast } = useToast()
   usePageTitle('Clientes')
-  const [items, setItems] = useState<ClienteComProjetos[]>([])
+  const [items, setItems] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<ClienteComProjetos | null>(null)
-  const [viewing, setViewing] = useState<ClienteComProjetos | null>(null)
+  const [editing, setEditing] = useState<Cliente | null>(null)
+  const [viewing, setViewing] = useState<Cliente | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
   const [busca, setBusca] = useState('')
-  const [etapaFiltro, setEtapaFiltro] = useState('')
-  const [etapasImplantacao, setEtapasImplantacao] = useState<EtapaImplantacao[]>([])
   const [viewStatus, setViewStatus] = useState<StatusView>('ativos')
   const [importarOpen, setImportarOpen] = useState(false)
 
   async function load() {
     setLoading(true)
     setError(null)
-    const [cliRes, etRes] = await Promise.all([
-      supabase
-        .from('clientes')
-        .select('*, projetos(id, ativo, etapa_implantacao_id, etapa_implantacao:etapas_implantacao(id, nome, cor, ordem))')
-        .order('codigo_cliente', { nullsFirst: false }),
-      supabase.from('etapas_implantacao').select('*').eq('ativo', true).order('ordem'),
-    ])
-    if (cliRes.error) setError(cliRes.error.message)
-    else setItems((cliRes.data ?? []) as unknown as ClienteComProjetos[])
-    setEtapasImplantacao((etRes.data ?? []) as EtapaImplantacao[])
+    const { data, error: err } = await supabase
+      .from('clientes')
+      .select('*')
+      .order('codigo_cliente', { nullsFirst: false })
+    if (err) setError(err.message)
+    else setItems((data ?? []) as Cliente[])
     setLoading(false)
   }
 
@@ -104,7 +82,6 @@ export function Clientes() {
 
   const itensFiltrados = useMemo(() => {
     return items.filter((c) => {
-      // Filtro de status (ativos / inativos) — sempre aplicado
       if (viewStatus === 'ativos' && !c.ativo) return false
       if (viewStatus === 'inativos' && c.ativo) return false
       if (busca.trim()) {
@@ -113,13 +90,13 @@ export function Clientes() {
           c.nome_fantasia.toLowerCase().includes(b) ||
           c.razao_social.toLowerCase().includes(b) ||
           c.cnpj.toLowerCase().includes(b) ||
+          (c.codigo_cliente?.toLowerCase().includes(b) ?? false) ||
           (c.responsavel_comercial?.toLowerCase().includes(b) ?? false)
         if (!match) return false
       }
-      if (etapaFiltro && projetoPrincipal(c)?.etapa_implantacao_id !== etapaFiltro) return false
       return true
     })
-  }, [items, viewStatus, busca, etapaFiltro])
+  }, [items, viewStatus, busca])
 
   function openCreate() {
     setEditing(null)
@@ -139,7 +116,7 @@ export function Clientes() {
     toast(`${itensFiltrados.length} cliente${itensFiltrados.length === 1 ? '' : 's'} exportado${itensFiltrados.length === 1 ? '' : 's'}.`)
   }
 
-  function openEdit(item: ClienteComProjetos) {
+  function openEdit(item: Cliente) {
     setEditing(item)
     setModalOpen(true)
   }
@@ -225,24 +202,12 @@ export function Clientes() {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <label htmlFor="clientes-etapa-filtro" className="sr-only">Filtrar por etapa</label>
-        <select
-          id="clientes-etapa-filtro"
-          value={etapaFiltro}
-          onChange={(e) => setEtapaFiltro(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-full sm:w-auto"
-        >
-          <option value="">Todas as etapas</option>
-          {etapasImplantacao.map((e) => (
-            <option key={e.id} value={e.id}>{e.nome}</option>
-          ))}
-        </select>
         <SearchInput
           id="clientes-busca"
           label="Buscar clientes"
           value={busca}
           onChange={setBusca}
-          placeholder="Buscar por nome, CNPJ ou responsável..."
+          placeholder="Buscar por código, nome, CNPJ..."
           className="w-full sm:w-80"
         />
       </div>
@@ -278,16 +243,15 @@ export function Clientes() {
                   onClick={() => setViewing(c)}
                   className="text-left min-w-0"
                 >
-                  <p className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">{c.nome_fantasia}</p>
+                  <p className="font-semibold text-gray-900 text-sm hover:text-blue-600 transition-colors">
+                    {c.codigo_cliente ? <span className="text-gray-400 font-normal mr-1">#{c.codigo_cliente}</span> : null}
+                    {c.nome_fantasia}
+                  </p>
                   <p className="text-xs text-gray-500">{c.razao_social}</p>
                 </button>
-                <EtapaImplantacaoBadge
-                  etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
-                  compacto
-                />
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
-                {c.responsavel_comercial && <span>Resp.: {c.responsavel_comercial}</span>}
+                {c.cnpj && <span>{c.cnpj}</span>}
                 {c.telefone && <span>Tel: {c.telefone}</span>}
                 <span>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
               </div>
@@ -321,12 +285,12 @@ export function Clientes() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>
+              <th className="px-4 py-3 font-medium w-24">Código</th>
               <th className="px-4 py-3 font-medium">Razão Social</th>
               <th className="px-4 py-3 font-medium">Nome Fantasia</th>
-              <th className="px-4 py-3 font-medium">Etapa</th>
-              <th className="px-4 py-3 font-medium">Responsável</th>
+              <th className="px-4 py-3 font-medium">CNPJ</th>
               <th className="px-4 py-3 font-medium">Telefone</th>
-              <th className="px-4 py-3 font-medium">Data cadastro</th>
+              <th className="px-4 py-3 font-medium">Data Cadastro</th>
               <th className="px-4 py-3 font-medium w-24 text-right">Ações</th>
             </tr>
           </thead>
@@ -358,6 +322,7 @@ export function Clientes() {
             ) : (
               itensFiltrados.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{c.codigo_cliente ?? '-'}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">
                     <button
                       type="button"
@@ -376,13 +341,7 @@ export function Clientes() {
                       {c.nome_fantasia}
                     </button>
                   </td>
-                  <td className="px-4 py-3">
-                    <EtapaImplantacaoBadge
-                  etapa={projetoPrincipal(c)?.etapa_implantacao ?? null}
-                  compacto
-                />
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{c.responsavel_comercial ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.cnpj}</td>
                   <td className="px-4 py-3 text-gray-600">{c.telefone ?? '-'}</td>
                   <td className="px-4 py-3 text-gray-600">{new Date(c.created_at).toLocaleDateString('pt-BR')}</td>
                   <td className="px-4 py-3">
