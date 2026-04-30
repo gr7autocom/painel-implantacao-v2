@@ -47,7 +47,8 @@
       "Bash(python scripts/search.py \"internal SaaS admin dashboard dark mode implementation panel\" --design-system -f markdown -p \"GR7 Painel Implantação\")",
       "Bash(python scripts/search.py \"internal SaaS admin panel dark mode productivity\" --design-system -f markdown -p \"GR7 Painel Implantacao\")",
       "Bash(python scripts/search.py \"dark mode admin dashboard table accessibility contrast\" --domain ux -n 8)",
-      "Bash(python scripts/search.py \"form validation loading state empty state feedback\" --domain ux -n 6)"
+      "Bash(python scripts/search.py \"form validation loading state empty state feedback\" --domain ux -n 6)",
+      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\('HAS inicio_previsto:', 'inicio_previsto' in data['rows'][0]['prosrc']\\)\")"
     ]
   }
 }

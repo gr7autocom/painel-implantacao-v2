@@ -246,6 +246,7 @@ export type Cliente = {
   modulos: string[]
   etapa_implantacao_id: string | null
   ativo: boolean
+  registro_gerado: boolean
   created_at: string
   updated_at: string
 }

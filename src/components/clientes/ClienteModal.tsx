@@ -52,6 +52,7 @@ type FormState = {
   pdv_qtd: number
   modulos: Set<string>
   ativo: boolean
+  registro_gerado: boolean
 }
 
 function emptyForm(): FormState {
@@ -76,6 +77,7 @@ function emptyForm(): FormState {
     pdv_qtd: 0,
     modulos: new Set(),
     ativo: true,
+    registro_gerado: false,
   }
 }
 
@@ -157,6 +159,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         pdv_qtd: cliente.pdv_qtd,
         modulos: new Set(cliente.modulos ?? []),
         ativo: cliente.ativo,
+        registro_gerado: cliente.registro_gerado,
       }
     } else {
       novo = emptyForm()
@@ -264,6 +267,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       pdv_qtd: form.pdv_qtd,
       modulos: Array.from(form.modulos),
       ativo: form.ativo,
+      registro_gerado: form.registro_gerado,
       updated_at: new Date().toISOString(),
     }
 
@@ -674,17 +678,30 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
           )}
         </Secao>
 
-        <Secao titulo="Status">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.ativo}
-              onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-gray-700">Cliente ativo</span>
-          </label>
-        </Secao>
+        <div className="grid grid-cols-2 gap-3">
+          <Secao titulo="Status">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.ativo}
+                onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-700">Cliente ativo</span>
+            </label>
+          </Secao>
+          <Secao titulo="Registro">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={form.registro_gerado}
+                onChange={(e) => setForm({ ...form, registro_gerado: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-700">Gerado</span>
+            </label>
+          </Secao>
+        </div>
       </form>
     </Modal>
 

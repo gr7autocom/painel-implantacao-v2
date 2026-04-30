@@ -4,6 +4,12 @@
 
 ## ✅ Concluído
 
+### Campo "Registro Gerado" no cadastro de cliente
+
+- [x] `20260430000003_clientes_registro_gerado.sql` — coluna `registro_gerado BOOLEAN NOT NULL DEFAULT FALSE` na tabela `clientes`
+- [x] `src/lib/types.ts` — campo `registro_gerado: boolean` adicionado ao tipo `Cliente`
+- [x] `src/components/clientes/ClienteModal.tsx` — campo no FormState, emptyForm, carregamento, payload de save e UI (seção "Status" vira duas colunas: "Status" + "Registro" com checkbox "Gerado")
+
 ### Fix: Notificações nativas Windows (Talk + Tarefas)
 
 - [x] `src/lib/notificacoes-nativas.ts` — utilitário compartilhado: usa `ServiceWorker.showNotification()` (único que funciona no PWA standalone do Windows), suprime quando `document.visibilityState === 'visible'`, fallback para `new Notification()` fora do PWA
