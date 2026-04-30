@@ -4,6 +4,12 @@
 
 ## ✅ Concluído
 
+### Auditoria UI/UX — Etapa 3 (Responsividade)
+
+- [x] `index.css` — `font-size: 16px` em `input, select, textarea` no mobile (`max-width: 767px`) para eliminar zoom automático do iOS Safari
+- [x] `Layout.tsx` — `md:pr-14` no wrapper interno do conteúdo para proteger contra sobreposição do sino flutuante (`fixed top-3 right-4`) em desktop
+- [x] `Clientes.tsx` — tabela desktop com `overflow-x-auto` (era `overflow-hidden`), permitindo scroll horizontal em tablets estreitos (768px)
+
 ### Auditoria UI/UX — Etapa 4 (Acessibilidade e UX)
 
 - [x] `Toast.tsx` — `role="alert"` para erros, `role="status"` para success/info/task (leitores de tela anunciam automaticamente)

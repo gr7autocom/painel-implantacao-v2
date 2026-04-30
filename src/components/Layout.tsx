@@ -56,7 +56,7 @@ export function Layout() {
           <NotificationBell />
         </div>
         <main id="main-content" className="flex-1 p-4 sm:p-6 xl:p-8">
-          <div className="max-w-screen-2xl mx-auto">
+          <div className="max-w-screen-2xl mx-auto md:pr-14">
             <Outlet />
           </div>
         </main>

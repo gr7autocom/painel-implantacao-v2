@@ -263,7 +263,7 @@ export function Clientes() {
       </div>
 
       {/* Tabela — desktop */}
-      <div className="hidden md:block bg-white border border-gray-300 rounded-lg overflow-hidden">
+      <div className="hidden md:block bg-white border border-gray-300 rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>
