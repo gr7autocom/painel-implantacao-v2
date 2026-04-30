@@ -215,6 +215,14 @@ export type UsuarioAutenticado = Usuario & {
   permissao: Pick<Permissao, 'id' | 'nome' | 'slug' | 'cor' | 'capacidades'> | null
 }
 
+export type RegimeCliente = {
+  id: string
+  nome: string
+  ativo: boolean
+  created_at: string
+  updated_at: string
+}
+
 export type Cliente = {
   id: string
   razao_social: string
@@ -228,6 +236,7 @@ export type Cliente = {
   contador: string | null
   telefone_contabilidade: string | null
   email_contabilidade: string | null
+  regime_cliente_id: string | null
   data_venda: string | null
   importar_dados: boolean
   sistema_atual: string | null

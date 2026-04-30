@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, FolderPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePermissao } from '../../lib/permissoes'
-import type { Cliente, EtapaImplantacao } from '../../lib/types'
+import type { Cliente, EtapaImplantacao, RegimeCliente } from '../../lib/types'
 import {
   cnpjValido,
   formatarCnpj,
@@ -43,6 +43,7 @@ type FormState = {
   contador: string
   telefone_contabilidade: string
   email_contabilidade: string
+  regime_cliente_id: string
   data_venda: string
   importar_dados: boolean
   sistema_atual: string
@@ -66,6 +67,7 @@ function emptyForm(): FormState {
     contador: '',
     telefone_contabilidade: '',
     email_contabilidade: '',
+    regime_cliente_id: '',
     data_venda: '',
     importar_dados: false,
     sistema_atual: '',
@@ -98,6 +100,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [etapas, setEtapas] = useState<EtapaImplantacao[]>([])
+  const [regimes, setRegimes] = useState<RegimeCliente[]>([])
   const [projetosDoCliente, setProjetosDoCliente] = useState<ProjetoDoCliente[]>([])
   const [confirmDescartarOpen, setConfirmDescartarOpen] = useState(false)
   // "Criar projeto" — só ativo em modo edição e quando cliente não tem projeto ativo
@@ -145,6 +148,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         contador: cliente.contador ?? '',
         telefone_contabilidade: cliente.telefone_contabilidade ?? '',
         email_contabilidade: cliente.email_contabilidade ?? '',
+        regime_cliente_id: cliente.regime_cliente_id ?? '',
         data_venda: cliente.data_venda ?? '',
         importar_dados: cliente.importar_dados,
         sistema_atual: cliente.sistema_atual ?? '',
@@ -187,6 +191,12 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       .eq('ativo', true)
       .order('ordem')
       .then(({ data }) => setEtapas((data ?? []) as EtapaImplantacao[]))
+    supabase
+      .from('regimes_cliente')
+      .select('*')
+      .eq('ativo', true)
+      .order('nome')
+      .then(({ data }) => setRegimes((data ?? []) as RegimeCliente[]))
   }, [open])
 
   // Busca etapa atual via projetos do cliente (fonte de verdade desde o refactor
@@ -245,6 +255,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       contador: form.contador.trim() || null,
       telefone_contabilidade: form.telefone_contabilidade.trim() || null,
       email_contabilidade: form.email_contabilidade.trim() || null,
+      regime_cliente_id: form.regime_cliente_id || null,
       data_venda: form.data_venda || null,
       importar_dados: form.importar_dados,
       sistema_atual: form.importar_dados ? form.sistema_atual.trim() || null : null,
@@ -431,7 +442,20 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 </p>
               )}
             </div>
-            <div className="col-span-12 md:col-span-6">
+            <div className="col-span-12 md:col-span-4">
+              <Label>Regime do cliente</Label>
+              <select
+                value={form.regime_cliente_id}
+                onChange={(e) => setForm({ ...form, regime_cliente_id: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">— Selecione —</option>
+                {regimes.map((r) => (
+                  <option key={r.id} value={r.id}>{r.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-12 md:col-span-4">
               <Label>Data da venda</Label>
               <input
                 type="date"
@@ -440,7 +464,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-6">
+            <div className="col-span-12 md:col-span-4">
               <Label>Telefone Empresa</Label>
               <input
                 type="text"
