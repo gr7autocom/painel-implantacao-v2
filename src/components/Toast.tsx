@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, dismissByTag }}>
       {children}
-      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] right-6 z-[200] flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
           <ToastBubble key={t.id} item={t} onRemove={() => remove(t.id)} />
         ))}
@@ -113,6 +113,7 @@ function ToastBubble({ item, onRemove }: { item: ToastItem; onRemove: () => void
 
   return (
     <div
+      role={item.type === 'error' ? 'alert' : 'status'}
       onMouseEnter={pauseTimer}
       onMouseLeave={startTimer}
       className={cn(

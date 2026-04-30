@@ -1,4 +1,4 @@
-import { FolderKanban, Pencil, Trash2 } from 'lucide-react'
+﻿import { FolderKanban, Pencil, Trash2 } from 'lucide-react'
 import type { ProjetoComRelacoes } from '../../lib/types'
 import { type Progresso, corDaBarra } from '../../lib/projetos-utils'
 import { StatusAtividadeBadge } from './StatusAtividadeBadge'
@@ -47,7 +47,7 @@ export function CardProjeto({
           onOpen()
         }
       }}
-      className="group relative bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center cursor-pointer hover:shadow-md hover:border-blue-200 transition-all select-none"
+      className="group relative bg-white border border-gray-300 rounded-xl p-4 flex flex-col items-center text-center cursor-pointer hover:shadow-md hover:border-blue-200 transition-all select-none"
     >
       {(onRenomear || onExcluir) && (
         <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">

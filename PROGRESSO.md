@@ -4,6 +4,21 @@
 
 ## ✅ Concluído
 
+### Auditoria UI/UX — Etapa 4 (Acessibilidade e UX)
+
+- [x] `Toast.tsx` — `role="alert"` para erros, `role="status"` para success/info/task (leitores de tela anunciam automaticamente)
+- [x] `Toast.tsx` — posição `bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]` para safe-area no iOS
+- Erros de formulário (`aria-invalid` + `aria-describedby`): já corretos em todo o projeto
+- Botões ícone (`aria-label`): já corretos em todo o projeto
+
+### Auditoria UI/UX — Etapa 2 (Padronização de componentes)
+
+- [x] `Tabs.tsx` — novo componente reutilizável com variante `underline` e `box`, suporte a ícone, badge de contagem, cor por aba e modo scrollable
+- [x] `Projetos.tsx` — tabs migradas para `<Tabs variant="box">`, select com `text-gray-900`, botão "Novo projeto" usando `<Button>`
+- [x] `Clientes.tsx` — tabs migradas para `<Tabs>` (underline)
+- [x] `Configuracoes.tsx` — tabs migradas para `<Tabs scrollable className="mb-6">`
+- [x] Bordas de cards/componentes — `border border-gray-200` → `border border-gray-300` em todos os 29 arquivos de `src/components/`
+
 ### Auditoria UI/UX — Etapa 1 (Correções estruturais)
 
 - [x] `Button.tsx` — `cursor-pointer` + `disabled:cursor-not-allowed`

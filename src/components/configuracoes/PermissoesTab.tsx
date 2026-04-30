@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Lock, Pencil, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Permissao } from '../../lib/types'
@@ -162,7 +162,7 @@ export function PermissoesTab() {
         </AlertBanner>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>
@@ -327,7 +327,7 @@ export function PermissoesTab() {
               {GRUPOS_ACOES.map((grupo) => (
                 <fieldset
                   key={grupo.titulo}
-                  className="border border-gray-200 rounded-lg p-3"
+                  className="border border-gray-300 rounded-lg p-3"
                 >
                   <legend className="px-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     {grupo.titulo}

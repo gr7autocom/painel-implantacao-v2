@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { GitBranch, Plus, UserRound } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePermissao } from '../../lib/permissoes'
@@ -86,7 +86,7 @@ export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-3 bg-white border border-gray-200 rounded-lg animate-pulse">
+              <div key={i} className="p-3 bg-white border border-gray-300 rounded-lg animate-pulse">
                 <div className="h-3 bg-gray-200 rounded w-2/3 mb-2" />
                 <div className="h-2 bg-gray-200 rounded w-1/3" />
               </div>
@@ -118,7 +118,7 @@ export function TarefaSubtarefasTab({ tarefa, onAbrirSubtarefa, onCriarSubtarefa
                   <button
                     type="button"
                     onClick={() => onAbrirSubtarefa(s)}
-                    className="w-full text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-400/5 transition-colors"
+                    className="w-full text-left p-3 bg-white border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-400/5 transition-colors"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-caption text-gray-400 font-mono">#{s.codigo}</span>

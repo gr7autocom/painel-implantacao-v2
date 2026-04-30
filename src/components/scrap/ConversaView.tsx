@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { ArrowDown, ArrowLeft, BellOff, MessageSquarePlus, MessageSquareText, MoreVertical, Search, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { UserAvatar } from '../UserAvatar'
@@ -613,7 +613,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
                   <MoreVertical className="w-5 h-5" />
                 </button>
                 {menuHeaderAberto && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[180px]">
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg py-1 z-20 min-w-[180px]">
                     <button
                       type="button"
                       onClick={() => {

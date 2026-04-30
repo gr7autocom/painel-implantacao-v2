@@ -1,8 +1,8 @@
-import { cn } from '../lib/utils'
+﻿import { cn } from '../lib/utils'
 
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('bg-white border border-gray-200 rounded-lg p-4', className)}>
+    <div className={cn('bg-white border border-gray-300 rounded-lg p-4', className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-2 flex-1">
           <div className="h-3 bg-gray-200 rounded skeleton-pulse w-1/3" />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth'
 import { usePresence } from '../../lib/usePresence'
@@ -65,7 +65,7 @@ export function NovaConversaModal({ open, onClose, onConversaAberta }: Props) {
           onChange={setBusca}
           placeholder="Buscar por nome ou email..."
         />
-        <div className="max-h-72 overflow-y-auto border border-gray-200 rounded-lg">
+        <div className="max-h-72 overflow-y-auto border border-gray-300 rounded-lg">
           {filtrados.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-6">Nenhum usuário encontrado.</p>
           ) : (

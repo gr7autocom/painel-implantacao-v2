@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+﻿import { Pencil } from 'lucide-react'
 import { usePermissao } from '../../lib/permissoes'
 import type { Cliente } from '../../lib/types'
 import { MODULOS_CLIENTE } from '../../lib/clientes-utils'
@@ -26,7 +26,7 @@ function Campo({ label, value }: { label: string; value?: string | null }) {
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <fieldset className="border border-gray-200 rounded-lg p-3">
+    <fieldset className="border border-gray-300 rounded-lg p-3">
       <legend className="px-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">
         {titulo}
       </legend>

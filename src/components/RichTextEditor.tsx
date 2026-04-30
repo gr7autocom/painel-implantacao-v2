@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+﻿import { useEffect, useRef } from 'react'
 import DOMPurify from 'dompurify'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -109,7 +109,7 @@ export function RichTextEditor({ value, onChange, disabled, placeholder }: Props
   if (!editor) return null
 
   const containerClass = disabled
-    ? 'border border-gray-200 bg-gray-50 rounded-lg'
+    ? 'border border-gray-300 bg-gray-50 rounded-lg'
     : 'border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500'
 
   return (
@@ -172,7 +172,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <select
         value={currentFont}
         onChange={(e) => handleFontChange(e.target.value)}
-        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+        className="text-xs bg-white border border-gray-300 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
         title="Família da fonte"
       >
         <option value="">Sans Serif</option>
@@ -186,7 +186,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       <select
         value={currentHeading ?? 0}
         onChange={(e) => handleHeadingChange(Number(e.target.value))}
-        className="text-xs bg-white border border-gray-200 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+        className="text-xs bg-white border border-gray-300 rounded px-2 py-1 outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
         title="Estilo do parágrafo"
       >
         {HEADING_LEVELS.map((h) => (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, Ban, Check, CheckCheck, Download, ExternalLink, FileText, Loader2, MoreVertical, RotateCcw, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { UserAvatar } from '../UserAvatar'
@@ -209,7 +209,7 @@ export function MensagemBubble({ mensagem, ehMinha, remetente, mostrarAvatar, on
               </button>
               {menuAberto && (
                 <div
-                  className={`absolute top-full mt-1 ${ehMinha ? 'right-0' : 'left-0'} bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[140px]`}
+                  className={`absolute top-full mt-1 ${ehMinha ? 'right-0' : 'left-0'} bg-white border border-gray-300 rounded-lg shadow-lg py-1 z-20 min-w-[140px]`}
                 >
                   <button
                     type="button"

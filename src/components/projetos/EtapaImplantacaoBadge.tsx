@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
@@ -158,7 +158,7 @@ export function EtapaImplantacaoBadge({
 
         {open && (
           <div
-            className="absolute z-40 mt-1 left-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]"
+            className="absolute z-40 mt-1 left-0 bg-white border border-gray-300 rounded-lg shadow-lg py-1 min-w-[180px]"
             onClick={(e) => e.stopPropagation()}
           >
             {etapas.length === 0 ? (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { FileText, Image, Archive, File, Upload, X, Download, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
@@ -254,7 +254,7 @@ export function TarefaAnexosSection({ tarefaId, readonly, onPendingChange }: Pro
 
       {/* Uploads em progresso */}
       {uploading.map((u) => (
-        <div key={u.id} className="mt-2 flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
+        <div key={u.id} className="mt-2 flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm">
           <Loader2 className="w-4 h-4 text-blue-500 animate-spin shrink-0" />
           <span className="flex-1 text-gray-700 truncate">{u.nome}</span>
           {u.erro ? (
@@ -269,7 +269,7 @@ export function TarefaAnexosSection({ tarefaId, readonly, onPendingChange }: Pro
       {pendingAnexos.length > 0 && (
         <ul className="mt-2 space-y-1">
           {pendingAnexos.map((a) => (
-            <li key={a.uid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm group">
+            <li key={a.uid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm group">
               <span className="text-gray-400 shrink-0">{iconeArquivo(a.tipo_mime)}</span>
               <span className="flex-1 truncate text-gray-700" title={a.nome_arquivo}>{a.nome_arquivo}</span>
               {a.tamanho_bytes && (
@@ -305,7 +305,7 @@ export function TarefaAnexosSection({ tarefaId, readonly, onPendingChange }: Pro
           {savedAnexos.map((a) => (
             <li
               key={a.id}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm group"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm group"
             >
               <span className="text-gray-400 shrink-0">{iconeArquivo(a.tipo_mime)}</span>
               <span className="flex-1 truncate text-gray-700" title={a.nome_arquivo}>{a.nome_arquivo}</span>

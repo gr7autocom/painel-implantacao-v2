@@ -18,7 +18,9 @@ import { NomeProjetoModal } from '../components/projetos/NomeProjetoModal'
 import { type Progresso, PROGRESSO_VAZIO } from '../lib/projetos-utils'
 import { PageHeader } from '../components/PageHeader'
 import { SearchInput } from '../components/SearchInput'
+import { Button } from '../components/Button'
 import { usePageTitle } from '../lib/utils'
+import { Tabs } from '../components/Tabs'
 
 const SELECT_PROJETO =
   '*, cliente:clientes(id, nome_fantasia, razao_social), etapa_implantacao:etapas_implantacao(id, nome, cor, ordem)'
@@ -192,70 +194,17 @@ export function Projetos() {
       />
 
       {/* Abas */}
-      <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
-        <button
-          type="button"
-          onClick={() => setAbaAtiva('andamento')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
-            abaAtiva === 'andamento'
-              ? 'border-gray-200 border-b-white bg-white text-blue-600'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <FolderKanban className="w-4 h-4" />
-          Em andamento
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'andamento' ? 'bg-blue-400/25 text-blue-300' : 'bg-gray-400/20 text-gray-400'}`}>
-            {projetosAndamento.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setAbaAtiva('pendentes')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
-            abaAtiva === 'pendentes'
-              ? 'border-gray-200 border-b-white bg-white text-amber-600'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <FolderClock className="w-4 h-4" />
-          Pendentes
-          {projetosPendentes.length > 0 && (
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'pendentes' ? 'bg-amber-400/25 text-amber-300' : 'bg-amber-400/20 text-amber-400'}`}>
-              {projetosPendentes.length}
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setAbaAtiva('concluidos')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
-            abaAtiva === 'concluidos'
-              ? 'border-gray-200 border-b-white bg-white text-emerald-600'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <FolderCheck className="w-4 h-4" />
-          Concluídos
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'concluidos' ? 'bg-emerald-400/25 text-emerald-300' : 'bg-gray-400/20 text-gray-400'}`}>
-            {projetosConcluidos.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setAbaAtiva('cancelados')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none -mb-px border border-transparent ${
-            abaAtiva === 'cancelados'
-              ? 'border-gray-200 border-b-white bg-white text-red-600'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          <FolderX className="w-4 h-4" />
-          Cancelados
-          <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${abaAtiva === 'cancelados' ? 'bg-red-400/25 text-red-300' : 'bg-gray-400/20 text-gray-400'}`}>
-            {projetosCancelados.length}
-          </span>
-        </button>
-      </div>
+      <Tabs
+        variant="box"
+        tabs={[
+          { key: 'andamento', label: 'Em andamento', icon: FolderKanban, count: projetosAndamento.length, color: 'blue' },
+          { key: 'pendentes', label: 'Pendentes', icon: FolderClock, count: projetosPendentes.length, color: 'amber' },
+          { key: 'concluidos', label: 'Concluídos', icon: FolderCheck, count: projetosConcluidos.length, color: 'emerald' },
+          { key: 'cancelados', label: 'Cancelados', icon: FolderX, count: projetosCancelados.length, color: 'red' },
+        ]}
+        activeKey={abaAtiva}
+        onChange={(k) => setAbaAtiva(k as AbaAtiva)}
+      />
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
@@ -264,7 +213,7 @@ export function Projetos() {
           id="projetos-etapa-filtro"
           value={etapaFiltro}
           onChange={(e) => setEtapaFiltro(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-full sm:w-auto"
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-900 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 w-full sm:w-auto"
         >
           <option value="">Todas as etapas</option>
           {etapasImplantacao.map((e) => (
@@ -287,15 +236,14 @@ export function Projetos() {
             Selecione um projeto abaixo ou inicie um novo:
           </p>
           <div className="flex flex-col items-center gap-1.5">
-            <button
-              type="button"
+            <Button
               onClick={() => setSelecionarOpen(true)}
               disabled={criandoProjeto}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-[#ffffff] text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="px-5 py-2.5 font-semibold"
             >
               <FolderPlus className="w-4 h-4" />
               {criandoProjeto ? 'Criando...' : 'Novo projeto'}
-            </button>
+            </Button>
             <span className="text-xs text-gray-400">
               Vincula a um cliente já cadastrado.{' '}
               <button

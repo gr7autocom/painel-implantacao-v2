@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { MessageSquare, Send, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
@@ -109,7 +109,7 @@ export function TarefaComentariosTab({ tarefa, onChange }: Props) {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-50 border border-gray-200 rounded-lg p-3 animate-pulse">
+              <div key={i} className="bg-gray-50 border border-gray-300 rounded-lg p-3 animate-pulse">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-7 h-7 rounded-full bg-gray-200 shrink-0" />
                   <div className="space-y-1 flex-1">
@@ -136,7 +136,7 @@ export function TarefaComentariosTab({ tarefa, onChange }: Props) {
               return (
                 <li
                   key={c.id}
-                  className="bg-gray-50 border border-gray-200 rounded-lg p-3 group"
+                  className="bg-gray-50 border border-gray-300 rounded-lg p-3 group"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2">

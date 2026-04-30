@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -393,7 +393,7 @@ export function TarefaModal({
 
         {aguardandoConfirmacao && tarefa && (
           <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
-            <div className="max-w-lg w-full bg-white border border-gray-200 rounded-xl p-6 text-center shadow-sm">
+            <div className="max-w-lg w-full bg-white border border-gray-300 rounded-xl p-6 text-center shadow-sm">
               <div className="w-14 h-14 rounded-full bg-green-400/20 text-green-300 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-7 h-7" />
               </div>

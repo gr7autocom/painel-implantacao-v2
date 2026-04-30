@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { CheckSquare, ExternalLink, GripVertical, Link2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { ChecklistTemplate, ChecklistTemplateComItens } from '../../lib/types'
@@ -293,7 +293,7 @@ export function ChecklistTab() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse">
+            <div key={i} className="bg-white border border-gray-300 rounded-lg p-4 animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-2/3 mb-3" />
               <div className="space-y-2">
                 <div className="h-2.5 bg-gray-200 rounded w-full" />
@@ -320,7 +320,7 @@ export function ChecklistTab() {
           {filtrados.map((t) => (
             <div
               key={t.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col group hover:border-gray-300 transition-colors"
+              className="bg-white border border-gray-300 rounded-lg p-4 flex flex-col group hover:border-gray-300 transition-colors"
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="min-w-0 flex-1">
@@ -428,7 +428,7 @@ export function ChecklistTab() {
               {form.itens.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg"
+                  className="flex items-start gap-2 p-2 bg-gray-50 border border-gray-300 rounded-lg"
                 >
                   <div className="flex flex-col gap-0.5 pt-1.5">
                     <button

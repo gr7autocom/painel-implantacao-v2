@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { SmilePlus } from 'lucide-react'
 import type { ScrapReacao } from '../../lib/types'
 
@@ -62,7 +62,7 @@ export function ReacaoPicker({ onSelect, alinhar = 'esquerda', triggerClassName 
       {aberto && (
         <div
           role="menu"
-          className={`absolute bottom-full mb-1 ${alinhar === 'direita' ? 'right-0' : 'left-0'} z-30 bg-white border border-gray-200 rounded-full shadow-lg px-1.5 py-1 flex items-center gap-0.5`}
+          className={`absolute bottom-full mb-1 ${alinhar === 'direita' ? 'right-0' : 'left-0'} z-30 bg-white border border-gray-300 rounded-full shadow-lg px-1.5 py-1 flex items-center gap-0.5`}
         >
           {EMOJIS_REACOES.map((e) => (
             <button

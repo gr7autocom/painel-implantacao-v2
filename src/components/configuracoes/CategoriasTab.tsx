@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Categoria } from '../../lib/types'
@@ -127,7 +127,7 @@ export function CategoriasTab() {
         </AlertBanner>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-left">
             <tr>
@@ -159,7 +159,7 @@ export function CategoriasTab() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span
-                        className="w-5 h-5 rounded border border-gray-200"
+                        className="w-5 h-5 rounded border border-gray-300"
                         style={{ backgroundColor: c.cor }}
                       />
                       <span className="text-gray-600 text-xs">{c.cor}</span>

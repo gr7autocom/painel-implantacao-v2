@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
 import { Mic, Paperclip, Send, X, FileText, Music, Loader2 } from 'lucide-react'
 import { uploadImagemCloudinary } from '../../lib/cloudinary'
 import { GravadorAudio } from './GravadorAudio'
@@ -185,7 +185,7 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
             return (
               <div
                 key={i}
-                className="relative group flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg p-1.5 pr-7 max-w-full"
+                className="relative group flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-lg p-1.5 pr-7 max-w-full"
               >
                 {imagem ? (
                   <img
@@ -194,7 +194,7 @@ export function MensagemInput({ onEnviar, disabled, onDigitando }: Props) {
                     className="w-10 h-10 rounded object-cover shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded bg-white border border-gray-300 flex items-center justify-center shrink-0">
                     {audio ? (
                       <Music className="w-5 h-5 text-blue-500" />
                     ) : (

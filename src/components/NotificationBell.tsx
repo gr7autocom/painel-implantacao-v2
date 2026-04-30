@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Bell, BellOff, BellRing, Check, CheckCheck, Clock, UserCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -163,7 +163,7 @@ export function NotificationBell() {
       </button>
 
       {aberto && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 flex flex-col overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-300 rounded-xl shadow-xl z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
             <span className="text-sm font-semibold text-gray-900">Notificações</span>

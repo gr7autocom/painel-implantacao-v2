@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { AlertTriangle, BookOpen, CheckSquare, FileDown, MessageSquare, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
@@ -260,7 +260,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg animate-pulse">
+              <div key={i} className="flex items-center gap-3 p-3 bg-white border border-gray-300 rounded-lg animate-pulse">
                 <div className="w-5 h-5 rounded border-2 border-gray-200 shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-2.5 bg-gray-200 rounded w-3/4" />
@@ -296,7 +296,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
               return (
                 <li
                   key={item.id}
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden group"
+                  className="bg-white border border-gray-300 rounded-lg overflow-hidden group"
                 >
                   <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50">
                     <button
@@ -476,7 +476,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
                 type="button"
                 onClick={() => importarTemplate(t)}
                 disabled={importando !== null}
-                className="w-full text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-400/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full text-left p-3 bg-white border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-400/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">

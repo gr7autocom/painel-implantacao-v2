@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, FolderPlus } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -749,7 +749,7 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <fieldset className="border border-gray-200 rounded-lg p-3">
+    <fieldset className="border border-gray-300 rounded-lg p-3">
       <legend className="px-2 text-xs font-semibold text-gray-700 uppercase tracking-wider">
         {titulo}
       </legend>

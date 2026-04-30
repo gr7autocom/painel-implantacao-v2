@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { BellOff, Camera, Check, ChevronUp, KeyRound, Loader2, LogOut } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
@@ -136,7 +136,7 @@ export function PerfilSidebar() {
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-2 right-2 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute bottom-full left-2 right-2 mb-2 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden">
           {erroFoto && (
             <div className="px-3 py-2 text-xs text-red-300 bg-red-400/15 border-b border-red-400/30">
               {erroFoto}

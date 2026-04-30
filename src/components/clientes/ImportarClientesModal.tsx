@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import {
@@ -260,7 +260,7 @@ export function ImportarClientesModal({ open, onClose, onImportado }: Props) {
               <h4 className="text-xs font-semibold text-gray-700 uppercase mb-2">
                 Prévia ({Math.min(resultado.validos.length, PREVIEW_MAX)} de {resultado.validos.length})
               </h4>
-              <div className="border border-gray-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <div className="border border-gray-300 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="bg-gray-50 text-gray-600 sticky top-0">
                     <tr>

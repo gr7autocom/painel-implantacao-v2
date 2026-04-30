@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Plus, Trash2, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useUsuarioAtual } from '../../lib/auth'
@@ -145,7 +145,7 @@ export function TarefaParticipantesTab({ tarefa, onChange }: Props) {
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg animate-pulse">
+              <div key={i} className="flex items-center gap-3 p-3 bg-white border border-gray-300 rounded-lg animate-pulse">
                 <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-2.5 bg-gray-200 rounded w-1/3" />
@@ -174,7 +174,7 @@ export function TarefaParticipantesTab({ tarefa, onChange }: Props) {
             {participantes.map((p) => (
               <li
                 key={p.id}
-                className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg group"
+                className="flex items-center gap-3 p-3 bg-white border border-gray-300 rounded-lg group"
               >
                 <UserAvatar
                   nome={p.usuario?.nome ?? '?'}
@@ -221,7 +221,7 @@ export function TarefaParticipantesTab({ tarefa, onChange }: Props) {
             onChange={setBusca}
             placeholder="Nome ou email..."
           />
-          <div className="max-h-72 overflow-y-auto border border-gray-200 rounded-lg">
+          <div className="max-h-72 overflow-y-auto border border-gray-300 rounded-lg">
             {filtrados.length === 0 ? (
               <p className="text-sm text-gray-500 text-center py-6">
                 {elegiveis.length === 0
