@@ -322,7 +322,7 @@ export function Clientes() {
             ) : (
               itensFiltrados.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{c.codigo_cliente ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-600">{c.codigo_cliente ?? '-'}</td>
                   <td className="px-4 py-3 font-medium text-gray-900">
                     <button
                       type="button"
