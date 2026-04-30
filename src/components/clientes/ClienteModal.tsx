@@ -378,7 +378,17 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
 
         <Secao titulo="Dados Básicos">
           <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-12 md:col-span-7">
+            <div className="col-span-12 md:col-span-6">
+              <Label>Código do cliente</Label>
+              <input
+                type="text"
+                value={form.codigo_cliente}
+                onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value })}
+                placeholder="Ex.: 00042"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
               <Label>Razão Social *</Label>
               <input
                 type="text"
@@ -388,7 +398,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-5">
+            <div className="col-span-12 md:col-span-6">
               <Label>Nome Fantasia *</Label>
               <input
                 type="text"
@@ -398,7 +408,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-4">
+            <div className="col-span-12 md:col-span-6">
               <Label>CNPJ *</Label>
               <input
                 id="cliente-field-cnpj"
@@ -420,17 +430,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 </p>
               )}
             </div>
-            <div className="col-span-12 md:col-span-4">
-              <Label>Código do cliente</Label>
-              <input
-                type="text"
-                value={form.codigo_cliente}
-                onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value })}
-                placeholder="Ex.: 00042"
-                className={inputClass}
-              />
-            </div>
-            <div className="col-span-12 md:col-span-4">
+            <div className="col-span-12 md:col-span-6">
               <Label>Data da venda</Label>
               <input
                 type="date"
@@ -439,7 +439,7 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-4">
+            <div className="col-span-12 md:col-span-6">
               <Label>Telefone Empresa</Label>
               <input
                 type="text"
@@ -449,9 +449,8 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-8" />
             <div className="col-span-12 md:col-span-6">
-              <Label>Responsável (proprietário / quem fechou o contrato)</Label>
+              <Label>Responsável (Proprietário)</Label>
               <input
                 type="text"
                 value={form.responsavel_comercial}
