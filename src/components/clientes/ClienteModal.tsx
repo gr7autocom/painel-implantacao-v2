@@ -383,8 +383,9 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
               <input
                 type="text"
                 value={form.codigo_cliente}
-                onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value })}
+                onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value.slice(0, 6) })}
                 placeholder="Ex.: 00042"
+                maxLength={6}
                 className={inputClass}
               />
             </div>
