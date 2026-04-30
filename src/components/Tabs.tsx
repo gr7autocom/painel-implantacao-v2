@@ -74,7 +74,7 @@ export function Tabs<K extends string = string>({
   }
 
   return (
-    <div className={cn('border-b border-gray-200 mb-4', scrollable && 'overflow-x-auto', className)}>
+    <div className={cn('border-b border-gray-200 mb-4', scrollable && 'overflow-x-auto [mask-image:linear-gradient(to_right,black_85%,transparent)]', className)}>
       <nav role="tablist" className={cn('flex gap-1 -mb-px', scrollable && 'min-w-max')}>
         {tabs.map((tab) => {
           const isActive = tab.key === activeKey

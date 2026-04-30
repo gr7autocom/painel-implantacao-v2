@@ -4,6 +4,12 @@
 
 ## ✅ Concluído
 
+### Auditoria UI/UX — Etapa 5 (Polish)
+
+- [x] `EmptyState.tsx` — descrição de `text-xs text-gray-400` (12px) → `text-sm text-gray-500` (14px, contraste 4.9:1)
+- [x] `design-tokens.css` — removidos os 3 blocos de tokens sem uso: `--text-*` (escala tipográfica), `--radius-*` (raios) e `--spacing-*` (espaçamentos). Tokens de cor mantidos (usados pelo Tailwind remapping)
+- [x] `Tabs.tsx` — `mask-image: linear-gradient` na borda direita do wrapper scrollável: fade visual que sinaliza conteúdo além da área visível (ex: 9 tabs em Configurações no mobile)
+
 ### Auditoria UI/UX — Etapa 3 (Responsividade)
 
 - [x] `index.css` — `font-size: 16px` em `input, select, textarea` no mobile (`max-width: 767px`) para eliminar zoom automático do iOS Safari
