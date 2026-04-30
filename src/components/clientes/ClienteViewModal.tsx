@@ -1,24 +1,18 @@
 import { Pencil } from 'lucide-react'
 import { usePermissao } from '../../lib/permissoes'
-import type { Cliente, EtapaImplantacao } from '../../lib/types'
+import type { Cliente } from '../../lib/types'
 import { MODULOS_CLIENTE } from '../../lib/clientes-utils'
 import { Modal } from '../Modal'
-import { estiloBadge } from '../../lib/utils'
 
-type ProjetoMin = {
-  id: string
-  ativo: boolean
-  etapa_implantacao_id: string | null
-  etapa_implantacao?: Pick<EtapaImplantacao, 'id' | 'nome' | 'cor' | 'ordem'> | null
+type ClienteComRegime = Cliente & {
+  regime_cliente?: { id: string; nome: string } | null
 }
-
-type ClienteComProjetos = Cliente & { projetos?: ProjetoMin[] | null }
 
 type Props = {
   open: boolean
   onClose: () => void
   onEditar: () => void
-  cliente: ClienteComProjetos | null
+  cliente: ClienteComRegime | null
 }
 
 function Campo({ label, value }: { label: string; value?: string | null }) {
@@ -45,7 +39,6 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
   const perm = usePermissao()
   if (!cliente) return null
 
-  const projetosAtivos = (cliente.projetos ?? []).filter((p) => p.ativo)
   const modulosContratados = MODULOS_CLIENTE.filter((m) => (cliente.modulos ?? []).includes(m.id))
 
   return (
@@ -79,17 +72,20 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
       <div className="space-y-4">
         <Secao titulo="Dados Básicos">
           <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-12 md:col-span-7">
+            <div className="col-span-4 md:col-span-3">
+              <Campo label="Código" value={cliente.codigo_cliente} />
+            </div>
+            <div className="col-span-8 md:col-span-9">
               <Campo label="Razão Social" value={cliente.razao_social} />
             </div>
-            <div className="col-span-12 md:col-span-5">
+            <div className="col-span-12 md:col-span-6">
               <Campo label="Nome Fantasia" value={cliente.nome_fantasia} />
             </div>
-            <div className="col-span-12 md:col-span-4">
+            <div className="col-span-12 md:col-span-6">
               <Campo label="CNPJ" value={cliente.cnpj} />
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Campo label="Telefone" value={cliente.telefone} />
+              <Campo label="Regime do cliente" value={cliente.regime_cliente?.nome} />
             </div>
             <div className="col-span-12 md:col-span-4">
               <Campo
@@ -101,8 +97,26 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
                 }
               />
             </div>
-            <div className="col-span-12">
-              <Campo label="Responsável" value={cliente.responsavel_comercial} />
+            <div className="col-span-12 md:col-span-4">
+              <Campo label="Telefone Empresa" value={cliente.telefone} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Responsável (Proprietário)" value={cliente.responsavel_comercial} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Telefone Responsável" value={cliente.telefone_responsavel} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Contabilidade" value={cliente.contabilidade} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Contador" value={cliente.contador} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Telefone Contabilidade" value={cliente.telefone_contabilidade} />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Campo label="Email Contabilidade" value={cliente.email_contabilidade} />
             </div>
           </div>
         </Secao>
@@ -146,33 +160,6 @@ export function ClienteViewModal({ open, onClose, onEditar, cliente }: Props) {
                 >
                   {m.label}
                 </span>
-              ))}
-            </div>
-          )}
-        </Secao>
-
-        <Secao titulo="Estágio de implantação">
-          {projetosAtivos.length === 0 ? (
-            <p className="text-sm text-gray-400">Este cliente não tem projeto ativo.</p>
-          ) : (
-            <div className="space-y-2">
-              {projetosAtivos.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 flex-wrap">
-                  {p.etapa_implantacao ? (
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border"
-                      style={estiloBadge(p.etapa_implantacao.cor)}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: p.etapa_implantacao.cor }}
-                      />
-                      {p.etapa_implantacao.nome}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400">Sem etapa definida</span>
-                  )}
-                </div>
               ))}
             </div>
           )}

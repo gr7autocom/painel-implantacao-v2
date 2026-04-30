@@ -39,7 +39,7 @@ export function Clientes() {
     setError(null)
     const { data, error: err } = await supabase
       .from('clientes')
-      .select('*')
+      .select('*, regime_cliente:regimes_cliente(id, nome)')
       .order('codigo_cliente', { nullsFirst: false })
     if (err) setError(err.message)
     else setItems((data ?? []) as Cliente[])
