@@ -335,8 +335,12 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
     onClose()
   }
 
-  function traduzirErro(err: { code?: string; message: string }): string {
-    if (err.code === '23505') return 'Já existe um cliente com esse CNPJ.'
+  function traduzirErro(err: { code?: string; message: string; details?: string }): string {
+    if (err.code === '23505') {
+      const ctx = `${err.message} ${err.details ?? ''}`.toLowerCase()
+      if (ctx.includes('codigo_cliente')) return 'Já existe um cliente com esse código.'
+      return 'Já existe um cliente com esse CNPJ.'
+    }
     if (err.code === '42501') return 'Você não tem permissão para esta operação.'
     return err.message
   }
