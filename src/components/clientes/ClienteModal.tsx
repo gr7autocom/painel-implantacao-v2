@@ -35,8 +35,14 @@ type FormState = {
   razao_social: string
   nome_fantasia: string
   cnpj: string
+  codigo_cliente: string
   telefone: string
   responsavel_comercial: string
+  telefone_responsavel: string
+  contabilidade: string
+  contador: string
+  telefone_contabilidade: string
+  email_contabilidade: string
   data_venda: string
   importar_dados: boolean
   sistema_atual: string
@@ -52,8 +58,14 @@ function emptyForm(): FormState {
     razao_social: '',
     nome_fantasia: '',
     cnpj: '',
+    codigo_cliente: '',
     telefone: '',
     responsavel_comercial: '',
+    telefone_responsavel: '',
+    contabilidade: '',
+    contador: '',
+    telefone_contabilidade: '',
+    email_contabilidade: '',
     data_venda: '',
     importar_dados: false,
     sistema_atual: '',
@@ -125,8 +137,14 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
         razao_social: cliente.razao_social,
         nome_fantasia: cliente.nome_fantasia,
         cnpj: cliente.cnpj,
+        codigo_cliente: cliente.codigo_cliente ?? '',
         telefone: cliente.telefone ?? '',
         responsavel_comercial: cliente.responsavel_comercial ?? '',
+        telefone_responsavel: cliente.telefone_responsavel ?? '',
+        contabilidade: cliente.contabilidade ?? '',
+        contador: cliente.contador ?? '',
+        telefone_contabilidade: cliente.telefone_contabilidade ?? '',
+        email_contabilidade: cliente.email_contabilidade ?? '',
         data_venda: cliente.data_venda ?? '',
         importar_dados: cliente.importar_dados,
         sistema_atual: cliente.sistema_atual ?? '',
@@ -219,8 +237,14 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
       razao_social: form.razao_social.trim(),
       nome_fantasia: form.nome_fantasia.trim(),
       cnpj: form.cnpj,
+      codigo_cliente: form.codigo_cliente.trim() || null,
       telefone: form.telefone.trim() || null,
       responsavel_comercial: form.responsavel_comercial.trim() || null,
+      telefone_responsavel: form.telefone_responsavel.trim() || null,
+      contabilidade: form.contabilidade.trim() || null,
+      contador: form.contador.trim() || null,
+      telefone_contabilidade: form.telefone_contabilidade.trim() || null,
+      email_contabilidade: form.email_contabilidade.trim() || null,
       data_venda: form.data_venda || null,
       importar_dados: form.importar_dados,
       sistema_atual: form.importar_dados ? form.sistema_atual.trim() || null : null,
@@ -397,12 +421,12 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
               )}
             </div>
             <div className="col-span-12 md:col-span-4">
-              <Label>Telefone de contato</Label>
+              <Label>Código do cliente</Label>
               <input
                 type="text"
-                value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
-                placeholder="(00) 00000-0000"
+                value={form.codigo_cliente}
+                onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value })}
+                placeholder="Ex.: 00042"
                 className={inputClass}
               />
             </div>
@@ -415,13 +439,74 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12">
+            <div className="col-span-12 md:col-span-4">
+              <Label>Telefone Empresa</Label>
+              <input
+                type="text"
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
+                placeholder="(00) 00000-0000"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-8" />
+            <div className="col-span-12 md:col-span-6">
               <Label>Responsável (proprietário / quem fechou o contrato)</Label>
               <input
                 type="text"
                 value={form.responsavel_comercial}
                 onChange={(e) => setForm({ ...form, responsavel_comercial: e.target.value })}
-                placeholder="Nome do responsável do lado do cliente"
+                placeholder="Nome do responsável"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label>Telefone Responsável</Label>
+              <input
+                type="text"
+                value={form.telefone_responsavel}
+                onChange={(e) => setForm({ ...form, telefone_responsavel: formatarTelefone(e.target.value) })}
+                placeholder="(00) 00000-0000"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label>Contabilidade</Label>
+              <input
+                type="text"
+                value={form.contabilidade}
+                onChange={(e) => setForm({ ...form, contabilidade: e.target.value })}
+                placeholder="Nome da empresa contábil"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label>Contador</Label>
+              <input
+                type="text"
+                value={form.contador}
+                onChange={(e) => setForm({ ...form, contador: e.target.value })}
+                placeholder="Nome do contador"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label>Telefone Contabilidade</Label>
+              <input
+                type="text"
+                value={form.telefone_contabilidade}
+                onChange={(e) => setForm({ ...form, telefone_contabilidade: formatarTelefone(e.target.value) })}
+                placeholder="(00) 00000-0000"
+                className={inputClass}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label>Email Contabilidade</Label>
+              <input
+                type="email"
+                value={form.email_contabilidade}
+                onChange={(e) => setForm({ ...form, email_contabilidade: e.target.value })}
+                placeholder="contato@contabilidade.com"
                 className={inputClass}
               />
             </div>

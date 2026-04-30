@@ -220,8 +220,14 @@ export type Cliente = {
   razao_social: string
   nome_fantasia: string
   cnpj: string
+  codigo_cliente: string | null
   telefone: string | null
   responsavel_comercial: string | null
+  telefone_responsavel: string | null
+  contabilidade: string | null
+  contador: string | null
+  telefone_contabilidade: string | null
+  email_contabilidade: string | null
   data_venda: string | null
   importar_dados: boolean
   sistema_atual: string | null

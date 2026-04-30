@@ -39,7 +39,7 @@ export function TarefaListasProvider({ children }: { children: React.ReactNode }
       supabase.from('classificacoes').select('*').eq('ativo', true).order('nome'),
       supabase.from('etapas').select('*').eq('ativo', true).order('ordem'),
       supabase.from('usuarios').select('*').eq('ativo', true).order('nome'),
-      supabase.from('clientes').select('id, nome_fantasia').eq('ativo', true).order('nome_fantasia'),
+      supabase.from('clientes').select('id, nome_fantasia, codigo_cliente').eq('ativo', true).order('codigo_cliente', { nullsFirst: false }),
     ])
     setListas({
       prioridades: (pr.data ?? []) as Prioridade[],

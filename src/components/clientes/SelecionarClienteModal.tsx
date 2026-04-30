@@ -29,9 +29,9 @@ export function SelecionarClienteModal({ open, onClose, onSelect }: Props) {
     Promise.all([
       supabase
         .from('clientes')
-        .select('id, nome_fantasia, razao_social, cnpj')
+        .select('id, nome_fantasia, razao_social, cnpj, codigo_cliente')
         .eq('ativo', true)
-        .order('nome_fantasia'),
+        .order('codigo_cliente', { nullsFirst: false }),
       supabase
         .from('projetos')
         .select('cliente_id, etapa_implantacao:etapas_implantacao(nome)')

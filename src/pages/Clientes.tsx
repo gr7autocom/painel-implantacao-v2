@@ -59,7 +59,7 @@ export function Clientes() {
       supabase
         .from('clientes')
         .select('*, projetos(id, ativo, etapa_implantacao_id, etapa_implantacao:etapas_implantacao(id, nome, cor, ordem))')
-        .order('nome_fantasia'),
+        .order('codigo_cliente', { nullsFirst: false }),
       supabase.from('etapas_implantacao').select('*').eq('ativo', true).order('ordem'),
     ])
     if (cliRes.error) setError(cliRes.error.message)
