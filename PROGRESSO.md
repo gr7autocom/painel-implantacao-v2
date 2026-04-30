@@ -4,6 +4,11 @@
 
 ## ✅ Concluído
 
+### Badge de notificação em Tarefas na Sidebar
+
+- [x] `src/lib/useTarefasNotifications.ts` — novo hook: conta notificações `tarefa_atribuida` não lidas via Supabase, atualiza em realtime, limpa ao entrar em `/tarefas`
+- [x] `src/components/Sidebar.tsx` — badge vermelho no item "Tarefas" quando `naoLidasTarefas > 0`, idêntico ao badge do Talk; renomeadas as variáveis para `naoLidasScrap` e `naoLidasTarefas`
+
 ### Auditoria UI/UX — Etapa 5 (Polish)
 
 - [x] `EmptyState.tsx` — descrição de `text-xs text-gray-400` (12px) → `text-sm text-gray-500` (14px, contraste 4.9:1)

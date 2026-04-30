@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { cn } from '../lib/utils'
 import { usePermissao } from '../lib/permissoes'
 import { useScrapNotifications } from '../lib/useScrapNotifications'
+import { useTarefasNotifications } from '../lib/useTarefasNotifications'
 import { PerfilSidebar } from './PerfilSidebar'
 
 import type { AcaoId } from '../lib/acoes'
@@ -25,7 +26,8 @@ const menuItems: MenuItem[] = [
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { can } = usePermissao()
-  const { naoLidas } = useScrapNotifications()
+  const { naoLidas: naoLidasScrap } = useScrapNotifications()
+  const { naoLidas: naoLidasTarefas } = useTarefasNotifications()
   const items = menuItems.filter((item) => !item.requiresAcao || can(item.requiresAcao))
 
   return (
@@ -53,9 +55,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               >
                 <item.icon className="w-5 h-5" />
                 <span className="flex-1">{item.label}</span>
-                {item.to === '/talk' && naoLidas > 0 && (
+                {item.to === '/talk' && naoLidasScrap > 0 && (
                   <span className="min-w-[18px] h-[18px] px-1.5 bg-red-500 text-[#ffffff] text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
-                    {naoLidas > 9 ? '9+' : naoLidas}
+                    {naoLidasScrap > 9 ? '9+' : naoLidasScrap}
+                  </span>
+                )}
+                {item.to === '/tarefas' && naoLidasTarefas > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1.5 bg-red-500 text-[#ffffff] text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+                    {naoLidasTarefas > 9 ? '9+' : naoLidasTarefas}
                   </span>
                 )}
               </NavLink>

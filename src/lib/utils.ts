@@ -15,10 +15,8 @@ export function useDebounce<T>(value: T, delay: number): T {
   return debounced
 }
 
-export function usePageTitle(title: string) {
-  useEffect(() => {
-    document.title = title ? `${title} — GR7` : 'GR7 Automação'
-  }, [title])
+export function usePageTitle(_title: string) {
+  // título fixo — sem variação por rota
 }
 
 /**
