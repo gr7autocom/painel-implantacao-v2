@@ -343,21 +343,15 @@ export function Projetos() {
         size="sm"
         footer={
           <>
-            <button
-              type="button"
-              onClick={() => setRenomearProjeto(null)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
+            <Button variant="secondary" onClick={() => setRenomearProjeto(null)}>
               Cancelar
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={salvarNomeProjeto}
               disabled={salvandoNome || !novoNome.trim()}
-              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               {salvandoNome ? 'Salvando...' : 'Salvar'}
-            </button>
+            </Button>
           </>
         }
       >
@@ -385,22 +379,12 @@ export function Projetos() {
         size="sm"
         footer={
           <>
-            <button
-              type="button"
-              onClick={() => setExcluirProjeto(null)}
-              disabled={excluindoProjeto}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
+            <Button variant="secondary" onClick={() => setExcluirProjeto(null)} disabled={excluindoProjeto}>
               Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={confirmarExcluirProjeto}
-              disabled={excluindoProjeto}
-              className="px-4 py-2 text-sm font-medium text-[#ffffff] bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-            >
+            </Button>
+            <Button variant="danger" onClick={confirmarExcluirProjeto} disabled={excluindoProjeto}>
               {excluindoProjeto ? 'Excluindo...' : 'Excluir projeto'}
-            </button>
+            </Button>
           </>
         }
       >
