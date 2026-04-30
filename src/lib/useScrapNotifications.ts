@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 import { useAuth } from './auth'
 import { useToast } from '../components/Toast'
 import { contarNaoLidas, preview } from './scrap-utils'
+import { dispararNotificacaoNativa } from './notificacoes-nativas'
 import type { ScrapMensagem } from './types'
 
 const TAG_SCRAP_TOAST = 'scrap-nova-mensagem'
@@ -48,20 +49,29 @@ export function useScrapNotifications() {
             if (msg.remetente_id === usuario.id) return // ignora mensagem minha
             // Atualiza contador
             atualizarContador()
-            // Toast só quando não estou na página /talk e não estou em "Não incomodar"
             const emDND = usuario.status_manual === 'nao_incomodar'
-            if (!window.location.pathname.startsWith('/talk') && !emDND) {
-              const { data: remetente } = await supabase
-                .from('usuarios')
-                .select('nome')
-                .eq('id', msg.remetente_id)
-                .maybeSingle()
+            if (emDND) return
+            const { data: remetente } = await supabase
+              .from('usuarios')
+              .select('nome')
+              .eq('id', msg.remetente_id)
+              .maybeSingle()
+            const nomeSender = remetente?.nome ?? 'usuário'
+            // Toast in-app só quando não estou na página /talk
+            if (!window.location.pathname.startsWith('/talk')) {
               toast(
-                `Nova mensagem de ${remetente?.nome ?? 'usuário'}: ${preview(msg.corpo, 40)}`,
+                `Nova mensagem de ${nomeSender}: ${preview(msg.corpo, 40)}`,
                 'info',
                 { tag: TAG_SCRAP_TOAST },
               )
             }
+            // Notificação nativa do SO (dispara apenas quando o app não está visível)
+            dispararNotificacaoNativa(
+              `Talk — ${nomeSender}`,
+              preview(msg.corpo, 80),
+              '/talk',
+              `talk-${msg.id}`,
+            )
           }
         )
         .on(

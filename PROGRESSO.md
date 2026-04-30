@@ -4,6 +4,12 @@
 
 ## ✅ Concluído
 
+### Fix: Notificações nativas Windows (Talk + Tarefas)
+
+- [x] `src/lib/notificacoes-nativas.ts` — utilitário compartilhado: usa `ServiceWorker.showNotification()` (único que funciona no PWA standalone do Windows), suprime quando `document.visibilityState === 'visible'`, fallback para `new Notification()` fora do PWA
+- [x] `src/components/NotificationBell.tsx` — removida função inline duplicada, agora importa e usa `dispararNotificacaoNativa` do utilitário compartilhado
+- [x] `src/lib/useScrapNotifications.ts` — Talk agora chama `dispararNotificacaoNativa` ao receber mensagem nova (era ausente); respeita DND; remetente buscado antes da bifurcação toast/nativa
+
 ### Badge de notificação em Tarefas na Sidebar
 
 - [x] `src/lib/useTarefasNotifications.ts` — novo hook: conta notificações `tarefa_atribuida` não lidas via Supabase, atualiza em realtime, limpa ao entrar em `/tarefas`

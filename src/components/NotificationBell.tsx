@@ -4,36 +4,10 @@ import { Bell, BellOff, BellRing, Check, CheckCheck, Clock, UserCheck } from 'lu
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useToast } from './Toast'
+import { dispararNotificacaoNativa } from '../lib/notificacoes-nativas'
 import type { Notificacao } from '../lib/types'
 
 const SUPORTE_NOTIF = typeof window !== 'undefined' && 'Notification' in window
-
-async function dispararNotificacaoNativa(n: Notificacao) {
-  if (!SUPORTE_NOTIF || Notification.permission !== 'granted') return
-  // Usa o Service Worker para disparar a notificação — único método que
-  // funciona no PWA standalone do Windows (new Notification() é bloqueado).
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.ready
-      await registration.showNotification(n.titulo, {
-        body: n.mensagem ?? undefined,
-        icon: '/pwa-192.svg',
-        tag: `notificacao-${n.id}`,
-        data: { url: '/tarefas' },
-      })
-      return
-    } catch {
-      // fallback abaixo
-    }
-  }
-  // Fallback para contexto fora do PWA (aba normal do navegador)
-  const notif = new Notification(n.titulo, {
-    body: n.mensagem ?? undefined,
-    icon: '/pwa-192.svg',
-    tag: `notificacao-${n.id}`,
-  })
-  notif.onclick = () => window.focus()
-}
 
 const TAG_TAREFA_TOAST = 'notificacao-tarefa'
 
@@ -125,7 +99,7 @@ export function NotificationBell() {
             }
 
             // Notificação nativa do SO (card do Windows)
-            dispararNotificacaoNativa(nova)
+            dispararNotificacaoNativa(nova.titulo, nova.mensagem ?? undefined, '/tarefas', `notificacao-${nova.id}`)
           }
         )
         .subscribe()
