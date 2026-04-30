@@ -378,18 +378,18 @@ export function ClienteModal({ open, onClose, onSaved, cliente }: Props) {
 
         <Secao titulo="Dados Básicos">
           <div className="grid grid-cols-12 gap-3">
-            <div className="col-span-12 md:col-span-6">
-              <Label>Código do cliente</Label>
+            <div className="col-span-4 md:col-span-3">
+              <Label>Código</Label>
               <input
                 type="text"
                 value={form.codigo_cliente}
                 onChange={(e) => setForm({ ...form, codigo_cliente: e.target.value.slice(0, 6) })}
-                placeholder="Ex.: 00042"
+                placeholder="000001"
                 maxLength={6}
                 className={inputClass}
               />
             </div>
-            <div className="col-span-12 md:col-span-6">
+            <div className="col-span-8 md:col-span-9">
               <Label>Razão Social *</Label>
               <input
                 type="text"
