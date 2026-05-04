@@ -43,6 +43,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
   const [excluindo, setExcluindo] = useState(false)
   const [erroExclusao, setErroExclusao] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
   const menuHeaderRef = useRef<HTMLDivElement>(null)
   // Snapshots de mensagens excluídas otimisticamente (para restaurar no Undo)
   const snapshotsExcluidasRef = useRef<Map<string, MensagemComAnexos>>(new Map())
@@ -55,8 +56,15 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
   const [novasNaoLidas, setNovasNaoLidas] = useState(0)
   const ultimoIdRef = useRef<string | null>(null)
 
+  function scrollParaBaixo(behavior: ScrollBehavior = 'instant') {
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior, block: 'end' })
+    })
+  }
+
   async function carregarMensagens(conversaId: string) {
     setCarregando(true)
+    setMensagens([])
     // 1ª query: pega ids das mensagens da conversa
     const { data: msgs } = await supabase
       .from('scrap_mensagens')
@@ -247,12 +255,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
     if (ultimoIdRef.current === null) {
       // Carga inicial: restaurar position salva, ou fundo se nunca visitou
       ultimoIdRef.current = ultima.id
-      const idAtual = conversa?.id
-      requestAnimationFrame(() => {
-        if (!scrollRef.current) return
-        const saved = idAtual ? scrollPositionsRef.current.get(idAtual) : undefined
-        scrollRef.current.scrollTop = saved !== undefined ? saved : scrollRef.current.scrollHeight
-      })
+      scrollParaBaixo('instant')
       return
     }
     if (ultima.id === ultimoIdRef.current) return // mesma última, não é nova
@@ -260,9 +263,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
 
     const minha = ultima.remetente_id === meuId
     if (estaNoBottomRef.current || minha) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-      })
+      scrollParaBaixo('smooth')
       setNovasNaoLidas(0)
     } else {
       setNovasNaoLidas((c) => c + 1)
@@ -280,7 +281,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
   }
 
   function irParaBaixo() {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    scrollParaBaixo('smooth')
     setNovasNaoLidas(0)
   }
 
@@ -714,6 +715,7 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
             </div>
           ))
         )}
+        <div ref={bottomRef} />
       </div>
         {novasNaoLidas > 0 && (
           <button
