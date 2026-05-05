@@ -67,6 +67,23 @@ export function Scrap() {
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [usuario?.id])
 
+  async function marcarNaoLida(conversaId: string) {
+    if (!usuario) return
+    const { data: ultima } = await supabase
+      .from('scrap_mensagens')
+      .select('id')
+      .eq('conversa_id', conversaId)
+      .neq('remetente_id', usuario.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (!ultima) return
+    await supabase
+      .from('scrap_mensagens')
+      .update({ lida: false })
+      .eq('id', ultima.id)
+  }
+
   function selecionarConversa(id: string) {
     setConversaAtivaId(id)
     setSearchParams({ conversa: id })
@@ -91,6 +108,7 @@ export function Scrap() {
             onBuscaChange={setBusca}
             onSelecionar={selecionarConversa}
             onNovaConversa={() => setModalNovaOpen(true)}
+            onMarcarNaoLida={marcarNaoLida}
             meuId={usuario?.id ?? ''}
           />
         </div>
