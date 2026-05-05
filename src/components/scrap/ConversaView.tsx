@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowLeft, BellOff, MessageSquarePlus, MessageSquareText, MoreVertical, Search, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, BellDot, BellOff, MessageSquarePlus, MessageSquareText, MoreVertical, Search, Trash2, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { UserAvatar } from '../UserAvatar'
 import { MensagemBubble } from './MensagemBubble'
@@ -500,6 +500,22 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
     })
   }
 
+  async function marcarNaoLida() {
+    if (!conversa) return
+    setMenuHeaderAberto(false)
+    const { data: ultima } = await supabase
+      .from('scrap_mensagens')
+      .select('id')
+      .eq('conversa_id', conversa.id)
+      .neq('remetente_id', meuId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (ultima) {
+      await supabase.from('scrap_mensagens').update({ lida: false }).eq('id', ultima.id)
+    }
+  }
+
   async function excluirConversa() {
     if (!conversa) return
     setExcluindo(true)
@@ -603,18 +619,26 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
             >
               <Search className="w-5 h-5" />
             </button>
-            {perm.can('scrap.excluir_conversa') && (
-              <div className="relative shrink-0" ref={menuHeaderRef}>
-                <button
-                  type="button"
-                  onClick={() => setMenuHeaderAberto((v) => !v)}
-                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
-                  aria-label="Opções da conversa"
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-                {menuHeaderAberto && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg py-1 z-20 min-w-[180px]">
+            <div className="relative shrink-0" ref={menuHeaderRef}>
+              <button
+                type="button"
+                onClick={() => setMenuHeaderAberto((v) => !v)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="Opções da conversa"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              {menuHeaderAberto && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg py-1 z-20 min-w-[180px]">
+                  <button
+                    type="button"
+                    onClick={marcarNaoLida}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 text-left"
+                  >
+                    <BellDot className="w-4 h-4 text-blue-500" />
+                    Marcar como não lida
+                  </button>
+                  {perm.can('scrap.excluir_conversa') && (
                     <button
                       type="button"
                       onClick={() => {
@@ -626,10 +650,10 @@ export function ConversaView({ conversa, meuId, meuUsuario, onMensagemEnviada, o
                       <Trash2 className="w-4 h-4" />
                       Excluir conversa
                     </button>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )
       })()}
