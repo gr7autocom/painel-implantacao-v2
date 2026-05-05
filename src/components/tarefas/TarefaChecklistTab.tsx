@@ -83,6 +83,7 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
 
   async function alternar(item: TarefaChecklistItemComRel) {
     if (!usuarioAtual) return
+    if (!item.concluido && !podeEditarItens) return
     if (item.concluido) {
       const ehDono = item.concluido_por_id === usuarioAtual.id
       if (!ehDono && !perm.isAdmin) return
@@ -289,8 +290,8 @@ export function TarefaChecklistTab({ tarefa, onChange }: Props) {
             {itens.map((item, idx) => {
               const ehDono = item.concluido_por_id === usuarioAtual?.id
               const podeDesmarcar = item.concluido && (ehDono || perm.isAdmin)
-              const podeMarcar = !item.concluido
-              const checkboxDisabled = item.concluido && !podeDesmarcar
+              const podeMarcar = !item.concluido && podeEditarItens
+              const checkboxDisabled = item.concluido ? !podeDesmarcar : !podeMarcar
               const temObs = !!(item.observacao && item.observacao.trim())
               const obsEstaAberto = obsAberto === item.id
               return (
