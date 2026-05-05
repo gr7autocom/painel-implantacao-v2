@@ -48,7 +48,15 @@ export function Clientes() {
   }
 
   useEffect(() => {
-    load()
+    supabase
+      .from('clientes')
+      .select('*, regime_cliente:regimes_cliente(id, nome)')
+      .order('codigo_cliente', { nullsFirst: false })
+      .then(({ data, error: err }) => {
+        if (err) setError(err.message)
+        else setItems((data ?? []) as Cliente[])
+        setLoading(false)
+      })
   }, [])
 
   // Contagens totais (independente da busca/etapa) — pra mostrar nas abas
